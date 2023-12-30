@@ -78,6 +78,9 @@ def add (n m : ℕ) : ℕ :=
   | zero => m
   | successor n' => successor (add n' m)
 
+/-
+Addition is left associative, so `a + b + c` is definitionally equal to `(a + b) + c`.
+-/
 instance : Add Natural where
   add := Natural.add
 
@@ -154,9 +157,59 @@ theorem add_commutative (n m : ℕ) : n + m = m + n :=
     have h1 : (successor x) + m = successor (x + m) := successor_add x m
     have h2 : m + (successor x) = successor (m + x) := add_successor m x
     have h3 : successor (x + m) = successor (m + x) := congrArg successor ih
-    show (successor x) + m = m + (successor x) from h1.trans (h3.trans (h2.symm))
+    show (successor x) + m = m + (successor x) from h1.trans (h3.trans h2.symm)
     )
     n
 
+example : ((5 : ℕ) + 2) + 4 = 5 + (2 + 4) := rfl
+
+theorem add_associative (a b c : ℕ) : (a + b) + c = a + (b + c) :=
+  Natural.rec
+    (
+    have h1 : (0 + b) + c = b + c := congrArg (λ x => x + c) (zero_add b)
+    have h2 : 0 + (b + c) = b + c := zero_add (b + c)
+    show (0 + b) + c = 0 + (b + c) from h1.trans h2.symm
+    )
+    (λ (x : ℕ) (ih : (x + b) + c = x + (b + c)) =>
+    have h1 : ((successor x) + b) + c = (successor (x + b)) + c := congrArg (λ y => y + c) (successor_add x b)
+    have h2 : (successor (x + b)) + c = successor ((x + b) + c) := successor_add (x + b) c
+    have h3 : successor ((x + b) + c) = successor (x + (b + c)) := congrArg successor ih
+    have h4 : (successor x) + (b + c) = successor (x + (b + c)) := successor_add x (b + c)
+    show ((successor x) + b) + c = (successor x) + (b + c) from (h1.trans h2).trans (h3.trans h4.symm)
+    )
+    a
+
+theorem add_left_cancel (a b c : ℕ) : a + b = a + c → b = c := 
+  Natural.rec
+    (
+    have h1 : 0 + b = b := zero_add b
+    have h2 : 0 + c = c := zero_add c
+    show 0 + b = 0 + c → b = c from (λ h3 => (h1.symm.trans h3).trans h2)
+    )
+    (λ (x : ℕ) (ih : x + b = x + c → b = c) =>
+    have h1 : (successor x) + b = successor (x + b) := successor_add x b
+    have h2 : (successor x) + c = successor (x + c) := successor_add x c
+    show (successor x) + b = (successor x) + c → b = c from (λ h =>
+      have h3 : successor (x + b) = successor (x + c) := (h1.symm.trans h).trans h2
+      ih (successor_injective (x + b) (x + c) h3)
+    )
+    )
+    a
+
+def positive (n : ℕ) : Prop := n ≠ 0
+
+def add_positive (n m : ℕ) : positive n → positive (n + m) :=
+  Natural.rec
+    (
+    show positive 0 → positive (0 + m) 
+    from (λ (h : positive 0) => 
+    -- Basically call bullshit. If you're telling me 0 ≠ 0, I'm gonna tell you 
+    -- that 0 + m for any m is not equal to zero.
+    show positive (0 + m) from False.elim (h rfl)
+    )
+    )
+    -- There's some automatic definitional equality simplifying going on here, relies on the definition of addition
+    (λ (x : ℕ) _ _ => successor_not_equal_zero (x + m))
+    n
 
 end Natural
