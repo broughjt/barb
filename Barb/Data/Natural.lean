@@ -1,5 +1,7 @@
 import Barb.Logic
 
+-- TODO: replace all exists.elim with `let ⟨x, y⟩ := h`.
+
 inductive Natural where
   -- Axiom 2.1
   | zero : Natural
@@ -42,9 +44,6 @@ Axiom 2.4
 theorem successor_injective (m n : ℕ) : successor m = successor n → m = n :=
   λ h => (Natural.noConfusion h) id
 
-/-
-TODO: How to tidy up?
--/
 example : (6 : ℕ) ≠ 2 :=
   λ h : 6 = 2 =>
   let h1 := successor_injective 5 1 h;
@@ -408,6 +407,7 @@ theorem less_equal_transitive {a b c : ℕ} (h₁ : a ≤ b) (h₂ : b ≤ c) : 
 instance : Trans (. ≤ . : ℕ → ℕ → Prop) (. ≤ . : ℕ → ℕ → Prop) (. ≤ . : ℕ → ℕ → Prop) where
   trans := less_equal_transitive
 
+-- TODO: Can we use transitivity to simplify the proof?
 theorem less_equal_antisymmetric {n m : ℕ} (h₁ : n ≤ m) (h₂ : m ≤ n) : n = m := by
   apply Exists.elim h₁; intro x h₃
   apply Exists.elim h₂; intro y h₄
@@ -427,6 +427,17 @@ theorem less_equal_antisymmetric {n m : ℕ} (h₁ : n ≤ m) (h₂ : m ≤ n) :
 
 instance : Antisymm (. ≤ . : ℕ → ℕ → Prop) where
   antisymm := less_equal_antisymmetric
+
+/-
+Okay the question started off with, I keep doing the Exists.intro followed by Exists.elim thing, is there a way to generalize?
+Then I thought, what class of functions satisfies x ≤ y → f(x) ≤ f(y)
+But then I realized that really I should be flipping this around. That is (or is close to) the definition of an increasing function. So I guess my question now is, are there a class of functions I keep seeing which are all increasing? Which class are they?
+
+I have showed that (. + a) and (a + .) are increasing
+Have I showed successor is increasing?
+
+Should also show ∀ n : 0 ≤ n
+-/
 
 theorem add_less_equal_add_left {b c : ℕ} (h : b ≤ c) (a : ℕ) : a + b ≤ a + c := by
   apply Exists.elim h; intro x h₁;
@@ -476,7 +487,7 @@ theorem successor_less_equal_of_less_than : {a b : ℕ} → a < b → successor 
   apply Exists.intro y
   calc
     successor zero + y = successor (zero + y) := successor_add zero y
-    _                  = successor y := congrArg successor (zero_add y)
+    _                  = successor y          := congrArg successor (zero_add y)
 | successor x, zero, ⟨h, _⟩ => by
   apply Exists.elim h; intro z h₁
   have : successor (x + z) = 0 := (successor_add x z).symm.trans h₁
@@ -525,6 +536,40 @@ theorem less_than_of_equal_add_positive {a b : ℕ} (h : ∃ (d : ℕ), positive
       _                 = a + 0 := (add_zero a).symm
     exact successor_not_equal_zero c (add_left_cancel this)
 
-theorem trichotomous (a b : ℕ) : a < b ∨ a = b ∨ a > b := sorry
+theorem trichotomous' (n m : ℕ) : n < m ∨ n = m ∨ n > m := by
+  induction n with
+  | zero => 
+    sorry
+  | successor x ih =>
+    sorry
+
+-- TODO: How to show we can do substitute and congruent stuff with different releations besides equal?
+/-
+theorem trichotomous (a b : ℕ) : a < b ∨ a = b ∨ a > b := by
+  induction a with
+  | zero => cases b with
+    | zero => exact Or.inr (Or.inl rfl)
+    | successor y =>
+      apply Or.inl
+      apply And.intro
+      . exact Exists.intro (successor y) (zero_add (successor y))
+      . exact (successor_not_equal_zero y).symm
+  | successor x ih => 
+    suffices ∀ (n m : ℕ), n < m → successor n < successor m by
+    { cases (ih x b) with
+      | inl h_less_than => exact Or.inl (this x b h_less_than)
+      | inr h => cases h with
+        | inl h_equal => exact Or.inr (Or.inl (congrArg successor h_equal))
+        | inr h_greater_than => exact Or.inr (Or.inr (this b x h_greater_than)) }
+
+    intro n m ⟨h_less_than, h_not_equal⟩
+    apply And.intro
+    . apply Exists.elim h_less_than; intro k hk
+      have := calc
+        (successor n) + k = successor (n + k) := successor_add n k
+        _                 = successor m       := congrArg successor hk
+      exact Exists.intro k this
+    . exact mt (successor_injective n m) h_not_equal
+-/
 
 end Natural
