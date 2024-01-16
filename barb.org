@@ -1,0 +1,814 @@
+#+title: Barb
+#+date: <2023-12-25 Mon>
+#+author: Jackson Brough
+
+* Introduction
+
+With minimal exceptions, I have written the proofs without looking at
+anybody else's code first. I will try to explicitly state where this
+isn't the case. For example, in Tao's Analyis 1 book, I will look at
+the theorem statement and then try to prove it myself before looking
+at the proof below. Obviously once I get past basic arithmetic this
+ideal won't last very long -- I'll have to look at other proofs to
+even get an idea of how to approach the problem. However, my goal is
+to get as much insight from this project as possible, so I'll have to
+find a balance.
+
+- Interested in type theory
+- Goals and scope, good stuff from ~~/scratch~
+- Benefits from attempt to rewrite prelude, see git history before
+  literate and scratch
+
+* Library
+** Logic
+:PROPERTIES:
+:header-args: :tangle Barb/Logic.lean
+:END:
+*** Exists Unique
+Most of the logical constructs I've needed are already in the ~Init~
+prelude module, but I did need "there exists a unique" for stating
+that each non-zero natural number has a unique predecessor.
+
+We can formalize unique existence by claiming that the object exists
+such that it satisfies a predicate $p$ and that $p$ holding for any
+$y$ implies that $y = x$.
+
+#+begin_src lean4
+def ExistsUnique (p : α → Prop) := ∃ x, p x ∧ ∀ y, p y → y = x
+#+end_src
+
+I have copied two macros from [[https://github.com/leanprover-community/mathlib4/blob/1d3b4790261b440e9fdcb04f52c39143d0992f45/Mathlib/Init/Logic.lean#L223-L232][mathlib]] for the shorthand $\exists!$.
+
+#+begin_src lean4
+open Lean TSyntax.Compat in
+macro "∃!" xs:explicitBinders ", " b:term : term => expandExplicitBinders ``ExistsUnique xs b
+
+@[app_unexpander ExistsUnique] def unexpandExistsUnique : Lean.PrettyPrinter.Unexpander
+  | `($(_) fun $x:ident ↦ ∃! $xs:binderIdent*, $b) => `(∃! $x:ident $xs:binderIdent*, $b)
+  | `($(_) fun $x:ident ↦ $b)                      => `(∃! $x:ident, $b)
+  | `($(_) fun ($x:ident : $t) ↦ $b)               => `(∃! ($x:ident : $t), $b)
+  | _                                               => throw ()
+#+end_src
+
+The introduction rule is what you'd expect.
+
+#+begin_src lean4
+theorem ExistsUnique.introduction {p : α → Prop} (a : α)
+  (h₁ : p a) (h₂ : ∀ y, p y → y = a) : ∃! x, p x := ⟨a, h₁, h₂⟩
+#+end_src
+
+The regular elimination rule says that if $b$ holds whenever $p$ holds
+for some $a$, then we have a proof of $b$ (since we're claiming that
+such an $a$ exists, and in constructive logic we actually have that
+$a$ hanging around). The exists unique elimination rule just adds the
+uniqueness constraint, ~∀ y, p y → y = x~, to the set of theorems
+available for constructing a proof of $b$.
+
+#+begin_src lean4
+theorem ExistsUnique.elimination {p : α → Prop} (b : Prop)
+  (h₂ : ∃! x, p x) (h₁ : ∀ x, p x → (∀ y, p y → y = x) → b) : b :=
+  Exists.elim h₂ (λ w hw => h₁ w hw.left hw.right)
+#+end_src
+
+** Natural numbers
+:PROPERTIES:
+:header-args: :tangle Barb/Data/Natural.lean
+:END:
+
+"The positive integers and their arithmetic are presupposed by the
+very nature of our intelligence and, we are tempted to believe, by the
+very nature of intelligence in general. The development of the
+positive integers from the primitive concept of the unit, the concept
+of adjoining a unit, and the process of mathematical induction carries
+complete conviction. In the words of Kronecker, the positive integers
+were created by God."
+
+TODO: Cite
+
+#+begin_src lean4
+import Barb.Logic
+#+end_src
+
+*** Definition
+
+The inductive definition of natural numbers is as follows. There is a
+zero element in $\mathbb{N}$, and for any $n \in \mathbb{N}$, the
+successor of that number is also in $\mathbb{N}$. The natural numbers start
+at zero: people who think the natural numbers start at one have no
+class.
+
+Included in the type-theoretic inductive definition are three of
+Peano's axioms for the natural numbers, namely Axiom 2.1, 2.2, and 2.5
+from [cite:@tao2022analysis p. 16-18]. The first two are the
+constructors, and we get the induction for free through the recursor.
+
+#+begin_src lean4
+inductive Natural where
+  | zero : Natural
+  | successor : Natural → Natural
+#+end_src
+
+#+begin_src lean4
+namespace Natural
+
+open Natural (zero successor)
+#+end_src
+
+*** Syntax sugar
+
+We do things Lean's way for some syntax sugar, namely parsing digits
+and ~ℕ~ for ~Natural~.
+
+#+begin_src lean4
+def nat_to_natural (n : Nat) : Natural :=
+  match n with
+  | Nat.zero => Natural.zero
+  | Nat.succ n' => Natural.successor (nat_to_natural n')
+
+instance : OfNat Natural n where
+  ofNat := nat_to_natural n
+
+notation "ℕ" => Natural
+#+end_src
+
+*** Basic properties, additional Peano aximos
+
+I went on a long journey trying to understand ~noConfusion~, where I
+read [[https://xenaproject.wordpress.com/2018/03/24/no-confusion-over-no_confusion/]["No confusion over no_confusion"]] and attempted to write my own
+version. I think at one point I slightly grasped it, but really I am
+still confused.
+
+Here are the other Peano axioms (2.3 and 2.4, respectively,
+[cite:@tao2022analysis]), which are not included in the inductive
+definition, but can be stated here as normal theorems. I don't
+understand their proofs, especially that of ~successor_injective~ -- I
+just threw terms around until they type checked.
+
+#+begin_src lean4
+theorem successor_not_equal_zero (n : ℕ) : successor n ≠ 0 :=
+  Natural.noConfusion
+
+theorem successor_injective {n m : ℕ} : successor n = successor m → n = m :=
+  λ h => (Natural.noConfusion h) id
+#+end_src
+
+Now we prove that the successor of a number is never equal to that
+number. The proof works by applying the injectivity of the successor,
+forming a long chain of deduction via the inductive step stemming from
+the fact that zero is not the successor of any element of ~ℕ~.
+
+#+begin_src lean4
+theorem successor_not_equal_self (n : ℕ) : successor n ≠ n :=
+  Natural.rec 
+    (successor_not_equal_zero 0) 
+    (λ _ ih => λ h => ih (successor_injective h))
+    n
+#+end_src
+
+*** Boolean equality and decision procedure
+
+We define boolean equality on natural numbers, mainly for the purpose
+of providing a decision procedure for the natural number equality.
+
+#+begin_src lean4
+def booleanEqual : ℕ → ℕ → Bool
+  | zero, zero => true
+  | successor _, zero => false
+  | zero, successor _ => false
+  | successor n, successor m => booleanEqual n m
+
+instance : BEq Natural where
+  beq := booleanEqual
+#+end_src
+
+Then we give the following two theorems which show that our definition
+of boolean equality corresponds to propositional equality. Boolean
+equality giving a result implies that we can give a proof of the
+propositional version.
+
+#+begin_src lean4
+theorem equal_of_boolean_equal_true : {n m : ℕ} → (booleanEqual n m) = true → n = m
+  | zero, zero, _ => rfl
+  | zero, successor _, h => Bool.noConfusion h
+  | successor _, zero, h => Bool.noConfusion h
+  | successor _, successor _, h => 
+    congrArg successor (equal_of_boolean_equal_true h)
+
+theorem not_equal_of_boolean_equal_false : {n m : ℕ} → (booleanEqual n m) = false → n ≠ m
+  | zero, zero, h => Bool.noConfusion h
+  | zero, successor x, _ => (successor_not_equal_zero x).symm
+  | successor x, zero, _ => successor_not_equal_zero x
+  | successor _, successor _, h => 
+    mt successor_injective (not_equal_of_boolean_equal_false h)
+#+end_src
+
+A decision procedure for equality of natural numbers.
+
+I was thinking about what a decision procedure must be on the lift
+while snowboarding today, and I think I've got it. A decision
+procedure shows how to "decide" a predicate -- and mind you a
+predicate is a function taking values to statements, or a
+value-indexed family statements, it is *not* a function which returns
+a boolean value. Identifying statements with elements of
+$\{\top, \bot\}$ is something from classical math that feels obviously
+super messed up to me!
+
+So a decision procedure takes a predicate of the form ~p : α → Prop~
+and an element of that type ~a : α~, and _decides_ ~p a~ by providing
+a proof of ~p a~ or a proof ~¬(p a)~. Giving a decision procedure for
+a predicate ~p~ shwos that ~p~ is _decidable_, because given any
+instance ~a : α~, we have an algorithm for showing whether ~p a~ or
+not ~p a~.
+
+#+begin_src lean4
+def decideEqual (n m : ℕ) : Decidable (n = m) :=
+  match h : booleanEqual n m with
+  | true => isTrue (equal_of_boolean_equal_true h)
+  | false => isFalse (not_equal_of_boolean_equal_false h)
+
+@[inline] instance : DecidableEq Natural := decideEqual
+#+end_src
+
+*** Additional principles of induction
+
+TODO: strong induction, exercise 2.2.5
+TODO: Exercise 2.2.6
+TODO: Exercise 2.2.7
+*** Addition
+
+Addition is defined to be repeated application of the successor. To
+add four to five is the same as incrementing five four times. We can
+give a recursive definition as follows.
+
+#+begin_src lean4
+def add (n m : ℕ) : ℕ :=
+  match n with
+  | zero => m
+  | successor n' => successor (add n' m)
+#+end_src
+
+Again, we put up with some stuff from the prelude module to get nice
+syntax sugar for addition. Addition is left associative so $a + b + c$
+is definitionally equal to $(a + b) + c$.
+
+#+begin_src lean4
+instance : Add Natural where
+  add := add
+#+end_src
+
+These properties hold definitially, but I found it useful to have
+explicit names for them.
+
+#+begin_src lean4
+theorem zero_add (n : ℕ) : 0 + n = n := rfl
+
+theorem successor_add (n m : ℕ) : (successor n) + m = successor (n + m) := rfl
+#+end_src
+
+The proofs that follow were my first real exposure to proving things
+in Lean. I had worked with Coq tactic proofs before, but I wanted to
+understand term-style proofs in Lean instead of just playing Whac-A-Mole
+with tactics I didn't understand yet. People talk about how Coq can
+feel like a video game where you don't really understand what anything
+means or what you're proving, but you just try random things until
+you've satisfied the goal -- this was definitely my experience with
+most Coq tatic proofs I wrote.
+
+I think starting with pure term-style proofs was very worth it. I
+learned how inductive proofs match up with the recursor, and proofs of
+equality or negation that were total magic to me in Coq make intuitive
+sense to me now. After I done a dozen or so of these, I read the
+[[https://leanprover.github.io/theorem_proving_in_lean4/tactics.html][chapter in Theorem Proving in Lean 4 on tactics]] and slowly started
+revising these to use tactic proofs.
+
+What I'll do for the following theorems is provide some explanation,
+then show my original term-style proof if it exists (cleaned up a bit
+to match how I learned to do things later), and then finally show my
+revised tactic-style proof which will be the one that actually gets
+tangled.
+
+This first proof works because during the inductive step it's very
+easy to rewrite the goal using the definition of addition to
+~successor (x + 0)~ and then use the inductive hypothesis to show that
+this is equal to ~successor x~.
+
+In the term style proof, I didn't yet know about ~congrArg~ -- which
+is wonderful -- and so I had to hack together equality substitutions
+(which is what ~congrArg~ generalizes). I also used the ~have~ and
+~show~ keywords, since they are just nice ways of writing ~let~ and
+explicitly declaring the type of an expression, respectively, and this
+really didn't feel like any big jump from just pure lambda terms. 
+
+#+begin_src lean4 :tangle no
+theorem add_zero' (n : ℕ) : n + 0 = n := 
+  Natural.rec
+    (zero_add 0)
+    (λ (x : ℕ) (ih : x + 0 = x) =>
+      have h1 : (successor x) + 0 = successor (x + 0) := successor_add x 0
+      have h2 : successor (x + 0) = (successor x) + 0 := Eq.symm h1
+      have h3 : successor x = (successor x) + 0 := 
+        Eq.subst (motive := λ a => successor a = (successor x) + 0)
+          ih
+          h2
+      show (successor x) + 0 = successor x from Eq.symm h3)
+    n
+#+end_src
+
+The tactic style proof is much cleaner however. I really got the
+"calculation" style proof of lining rewrites up transitively, I think
+it's really clean and you get the feeling of knowing exactly what's
+going on without much magic.
+
+I suppose I'll also interject here to mention some patterns I decided
+to follow once I started writing term style proofs. I always call the
+inductive hypothesis ~ih~ and the element of the inductive step ~x~ to
+distinguish it from the variables comprising the theorem statement,
+where I have tried to stick with ~n, m, k~'s in that order. It's kind
+of weird though because that's all alphabetically messed up but oh
+well. The lean style guide says to use ~n~ instead of ~a~ for natural
+numbers. I also try to vertically align the calculational sections.
+
+#+begin_src lean4
+theorem add_zero (n : ℕ) : n + 0 = n := by
+  induction n with
+  | zero => exact zero_add 0
+  | successor x ih => calc
+    (successor x) + 0 = successor (x + 0) := successor_add x 0
+    _                 = successor x       := congrArg successor ih
+#+end_src
+
+The next theorem states that addition with a right hand side successor
+term works the same way as addition a successor term on the left hand
+side. The proof is very similar to the last theorem, we do two
+rewrites using the definition of addition and the inductive hypothesis
+and we're done. I discovered ~congrArg~ while writing the term-style
+proof for this theorem. It's awesome, it saves you from having to
+prove the same worthless mini lemmas over and over.
+
+#+begin_src lean4 :tangle no
+theorem add_successor' (n m : ℕ) : n + (successor m) = successor (n + m) :=
+  Natural.rec
+    (
+      have h1 : 0 + (successor m) = successor m := zero_add (successor m)
+      -- congrArg to the rescue!
+      have h2 : successor (0 + m) = successor m := congrArg successor (zero_add m)
+      show 0 + (successor m) = successor (0 + m) from Eq.trans h1 (Eq.symm h2)
+    )
+    (λ (x : ℕ) (ih : x + (successor m) = successor (x + m)) =>
+      have h1 : (successor x) + (successor m) = successor (x + (successor m)) := successor_add x (successor m)
+      have h2 : successor (x + (successor m)) = successor (successor (x + m)) := congrArg successor ih
+      -- Little extra help from the compiler since (successor x) + m) is definitionally equal to sucessor (x + m)
+      show (successor x) + (successor m) = successor ((successor x) + m) from Eq.trans h1 h2
+    )
+    n
+#+end_src
+
+#+begin_src lean4
+theorem add_successor (n m : ℕ) : n + (successor m) = successor (n + m) := by
+  induction n with
+  | zero => calc
+    0 + (successor m) = successor m       := zero_add (successor m)
+    _                 = successor (0 + m) := congrArg successor (zero_add m)
+  | successor x ih => calc
+    (successor x) + (successor m) = successor (x + (successor m)) := successor_add x (successor m)
+    _                             = successor (successor (x + m)) := congrArg successor ih
+#+end_src
+
+Why is addition commutitive? Incrementing $x$ $y$ times always gives the same
+result as incrementing $y$ $x$ times. This bears itself it out in the
+proof: we make direct use of the two theorems we just proved. Results
+will be the same whether successor terms appear on the left or
+on the right, so we can use induction to extend this argument to all
+possible additions of natural numbers. From now on (until we cover all
+the term style proofs I wrote initially), I will list the revised
+tactic-style proof first for clarity.
+
+#+begin_src lean4
+theorem add_commutative (n m : ℕ) : n + m = m + n := by
+  induction n with
+  | zero => calc
+    0 + m = m     := zero_add m
+    _     = m + 0 := (add_zero m).symm
+  | successor x ih => calc
+    (successor x) + m = successor (x + m) := successor_add x m
+    _                 = successor (m + x) := congrArg successor ih
+    _                 = m + (successor x) := (add_successor m x).symm
+
+#+end_src
+
+#+begin_src lean4 :tangle no
+theorem add_commutative' (n m : ℕ) : n + m = m + n := 
+  Natural.rec
+    (
+    show 0 + m = m + 0 from Eq.trans (zero_add m) (Eq.symm (add_zero m))
+    )
+    (λ (x : ℕ) (ih : x + m = m + x) => 
+    have h1 : (successor x) + m = successor (x + m) := successor_add x m
+    have h2 : m + (successor x) = successor (m + x) := add_successor m x
+    have h3 : successor (x + m) = successor (m + x) := congrArg successor ih
+    show (successor x) + m = m + (successor x) from h1.trans (h3.trans h2.symm)
+    )
+    n
+#+end_src
+
+Why is addition associative? It's a bit harder to come with an
+intuitive explanation for associativity. The order just doesn't matter
+man, that's all I have for you. The proof's nice though, you just
+move the successor to the front using the theorem's we developed for
+right hand side successor addition and then you rewrite inside the
+successor using the inductive hyptothesis.
+
+#+begin_src lean4
+theorem add_associative (n m k : ℕ) : (n + m) + k = n + (m + k) := by
+  induction n with
+  | zero => calc
+    (0 + m) + k = m + k       := congrArg (. + k) (zero_add m)
+    _           = 0 + (m + k) := zero_add (m + k)
+  | successor x ih => calc
+    ((successor x) + m) + k = (successor (x + m)) + k := congrArg (. + k) (successor_add x m)
+    _                       = successor ((x + m) + k) := successor_add (x + m) k
+    _                       = successor (x + (m + k)) := congrArg successor ih
+#+end_src
+
+#+begin_src lean4 :tangle no
+theorem add_associative' (a b c : ℕ) : (a + b) + c = a + (b + c) :=
+  Natural.rec
+    (
+    have h1 : (0 + b) + c = b + c := congrArg (λ x => x + c) (zero_add b)
+    have h2 : 0 + (b + c) = b + c := zero_add (b + c)
+    show (0 + b) + c = 0 + (b + c) from h1.trans h2.symm
+    )
+    (λ (x : ℕ) (ih : (x + b) + c = x + (b + c)) =>
+    have h1 : ((successor x) + b) + c = (successor (x + b)) + c := congrArg (λ y => y + c) (successor_add x b)
+    have h2 : (successor (x + b)) + c = successor ((x + b) + c) := successor_add (x + b) c
+    have h3 : successor ((x + b) + c) = successor (x + (b + c)) := congrArg successor ih
+    have h4 : (successor x) + (b + c) = successor (x + (b + c)) := successor_add x (b + c)
+    show ((successor x) + b) + c = (successor x) + (b + c) from (h1.trans h2).trans (h3.trans h4.symm)
+    )
+    a
+#+end_src
+
+Now we prove a cancellation law. Again it's kind of hard to come up
+with any intuitive expalanation because we've all had it drilled in
+since grade school that this is just how it works.
+
+#+begin_src lean4
+theorem add_left_cancel {n m k : ℕ} : n + m = n + k → m = k := by
+  induction n with
+  | zero => 
+    intro h
+    calc
+      m = 0 + m := zero_add m
+      _ = 0 + k := h
+      _ = k     := zero_add k
+  | successor x ih =>
+    intro h
+    have := calc
+      successor (x + m) = (successor x) + m := (successor_add x m).symm
+      _                 = (successor x) + k := h
+      _                 = successor (x + k) := successor_add x k
+    exact ih (successor_injective this)
+
+#+end_src
+
+#+begin_src lean4 :tangle no
+theorem add_left_cancel' {a b c : ℕ} : a + b = a + c → b = c := 
+  Natural.rec
+    (
+    have h1 : 0 + b = b := zero_add b
+    have h2 : 0 + c = c := zero_add c
+    show 0 + b = 0 + c → b = c from (λ h3 => (h1.symm.trans h3).trans h2)
+    )
+    (λ (x : ℕ) (ih : x + b = x + c → b = c) =>
+    have h1 : (successor x) + b = successor (x + b) := successor_add x b
+    have h2 : (successor x) + c = successor (x + c) := successor_add x c
+    show (successor x) + b = (successor x) + c → b = c from (λ h =>
+      have h3 : successor (x + b) = successor (x + c) := (h1.symm.trans h).trans h2
+      ih (successor_injective (x + b) (x + c) h3)
+    )
+    )
+    a
+#+end_src
+
+*** Positivity
+
+Before developing ordering on the natural numbers, there are a few
+theorems in [cite:@tao2022analysis p. 26-27] that focus on the
+definition of positivity and how it interacts with addition.
+
+A natural number is said to be _positive_ if it is not equal to
+zero. The book uses logical equivalence, but I see no reason to bring
+this into the actual code because of definitional equality. I actually
+can't think of a time when this wouldn't do what you wanted left to
+right and vice versa.
+
+#+begin_src lean4
+def positive (n : ℕ) : Prop := n ≠ 0
+#+end_src
+
+If we have a positive number $n$ we can add another number $m$ and the
+result will be positive.
+
+#+begin_src lean4
+theorem add_positive {n m : ℕ} : positive n → positive (n + m) := by
+  cases n with
+  | zero => intro h; exact False.elim (h rfl)
+  | successor x => intro; exact successor_not_equal_zero (x + m)
+#+end_src
+
+The next "corallary" (Corallary 2.2.9, [cite:@tao2022analysis]) took
+two extra lemmas and a lot of messy code for me to prove. The book
+gets to use proof by contradiction, but I can't use the same technique
+here because $\neg \neg p$ isn't as strong as $p$. I'd like to revisit
+this proposition and try using decidability to see if I can prove it
+more concisely. Does decidability let you go from $\neg \neg p$ to
+$p$?
+
+#+begin_src lean4
+theorem equal_zero_of_not_positive {n : ℕ} : ¬(positive n) → n = 0 := by
+  cases n with
+  | zero => intro; rfl
+  | successor x => intro h; exact False.elim (h (successor_not_equal_zero x))
+  
+theorem not_positive_of_equal_zero {n : ℕ} : n = 0 → ¬(positive n) := by
+  cases n with
+  | zero => intro _ h; exact False.elim (h rfl)
+  | successor x => intro h; exact False.elim (successor_not_equal_zero x h)
+#+end_src
+
+I have to use the above lemmas to convert on the way in and out for
+both $n$ and $m$. There has to be a better way!
+
+#+begin_src lean4
+theorem equal_zero_of_add_equal_zero {n m : ℕ} : n + m = 0 → (n = 0 ∧ m = 0) := by
+  intro h
+  apply And.intro
+  exact equal_zero_of_not_positive (mt add_positive (not_positive_of_equal_zero h))
+  have : m + n = 0 := (add_commutative n m).symm.trans h
+  exact equal_zero_of_not_positive (mt add_positive (not_positive_of_equal_zero this))
+#+end_src
+
+Finally, we show that every postive natural number has unique
+predecessor. We show that the predecessor is unique by using the fact
+the successor is injective, so for any element of the form
+$s(y)$, we can show $y$ to be equal to $x$.
+
+#+begin_src lean4
+theorem unique_predecessor_of_positive {n : ℕ} : positive n → ∃! (m : ℕ), successor m = n := by
+  cases n with
+  | zero => intro h; exact False.elim (h rfl)
+  | successor x => intro; exact ExistsUnique.introduction x rfl (λ _ => successor_injective)
+#+end_src
+
+*** Ordering
+
+Tao points out that we needed a notion of addition before we could
+define a notion of _ordering_. We say $n$ is _less than or equal to_
+$m$ if there exists a natural number $a$ such that $n + a = m$.
+
+The lean prelude library formalizes this differently. They use a
+direct inductive type definition with a reflexive constructor and a
+step constructor. Maybe proving things is easier that way. For now I
+will stick with Tao's defintion, it feels very intuitive.
+
+#+begin_src lean4
+def less_equal (n m : ℕ) : Prop := ∃ (a : ℕ), n + a = m
+#+end_src
+
+More syntactic sugar stuff. This will usually follow a definition like
+this I'm guessing.
+
+#+begin_src lean4
+instance : LE Natural where
+  le := less_equal
+#+end_src
+
+The _less than_ relation just adds the extra requirement that
+$n \ne m$.
+
+#+begin_src lean4
+def less_than (n m : ℕ) : Prop := less_equal n m ∧ n ≠ m
+
+instance : LT Natural where
+  lt := less_than
+#+end_src
+
+Now we show some basic properties for the ordering of natural
+numbers. The following theorems correspond to Proposition 2.2.12 in
+[cite:@tao2022analysis p. 27].
+
+#+begin_src lean4
+theorem less_equal_reflexive (n : ℕ) : n ≤ n := Exists.intro 0 (add_zero n)
+#+end_src
+
+The proof for transitivitiy is nice. We show that if $n + x = m$
+($n \le m$) and $m + y = k$ ($m \le k$), then we have
+$n + (x + y) = k$ ($n \le k$). This is much nicer using Tao's
+definition than for the definition given in Taylor. I had to prove
+transitivity for the week 1 homework assignment in my analysis class, and because their
+natural numbers start at one (again, anyone who does this seriously
+has no class), you have to do a proof by cases and it's big and ugly.
+
+TODO: Cite
+
+#+begin_src lean4
+theorem less_equal_transitive {n m k : ℕ} (h₁ : n ≤ m) (h₂ : m ≤ k) : n ≤ k := by
+  let ⟨x, (h₃ : n + x = m)⟩ := h₁
+  let ⟨y, (h₄ : m + y = k)⟩ := h₂
+  show ∃ (z : ℕ), n + z = k
+  let z := (x + y)
+  apply Exists.intro z
+  calc
+    n + z = n + (x + y) := rfl
+    _     = (n + x) + y := (add_associative n x y).symm
+    _     = m + y       := congrArg (. + y) h₃
+    _     = k           := h₄
+
+instance : Trans less_equal less_equal less_equal where
+  trans := less_equal_transitive
+#+end_src
+
+The next proof of the less equal relation being antisymmetric is a bit
+longer. The Taylor book suggested in a homework exercise use
+transitivity in the proof. Is it possible to make the proof much
+shorter by using transitivity?
+
+#+begin_src lean4
+theorem less_equal_antisymmetric {n m : ℕ} (h₁ : n ≤ m) (h₂ : m ≤ n) : n = m := by
+  let ⟨x, (h₃ : n + x = m)⟩ := h₁
+  let ⟨y, (h₄ : m + y = n)⟩ := h₂
+
+  suffices x + y = 0 by calc
+    n = n + 0 := (add_zero n).symm
+    _ = n + x := congrArg (n + .) (equal_zero_of_add_equal_zero this).left.symm
+    _ = m     := h₃
+
+  have := calc
+    n + 0 = n           := add_zero n
+    _     = m + y       := h₄.symm
+    _     = (n + x) + y := congrArg (. + y) h₃.symm
+    _     = n + (x + y) := add_associative n x y
+  show x + y = 0
+  exact add_left_cancel this.symm
+
+instance : Antisymm (. ≤ . : ℕ → ℕ → Prop) where
+  antisymm := less_equal_antisymmetric
+#+end_src
+
+I have noticed that the lean tendency in mathlib is to split if and
+only if into two seperate theorems. This seems reasonable, especially
+because in my limited experience there usually isn't much shared code
+between the two directions.
+
+Addition preserves order.
+
+#+begin_src lean4
+theorem add_left_less_equal {m k : ℕ} (h : m ≤ k) (n : ℕ) : n + m ≤ n + k := by
+  let ⟨x, (h₁ : m + x = k)⟩ := h
+  apply Exists.intro x
+  calc
+    n + m + x = n + (m + x) := add_associative n m x
+    _         = n + k       := congrArg (n + .) h₁
+
+theorem add_right_less_equal {n m : ℕ} (h : n ≤ m) (k : ℕ) : n + k ≤ m + k := by
+  calc
+    n + k = k + n := add_commutative n k
+    _     ≤ k + m := add_left_less_equal h k
+    _     = m + k := add_commutative k m
+#+end_src
+
+This is also true in the other direction. The next two theorems are like the
+cancellation law (which the proof makes use of) but for the less equal relation.
+
+#+begin_src lean4
+theorem less_equal_of_add_left_less_equal {n m k : ℕ} (h : n + m ≤ n + k) : m ≤ k := by
+  let ⟨x, (h₁ : n + m + x = n + k)⟩ := h
+  have := calc
+    n + (m + x) = (n + m) + x := (add_associative n m x).symm
+    _           = n + k       := h₁
+  show ∃ (x : ℕ), m + x = k
+  exact Exists.intro x (add_left_cancel this)
+
+theorem less_equal_of_add_right_less_equal {n m k : ℕ} (h : n + k ≤ m + k) : n ≤ m := by
+  have := calc
+    k + n = n + k := add_commutative k n
+    _     ≤ m + k := h
+    _     = k + m := add_commutative m k
+  exact less_equal_of_add_left_less_equal this
+#+end_src
+
+Next we show that $n < m$ and $s(n) \le m$ are logically
+equivalent. The second proof is long and involved, and I would like to
+revisit it to see if I can make it more concise (preferably by finding
+a way to avoid the double induction).
+
+#+begin_src lean4
+theorem less_than_of_successor_less_equal {n m : ℕ} (h : successor n ≤ m) : n < m := by
+  let ⟨x, (h₁ : (successor n) + x = m)⟩ := h
+  have h₂ := calc
+    n + (successor x) = successor (n + x) := add_successor n x
+    _                 = (successor n) + x := (successor_add n x).symm
+    _                 = m                 := h₁
+  apply And.intro
+  . exact (Exists.intro (successor x) h₂)
+  . show n ≠ m
+    intro (h₃ : n = m)
+    have := calc
+      n + (successor x) = m     := h₂
+      _                 = n     := h₃.symm
+      _                 = n + 0 := (add_zero n).symm
+    exact successor_not_equal_zero x (add_left_cancel this)
+
+theorem successor_less_equal_of_less_than : {n m : ℕ} → n < m → successor n ≤ m
+| zero, zero, ⟨_, h⟩ => False.elim (h rfl)
+| zero, successor y, _ => by
+  apply Exists.intro y
+  calc
+    successor zero + y = successor (zero + y) := successor_add zero y
+    _                  = successor y          := congrArg successor (zero_add y)
+| successor x, zero, ⟨h, _⟩ => by
+  let ⟨z, (h₁ : (successor x) + z = zero)⟩ := h
+  have : successor (x + z) = 0 := (successor_add x z).symm.trans h₁
+  exact False.elim (successor_not_equal_zero (x + z) this)
+| successor x, successor y, ⟨h₁, h₂⟩ => by
+  show successor (successor x) ≤ successor y
+  
+  suffices h₃ : x ≤ y ∧ x ≠ y by
+  { let ⟨w, (h₄ : (successor x) + w = y)⟩ := successor_less_equal_of_less_than h₃
+    have := calc
+      (successor (successor x)) + w = successor (successor x + w) := successor_add (successor x) w
+      _                             = successor y                 := congrArg successor h₄
+    exact Exists.intro w this }
+
+  let ⟨z, (h₄ : successor x + z = successor y)⟩ := h₁
+  apply And.intro
+  . have h₅ := calc
+      successor (x + z) = (successor x) + z := (successor_add x z).symm
+      _                 = successor y       := h₄
+    exact Exists.intro z (successor_injective h₅)
+  . exact mt (congrArg successor) h₂
+#+end_src
+
+The final statement of Proposition 2.2.12
+([cite:@tao2022analysis p. 27]) says that $n < m$ and $n + a = m$ for
+some positive natural number $a$ are logically equivalent.
+
+#+begin_src lean4
+theorem equal_add_positive_of_less_than {n m : ℕ} (h : n < m) : 
+  ∃ (a : ℕ), positive a ∧ n + a = m := by
+  let ⟨b, (h₁ : (successor n) + b = m)⟩ := successor_less_equal_of_less_than h
+  apply Exists.intro (successor b)
+  apply And.intro
+  . exact successor_not_equal_zero b
+  . calc
+      n + (successor b) = successor (n + b) := add_successor n b
+      _                 = (successor n) + b := (successor_add n b).symm
+      _                 = m                 := h₁
+
+theorem less_than_of_equal_add_positive {n m : ℕ} 
+  (h : ∃ (a : ℕ), positive a ∧ n + a = m) : n < m := by
+  let ⟨a, (h₁ : positive a), (h₂ : n + a = m)⟩ := h
+  let ⟨b, (h₃ : successor b = a), _⟩ := (unique_predecessor_of_positive h₁)
+  apply And.intro
+  . exact Exists.intro a h₂
+  . intro (h₄ : n = m)
+    have := calc
+      n + (successor b) = n + a := congrArg (n + .) h₃
+      _                 = m     := h₂
+      _                 = n     := h₄.symm
+      _                 = n + 0 := (add_zero n).symm
+    exact successor_not_equal_zero b (add_left_cancel this)
+#+end_src
+
+Here I did take a look at the proof sketch in the book
+([cite:@tao2022analysis p. 27]). I was able to prove on my own
+beforehand, but my proof was a really ugly double induction, and after
+a long time of trying to clean it up I felt like I was at the point
+where I could use some help.
+
+TODO:
+
+#+begin_src lean4
+theorem less_than_trichotomous (n m : ℕ) : n < m ∨ n = m ∨ n > m := by
+  induction n with
+  | zero => sorry
+  | successor x ih => sorry
+#+end_src
+
+We follow the same pattern: eliminate the existential quantification,
+prove some stuff, and introduce existential quantification. Is there
+some general principle we define for the less equal relation that most
+of these theorems are then instances of? Increasing function?
+At this point I have a question. Okay the question started off with, I
+keep doing the Exists.intro followed by Exists.elim thing, is there a
+way to generalize? Then I thought, what class of functions satisfies x
+≤ y → f(x) ≤ f(y) But then I realized that really I should be flipping
+this around. That is (or is close to) the definition of an increasing
+function. So I guess my question now is, are there a class of
+functions I keep seeing which are all increasing? Which class are
+they?
+
+* COMMENT Local variables
+# Local Variables:
+# eval: (add-hook 'after-save-hook (lambda () (org-babel-tangle)) nil t)
+# End:
