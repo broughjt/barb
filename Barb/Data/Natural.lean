@@ -439,3 +439,24 @@ theorem multiply_commutative (n m : ℕ) : n * m = m * n := by
       (successor n) * m = (n * m) + m       := successor_multiply n m
       _                 = (m * n) + m       := congrArg (. + m) ih
       _                 = m * (successor n) := (multiply_successor m n).symm
+
+theorem equal_zero_of_multiply_equal_zero (n m : ℕ) : n * m = 0 → n = 0 ∨ m = 0 := by
+  cases n with
+  | zero =>
+    intro _
+    exact Or.inl rfl
+  | successor n =>
+    intro h
+    have h₁ : (n * m) + m = 0 := (successor_multiply n m).symm.trans h
+    have h₂ : (n * m) = 0 ∧ m = 0 := equal_zero_of_add_equal_zero h₁
+    exact Or.inr h₂.right
+
+theorem multiply_equal_zero_of_equal_zero (n m : ℕ) : n = 0 ∨ m = 0 → n * m = 0 := by
+  intro h
+  cases h with
+  | inl n_equal_zero => exact calc
+    n * m = 0 * m := congrArg (. * m) n_equal_zero
+    _     = 0     := zero_multiply m
+  | inr m_equal_zero => exact calc
+    n * m = n * 0 := congrArg (n * .) m_equal_zero
+    _     = 0     := multiply_zero n
