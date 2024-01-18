@@ -200,6 +200,49 @@ theorem less_equal_antisymmetric {n m : ℕ} (h₁ : n ≤ m) (h₂ : m ≤ n) :
 instance : Antisymm (. ≤ . : ℕ → ℕ → Prop) where
   antisymm := less_equal_antisymmetric
 
+theorem less_than_irreflexive (n : ℕ) : ¬(n < n) := by
+  intro h
+  have : n ≠ n := h.right
+  exact False.elim (this rfl)
+
+theorem less_than_asymmetric (n m : ℕ) : n < m → ¬(n > m) := by
+  intro h₁ h₂
+  suffices n = m by
+  { let ⟨_, (h_not_equal : n ≠ m)⟩ := h₁
+    exact absurd this h_not_equal }
+    
+  let ⟨⟨a, (h₁_exists : n + a = m)⟩, _⟩ := h₁
+  let ⟨⟨b, (h₂_exists : m + b = n)⟩, _⟩ := h₂
+  have := calc
+    n + (a + b) = (n + a) + b := (add_associative n a b).symm
+    _           = m + b       := congrArg (. + b) h₁_exists
+    _           = n           := h₂_exists
+    _           = n + 0       := (add_zero n).symm
+  have : a + b = 0 := add_left_cancel this
+  calc
+    n = n + 0 := (add_zero n).symm
+    _ = n + a := congrArg (n + .) (equal_zero_of_add_equal_zero this).left.symm
+    _ = m     := h₁_exists
+
+theorem less_than_transitive {n m k : ℕ} (h₁ : n < m) (h₂ : m < k) : n < k := by
+  apply And.intro
+  . exact less_equal_transitive h₁.left h₂.left
+  . intro h_equal
+    let ⟨⟨a, (h₁_exists : n + a = m)⟩, h₁_not_equal⟩ := h₁
+    let ⟨⟨b, (h₂_exists : m + b = k)⟩, _⟩ := h₂
+    have := calc
+      n + (a + b) = (n + a) + b := (add_associative n a b).symm
+      _           = m + b       := congrArg (. + b) h₁_exists
+      _           = k           := h₂_exists
+      _           = n           := h_equal.symm
+      _           = n + 0       := (add_zero n).symm
+    have : a + b = 0 := add_left_cancel this
+    have : n = m := calc
+      n = n + 0 := (add_zero n).symm
+      _ = n + a := congrArg (n + .) (equal_zero_of_add_equal_zero this).left.symm
+      _ = m     := h₁_exists
+    exact False.elim (h₁_not_equal this)
+
 theorem add_left_less_equal {m k : ℕ} (h : m ≤ k) (n : ℕ) : n + m ≤ n + k := by
   let ⟨x, (h₁ : m + x = k)⟩ := h
   apply Exists.intro x
@@ -347,3 +390,52 @@ theorem less_than_trichotomous (n m : ℕ) : n < m ∨ n = m ∨ n > m := by
           apply And.intro
           . exact successor_not_equal_zero a
           . exact this
+
+def multiply (n m : ℕ) : ℕ :=
+  match n with
+  | zero => 0
+  | successor n' => (multiply n' m) + m
+
+instance : Mul Natural where
+  mul := multiply
+
+theorem zero_multiply (n : ℕ) : 0 * n = 0 := rfl
+
+theorem successor_multiply (n m : ℕ) : (successor n) * m = (n * m) + m := rfl
+
+theorem multiply_zero (n : ℕ) : n * 0 = 0 := by
+  induction n with
+  | zero => rfl
+  | successor x ih =>
+    exact calc
+      (successor x) * 0 = (x * 0) + 0 := successor_multiply x 0
+      _                 = x * 0       := add_zero (x * 0)
+      _                 = 0           := ih
+
+theorem multiply_successor (n m : ℕ) : n * (successor m) = (n * m) + n := by
+  induction n with
+  | zero => rfl
+  | successor x ih => 
+    show (successor x) * (successor m) = ((successor x) * m) + (successor x)
+    exact calc
+      (successor x) * (successor m)
+        = x * (successor m) + (successor m)   := successor_multiply x (successor m)
+      _ = ((x * m) + x) + (successor m)       := congrArg (. + successor m) ih
+      _ = (x * m) + (x + (successor m))       := add_associative (x * m) x (successor m)
+      _ = (x * m) + successor (x + m)         := congrArg (x * m + .) (add_successor x m)
+      _ = (x * m) + ((successor x) + m)       := congrArg (x * m + .) (successor_add x m).symm
+      _ = (x * m) + (m + (successor x))       := congrArg (x * m + .) (add_commutative (successor x) m)
+      _ = ((x * m) + m) + (successor x)       := (add_associative (x * m) m (successor x)).symm
+      _ = ((successor x) * m) + (successor x) := congrArg (. + (successor x)) (successor_multiply x m).symm
+
+theorem multiply_commutative (n m : ℕ) : n * m = m * n := by
+  induction n with
+  | zero =>
+    exact calc
+      0 * m = 0     := zero_multiply m
+      _     = m * 0 := (multiply_zero m).symm
+  | successor n ih =>
+    exact calc
+      (successor n) * m = (n * m) + m       := successor_multiply n m
+      _                 = (m * n) + m       := congrArg (. + m) ih
+      _                 = m * (successor n) := (multiply_successor m n).symm

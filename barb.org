@@ -229,11 +229,6 @@ def decideEqual (n m : ℕ) : Decidable (n = m) :=
 @[inline] instance : DecidableEq Natural := decideEqual
 #+end_src
 
-*** Additional principles of induction
-
-TODO: strong induction, exercise 2.2.5
-TODO: Exercise 2.2.6
-TODO: Exercise 2.2.7
 *** Addition
 
 Addition is defined to be repeated application of the successor. To
@@ -593,9 +588,9 @@ instance : LT Natural where
   lt := less_than
 #+end_src
 
-Now we show some basic properties for the ordering of natural
-numbers. The following theorems correspond to Proposition 2.2.12 in
-[cite:@tao2022analysis p. 27].
+Now we show some basic properties for the less equal relation. We will
+do the same for less than below. The following theorems correspond to
+Proposition 2.2.12 in [cite:@tao2022analysis p. 27].
 
 #+begin_src lean4
 theorem less_equal_reflexive (n : ℕ) : n ≤ n := Exists.intro 0 (add_zero n)
@@ -653,6 +648,73 @@ theorem less_equal_antisymmetric {n m : ℕ} (h₁ : n ≤ m) (h₂ : m ≤ n) :
 
 instance : Antisymm (. ≤ . : ℕ → ℕ → Prop) where
   antisymm := less_equal_antisymmetric
+#+end_src
+
+The next three concerning the binary relation properties for less than
+are not part of [cite:@tao2022analysis] but I have implemented them
+because I TODO (use it for such and such proof).
+
+First, less than is irreflexive. To show this, we derive a
+simple contradiction: part of the definition of $n < m$ is the
+assertion that $n \ne m$, but we assume this in the hypothesis, which
+is absurd.
+
+#+begin_src lean4
+theorem less_than_irreflexive (n : ℕ) : ¬(n < n) := by
+  intro h
+  have : n ≠ n := h.right
+  exact False.elim (this rfl)
+#+end_src
+
+The argument here is basically that $n < m \wedge n > m$ implies $n = m$,
+which contradicts the definition of $n < m$.
+
+#+begin_src lean4
+theorem less_than_asymmetric (n m : ℕ) : n < m → ¬(n > m) := by
+  intro h₁ h₂
+  suffices n = m by
+  { let ⟨_, (h_not_equal : n ≠ m)⟩ := h₁
+    exact absurd this h_not_equal }
+    
+  let ⟨⟨a, (h₁_exists : n + a = m)⟩, _⟩ := h₁
+  let ⟨⟨b, (h₂_exists : m + b = n)⟩, _⟩ := h₂
+  have := calc
+    n + (a + b) = (n + a) + b := (add_associative n a b).symm
+    _           = m + b       := congrArg (. + b) h₁_exists
+    _           = n           := h₂_exists
+    _           = n + 0       := (add_zero n).symm
+  have : a + b = 0 := add_left_cancel this
+  calc
+    n = n + 0 := (add_zero n).symm
+    _ = n + a := congrArg (n + .) (equal_zero_of_add_equal_zero this).left.symm
+    _ = m     := h₁_exists
+#+end_src
+
+The proof of transitivity uses basically the exact same argument. I
+don't think this is a nice proof at all, There has to be a nicer way
+to prove the $n \ne k$ component. I just realized that the same
+argument I had just written above would work again and copy
+pasted. Should definitely revisit this.
+
+#+begin_src lean4
+theorem less_than_transitive {n m k : ℕ} (h₁ : n < m) (h₂ : m < k) : n < k := by
+  apply And.intro
+  . exact less_equal_transitive h₁.left h₂.left
+  . intro h_equal
+    let ⟨⟨a, (h₁_exists : n + a = m)⟩, h₁_not_equal⟩ := h₁
+    let ⟨⟨b, (h₂_exists : m + b = k)⟩, _⟩ := h₂
+    have := calc
+      n + (a + b) = (n + a) + b := (add_associative n a b).symm
+      _           = m + b       := congrArg (. + b) h₁_exists
+      _           = k           := h₂_exists
+      _           = n           := h_equal.symm
+      _           = n + 0       := (add_zero n).symm
+    have : a + b = 0 := add_left_cancel this
+    have : n = m := calc
+      n = n + 0 := (add_zero n).symm
+      _ = n + a := congrArg (n + .) (equal_zero_of_add_equal_zero this).left.symm
+      _ = m     := h₁_exists
+    exact False.elim (h₁_not_equal this)
 #+end_src
 
 I have noticed that the lean tendency in mathlib is to split if and
@@ -851,6 +913,100 @@ this around. That is (or is close to) the definition of an increasing
 function. So I guess my question now is, are there a class of
 functions I keep seeing which are all increasing? Which class are
 they?
+
+*** Induction principles
+
+Not sure how to move forward on this one. It might be a lot more
+complicated than I anticpiated because the lean4 version uses
+well-founded recursion.
+
+See [[https://leanprover-community.github.io/mathlib4_docs/Init/WF.html#Nat.strongInductionOn]].
+
+#+begin_src lean4 :tangle no
+theorem strong_induction {p : ℕ → Prop} (n : ℕ) :
+  (∀ (n : ℕ), (∀ (m : ℕ), m < n → p m) → p n) → p n := by
+  induction n with
+  | zero =>
+    intro h
+    apply h 0
+    intro m h_less_than
+    have h_less_equal : successor m ≤ 0 := successor_less_equal_of_less_than h_less_than
+    let ⟨a, (h_exists : (successor m) + a = 0)⟩ := h_less_equal
+    have : successor (m + a) = 0 := (successor_add m a).symm.trans h_exists
+    exact False.elim (successor_not_equal_zero (m + a) this)
+  | successor x ih =>
+    apply h (successor x)
+    intro m h_less_than
+    sorry
+#+end_src
+
+TODO: Exercise 2.2.6
+TODO: Exercise 2.2.7
+
+*** Multiplication
+
+Why do we add on the right?
+
+#+begin_src lean4
+def multiply (n m : ℕ) : ℕ :=
+  match n with
+  | zero => 0
+  | successor n' => (multiply n' m) + m
+
+instance : Mul Natural where
+  mul := multiply
+#+end_src
+
+#+begin_src lean4
+theorem zero_multiply (n : ℕ) : 0 * n = 0 := rfl
+#+end_src
+
+#+begin_src lean4
+theorem successor_multiply (n m : ℕ) : (successor n) * m = (n * m) + m := rfl
+#+end_src
+
+#+begin_src lean4
+theorem multiply_zero (n : ℕ) : n * 0 = 0 := by
+  induction n with
+  | zero => rfl
+  | successor x ih =>
+    exact calc
+      (successor x) * 0 = (x * 0) + 0 := successor_multiply x 0
+      _                 = x * 0       := add_zero (x * 0)
+      _                 = 0           := ih
+#+end_src
+
+#+begin_src lean4
+theorem multiply_successor (n m : ℕ) : n * (successor m) = (n * m) + n := by
+  induction n with
+  | zero => rfl
+  | successor x ih => 
+    show (successor x) * (successor m) = ((successor x) * m) + (successor x)
+    exact calc
+      (successor x) * (successor m)
+        = x * (successor m) + (successor m)   := successor_multiply x (successor m)
+      _ = ((x * m) + x) + (successor m)       := congrArg (. + successor m) ih
+      _ = (x * m) + (x + (successor m))       := add_associative (x * m) x (successor m)
+      _ = (x * m) + successor (x + m)         := congrArg (x * m + .) (add_successor x m)
+      _ = (x * m) + ((successor x) + m)       := congrArg (x * m + .) (successor_add x m).symm
+      _ = (x * m) + (m + (successor x))       := congrArg (x * m + .) (add_commutative (successor x) m)
+      _ = ((x * m) + m) + (successor x)       := (add_associative (x * m) m (successor x)).symm
+      _ = ((successor x) * m) + (successor x) := congrArg (. + (successor x)) (successor_multiply x m).symm
+#+end_src
+
+#+begin_src lean4
+theorem multiply_commutative (n m : ℕ) : n * m = m * n := by
+  induction n with
+  | zero =>
+    exact calc
+      0 * m = 0     := zero_multiply m
+      _     = m * 0 := (multiply_zero m).symm
+  | successor n ih =>
+    exact calc
+      (successor n) * m = (n * m) + m       := successor_multiply n m
+      _                 = (m * n) + m       := congrArg (. + m) ih
+      _                 = m * (successor n) := (multiply_successor m n).symm
+#+end_src
 
 * COMMENT Local variables
 # Local Variables:
