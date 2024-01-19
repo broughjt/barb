@@ -440,7 +440,7 @@ theorem multiply_commutative (n m : ℕ) : n * m = m * n := by
       _                 = (m * n) + m       := congrArg (. + m) ih
       _                 = m * (successor n) := (multiply_successor m n).symm
 
-theorem equal_zero_of_multiply_equal_zero (n m : ℕ) : n * m = 0 → n = 0 ∨ m = 0 := by
+theorem equal_zero_of_multiply_equal_zero {n m : ℕ} : n * m = 0 → n = 0 ∨ m = 0 := by
   cases n with
   | zero =>
     intro _
@@ -451,7 +451,7 @@ theorem equal_zero_of_multiply_equal_zero (n m : ℕ) : n * m = 0 → n = 0 ∨ 
     have h₂ : (n * m) = 0 ∧ m = 0 := equal_zero_of_add_equal_zero h₁
     exact Or.inr h₂.right
 
-theorem multiply_equal_zero_of_equal_zero (n m : ℕ) : n = 0 ∨ m = 0 → n * m = 0 := by
+theorem multiply_equal_zero_of_equal_zero {n m : ℕ} : n = 0 ∨ m = 0 → n * m = 0 := by
   intro h
   cases h with
   | inl n_equal_zero => exact calc
@@ -504,4 +504,14 @@ theorem multiply_associative (n m k : ℕ) : (n * m) * k = n * (m * k) := by
     _ = (n * (m * k)) + m * k := congrArg (. + m * k) ih
     _ = successor n * (m * k) := successor_multiply n (m * k)
 
-theorem multiply_left_less_than {m k : ℕ} (h_less_than : m < k) (n : ℕ) (h_positive : positive n) : n * m ≤ n * k := by
+theorem multiply_left_less_than {m k : ℕ} (h_less_than : m < k) (n : ℕ) (h_n_positive : positive n) : n * m < n * k := by
+  let ⟨a, ⟨(h_a_positive : positive a), (h_exists : m + a = k)⟩⟩
+  := equal_add_positive_of_less_than h_less_than
+  apply less_than_of_equal_add_positive
+  apply Exists.intro (n * a)
+  apply And.intro
+  . show positive (n * a)
+    exact multiply_positive_of_and_positive (And.intro h_n_positive h_a_positive)
+  . calc
+    n * m + n * a = n * (m + a) := (left_distributive n m a).symm
+    _             = n * k       := congrArg (n * .) h_exists
