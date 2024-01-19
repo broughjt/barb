@@ -15,3 +15,8 @@ theorem ExistsUnique.introduction {p : α → Prop} (a : α)
 theorem ExistsUnique.elimination {p : α → Prop} (b : Prop)
   (h₂ : ∃! x, p x) (h₁ : ∀ x, p x → (∀ y, p y → y = x) → b) : b :=
   Exists.elim h₂ (λ w hw => h₁ w hw.left hw.right)
+
+theorem or_imply : (a ∨ b → c) ↔ (a → c) ∧ (b → c) :=
+  ⟨λ h => ⟨h ∘ .inl, h ∘ .inr⟩, λ ⟨ha, hb⟩ => Or.rec ha hb⟩
+
+theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imply

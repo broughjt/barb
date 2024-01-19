@@ -70,6 +70,26 @@ theorem ExistsUnique.elimination {p : α → Prop} (b : Prop)
   Exists.elim h₂ (λ w hw => h₁ w hw.left hw.right)
 #+end_src
 
+*** Or
+
+I need these for the ~positive_of_multiply_positive~ and
+~multiply_positive_of_positive~ theorems in the multiplication
+section. Should revist this when these logic proofs are developed more
+fully.
+
+The proof of ~or_imply~ is very interesting. Composition with the
+injection constructors for ~Or~! Brings to mind vague but interesting
+thoughts about the computational nature of inductive type
+constructors. Are they functions or not guys?
+
+#+begin_src lean4
+theorem or_imply : (a ∨ b → c) ↔ (a → c) ∧ (b → c) :=
+  ⟨λ h => ⟨h ∘ .inl, h ∘ .inr⟩, λ ⟨ha, hb⟩ => Or.rec ha hb⟩
+#+end_src
+
+#+begin_src lean4
+theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imply
+#+end_src
 ** Natural numbers
 :PROPERTIES:
 :header-args: :tangle Barb/Data/Natural.lean
@@ -1033,6 +1053,17 @@ theorem multiply_equal_zero_of_equal_zero (n m : ℕ) : n = 0 ∨ m = 0 → n * 
     _     = 0     := multiply_zero n
 #+end_src
 
+#+begin_src lean4
+theorem and_positive_of_multiply_positive {n m : ℕ} (h : positive (n * m)) : positive n ∧ positive m := by
+  have : ¬(n = 0 ∨ m = 0) := mt multiply_equal_zero_of_equal_zero h
+  exact not_or.mp this
+
+theorem multiply_positive_of_and_positive {n m : ℕ} : positive n ∧ positive m → positive (n * m) := by
+  intro h
+  have : ¬(n = 0 ∨ m = 0) := not_or.mpr h
+  exact mt equal_zero_of_multiply_equal_zero this
+#+end_src
+
 By the definition of multiplication $n * (m + k)$ is equivalent to
 repeatedly adding $m + k$ together $n$ times. In this summation, there
 will be $n$ $m$'s and $n$ $k$'s.
@@ -1078,6 +1109,14 @@ theorem multiply_associative (n m k : ℕ) : (n * m) * k = n * (m * k) := by
     _ = successor n * (m * k) := successor_multiply n (m * k)
 #+end_src
 
+Multiplication preserves order (Proposition 2.3.6 in
+[cite:@tao2022analysis]). Why are we using $<$ here instead of $\le$ like
+we did for addition?
+
+#+begin_src lean4
+theorem multiply_left_less_than {m k : ℕ} (h_less_than : m < k) (n : ℕ) (h_positive : positive n) : n * m ≤ n * k := by
+  
+#+end_src
 * COMMENT Local variables
 # Local Variables:
 # eval: (add-hook 'after-save-hook (lambda () (org-babel-tangle)) nil t)

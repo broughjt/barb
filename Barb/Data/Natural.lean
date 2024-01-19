@@ -461,6 +461,15 @@ theorem multiply_equal_zero_of_equal_zero (n m : ℕ) : n = 0 ∨ m = 0 → n * 
     n * m = n * 0 := congrArg (n * .) m_equal_zero
     _     = 0     := multiply_zero n
 
+theorem and_positive_of_multiply_positive {n m : ℕ} (h : positive (n * m)) : positive n ∧ positive m := by
+  have : ¬(n = 0 ∨ m = 0) := mt multiply_equal_zero_of_equal_zero h
+  exact not_or.mp this
+
+theorem multiply_positive_of_and_positive {n m : ℕ} : positive n ∧ positive m → positive (n * m) := by
+  intro h
+  have : ¬(n = 0 ∨ m = 0) := not_or.mpr h
+  exact mt equal_zero_of_multiply_equal_zero this
+
 theorem left_distributive (n m k : ℕ) : n * (m + k) = n * m + n * k := by
   induction k with
   | zero => exact calc
@@ -494,3 +503,5 @@ theorem multiply_associative (n m k : ℕ) : (n * m) * k = n * (m * k) := by
     _ = ((n * m) * k) + m * k := right_distributive (n * m) m k
     _ = (n * (m * k)) + m * k := congrArg (. + m * k) ih
     _ = successor n * (m * k) := successor_multiply n (m * k)
+
+theorem multiply_left_less_than {m k : ℕ} (h_less_than : m < k) (n : ℕ) (h_positive : positive n) : n * m ≤ n * k := by
