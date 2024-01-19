@@ -477,7 +477,20 @@ theorem left_distributive (n m k : ℕ) : n * (m + k) = n * m + n * k := by
 
 theorem right_distributive (n m k : ℕ) : (n + m) * k = n * k + m * k := by
   calc
-    (n + m) * k = k * (n + m) := multiply_commutative (n + m) k
-    _ = k * n + k * m := left_distributive k n m
-    _ = n * k + k * m := congrArg (. + k * m) (multiply_commutative k n)
-    _ = n * k + m * k := congrArg (n * k + .) (multiply_commutative k m)
+    (n + m) * k = k * (n + m)   := multiply_commutative (n + m) k
+    _           = k * n + k * m := left_distributive k n m
+    _           = n * k + k * m := congrArg (. + k * m) (multiply_commutative k n)
+    _           = n * k + m * k := congrArg (n * k + .) (multiply_commutative k m)
+
+theorem multiply_associative (n m k : ℕ) : (n * m) * k = n * (m * k) := by
+  induction n with
+  | zero => calc
+    (0 * m) * k = 0 * k       := congrArg (. * k) (zero_multiply m)
+    _           = 0           := zero_multiply k
+    _           = 0 * (m * k) := (zero_multiply (m * k)).symm
+  | successor n ih => calc
+    (successor n * m) * k
+      = (n * m + m) * k       := congrArg (. * k) (successor_multiply n m)
+    _ = ((n * m) * k) + m * k := right_distributive (n * m) m k
+    _ = (n * (m * k)) + m * k := congrArg (. + m * k) ih
+    _ = successor n * (m * k) := successor_multiply n (m * k)
