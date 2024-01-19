@@ -1129,6 +1129,36 @@ theorem multiply_left_less_than {m k : ℕ} (h_less_than : m < k) (n : ℕ) (h_n
     _             = n * k       := congrArg (n * .) h_exists
 #+end_src
 
+Glanced at the fact that the book proves it by cases on the trichotomy
+of order. Again a very slick proof. Sometimes it's difficult to
+immediately recall the definitions of things. Here it took me a second
+to realize that part of the definition of less than is that $n \ne m$,
+so if we can derive that we have a contradiction with ~h_equal~.
+
+#+begin_src lean4
+theorem multiply_left_cancel {n m k : ℕ} (h_equal : n * m = n * k) (h_positive : positive n) : m = k := by
+  have : m < k ∨ m = k ∨ m > k := less_than_trichotomous m k
+  cases this with
+  | inl h_less_than =>
+    have : n * m ≠ n * k := (multiply_left_less_than h_less_than n h_positive).right
+    exact absurd h_equal this
+  | inr h_right => cases h_right with
+    | inl h_equal => exact h_equal
+    | inr h_greater_than =>
+      have : n * k ≠ n * m := (multiply_left_less_than h_greater_than n h_positive).right
+      exact absurd h_equal this.symm
+
+theorem multiply_right_cancel {n m k : ℕ} (h_equal : n * k = m * k) (h_positive : positive k) : n = m := by
+  have := calc
+    k * n = n * k := multiply_commutative k n
+    _     = m * k := h_equal
+    _     = k * m := multiply_commutative m k
+  exact multiply_left_cancel this h_positive
+#+end_src
+
+#+begin_src lean4
+#+end_src
+
 * COMMENT Local variables
 # Local Variables:
 # eval: (add-hook 'after-save-hook (lambda () (org-babel-tangle)) nil t)

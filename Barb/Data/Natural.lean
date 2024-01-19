@@ -515,3 +515,24 @@ theorem multiply_left_less_than {m k : ℕ} (h_less_than : m < k) (n : ℕ) (h_n
   . calc
     n * m + n * a = n * (m + a) := (left_distributive n m a).symm
     _             = n * k       := congrArg (n * .) h_exists
+
+theorem multiply_left_cancel {n m k : ℕ} (h_equal : n * m = n * k) (h_positive : positive n) : m = k := by
+  have : m < k ∨ m = k ∨ m > k := less_than_trichotomous m k
+  cases this with
+  | inl h_less_than =>
+    have : n * m ≠ n * k := (multiply_left_less_than h_less_than n h_positive).right
+    exact absurd h_equal this
+  | inr h_right => cases h_right with
+    | inl h_equal => exact h_equal
+    | inr h_greater_than =>
+      have : n * k ≠ n * m := (multiply_left_less_than h_greater_than n h_positive).right
+      exact absurd h_equal this.symm
+
+theorem multiply_right_cancel {n m k : ℕ} (h_equal : n * k = m * k) (h_positive : positive k) : n = m := by
+  have := calc
+    k * n = n * k := multiply_commutative k n
+    _     = m * k := h_equal
+    _     = k * m := multiply_commutative m k
+  exact multiply_left_cancel this h_positive
+
+
