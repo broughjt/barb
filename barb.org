@@ -1031,6 +1031,36 @@ theorem multiply_equal_zero_of_equal_zero (n m : ℕ) : n = 0 ∨ m = 0 → n * 
     _     = 0     := multiply_zero n
 #+end_src
 
+By the definition of multiplication $n * (m + k)$ is equivalent to
+repeatedly adding $m + k$ together $n$ times. In this summation, there
+will be $n$ $m$'s and $n$ $k$'s.
+
+I looked at the proof in the book because it said to induct on $k$
+when I was trying to induct on $n$.
+
+#+begin_src lean4
+theorem left_distributive (n m k : ℕ) : n * (m + k) = n * m + n * k := by
+  induction k with
+  | zero => exact calc
+    n * (m + 0) = n * m         := congrArg (n * .) (add_zero m)
+    _           = n * m + 0     := (add_zero (n * m)).symm
+    _           = n * m + n * 0 := congrArg ((n * m) + .) (multiply_zero n).symm
+  | successor k ih => exact calc
+    n * (m + successor k)
+      = n * successor (m + k)     := congrArg (n * .) (add_successor m k)
+    _ = (n * (m + k)) + n         := multiply_successor n (m + k)
+    _ = (n * m + n * k) + n       := congrArg (. + n) ih
+    _ = n * m + (n * k + n)       := add_associative (n * m) (n * k) n
+    _ = n * m + n * (successor k) := congrArg (n * m + .) (multiply_successor n k).symm
+
+theorem right_distributive (n m k : ℕ) : (n + m) * k = n * k + m * k := by
+  calc
+    (n + m) * k = k * (n + m) := multiply_commutative (n + m) k
+    _ = k * n + k * m := left_distributive k n m
+    _ = n * k + k * m := congrArg (. + k * m) (multiply_commutative k n)
+    _ = n * k + m * k := congrArg (n * k + .) (multiply_commutative k m)
+#+end_src
+
 * COMMENT Local variables
 # Local Variables:
 # eval: (add-hook 'after-save-hook (lambda () (org-babel-tangle)) nil t)

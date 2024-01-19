@@ -460,3 +460,24 @@ theorem multiply_equal_zero_of_equal_zero (n m : ℕ) : n = 0 ∨ m = 0 → n * 
   | inr m_equal_zero => exact calc
     n * m = n * 0 := congrArg (n * .) m_equal_zero
     _     = 0     := multiply_zero n
+
+theorem left_distributive (n m k : ℕ) : n * (m + k) = n * m + n * k := by
+  induction k with
+  | zero => exact calc
+    n * (m + 0) = n * m         := congrArg (n * .) (add_zero m)
+    _           = n * m + 0     := (add_zero (n * m)).symm
+    _           = n * m + n * 0 := congrArg ((n * m) + .) (multiply_zero n).symm
+  | successor k ih => exact calc
+    n * (m + successor k)
+      = n * successor (m + k)     := congrArg (n * .) (add_successor m k)
+    _ = (n * (m + k)) + n         := multiply_successor n (m + k)
+    _ = (n * m + n * k) + n       := congrArg (. + n) ih
+    _ = n * m + (n * k + n)       := add_associative (n * m) (n * k) n
+    _ = n * m + n * (successor k) := congrArg (n * m + .) (multiply_successor n k).symm
+
+theorem right_distributive (n m k : ℕ) : (n + m) * k = n * k + m * k := by
+  calc
+    (n + m) * k = k * (n + m) := multiply_commutative (n + m) k
+    _ = k * n + k * m := left_distributive k n m
+    _ = n * k + k * m := congrArg (. + k * m) (multiply_commutative k n)
+    _ = n * k + m * k := congrArg (n * k + .) (multiply_commutative k m)
