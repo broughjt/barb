@@ -243,6 +243,45 @@ theorem less_than_transitive {n m k : ℕ} (h₁ : n < m) (h₂ : m < k) : n < k
       _ = m     := h₁_exists
     exact False.elim (h₁_not_equal this)
 
+theorem equal_zero_or_positive (n : ℕ) : n = 0 ∨ n > 0 := by
+  cases n with
+  | zero => exact Or.inl rfl
+  | successor n =>
+    apply Or.inr
+    show (∃ a, 0 + a = successor n) ∧ 0 ≠ successor n
+    apply And.intro
+    . exact Exists.intro (successor n) (zero_add (successor n))
+    . exact (successor_not_equal_zero n).symm
+
+theorem equal_or_less_than_of_less_equal {n m : ℕ} (h : n ≤ m) : n = m ∨ n < m := by
+  let ⟨a, (h_exists : n + a = m)⟩ := h
+  cases a with
+  | zero =>
+    apply Or.inl
+    calc
+      n = n + 0 := (add_zero n).symm
+      _ = m     := h_exists
+  | successor a =>
+    apply Or.inr
+    apply And.intro
+    . exact Exists.intro (successor a) h_exists
+    . intro h_equal
+      have := calc
+        n + (successor a) = m := h_exists
+        _ = n := h_equal.symm
+        _ = n + 0 := (add_zero n).symm
+      exact False.elim (successor_not_equal_zero a (add_left_cancel this))
+
+theorem less_equal_of_equal_of_less_than {n m : ℕ} (h : n = m ∨ n < m) : n ≤ m := by
+  cases h with
+  | inl h_equal => exact Exists.intro 0 ((add_zero n).trans h_equal)
+  | inr h_less_than => exact h_less_than.left
+
+theorem zero_less_than_successor (n : ℕ) : 0 < successor n := by
+  apply And.intro
+  . exact Exists.intro (successor n) (zero_add (successor n)).symm
+  . exact (successor_not_equal_zero n).symm
+
 theorem add_left_less_equal {m k : ℕ} (h : m ≤ k) (n : ℕ) : n + m ≤ n + k := by
   let ⟨x, (h₁ : m + x = k)⟩ := h
   apply Exists.intro x
@@ -535,4 +574,49 @@ theorem multiply_right_cancel {n m k : ℕ} (h_equal : n * k = m * k) (h_positiv
     _     = k * m := multiply_commutative m k
   exact multiply_left_cancel this h_positive
 
-
+theorem quotient_remainder {n q : ℕ} (q_positive : positive q) :
+  ∃ (p : ℕ × ℕ),
+  let ⟨m, r⟩ := p; n = m * q + r ∧ r < q := by
+  induction n with
+  | zero =>
+    apply Exists.intro ⟨0, 0⟩
+    apply And.intro
+    . calc
+      0 = 0 * q := (zero_multiply q).symm
+      _ = (0 * q) + 0 := (add_zero (0 * q)).symm
+    . have h_exists : 0 + q = q := zero_add q
+      exact less_than_of_equal_add_positive (Exists.intro q (And.intro q_positive h_exists))
+  | successor n ih =>
+    let ⟨⟨m, r⟩, ⟨(h_exists : n = m * q + r), (h_less_than : r < q)⟩⟩ := ih
+    show ∃ p, let ⟨m, r⟩ := p; successor n = m * q + r ∧ r < q
+    have : successor r = q ∨ successor r < q := 
+      (equal_or_less_than_of_less_equal ∘ successor_less_equal_of_less_than) h_less_than
+    cases this with
+    | inl h_equal => 
+      apply Exists.intro ⟨(successor m), 0⟩
+      apply And.intro
+      . calc
+          successor n = successor (m * q + r)         := congrArg successor h_exists
+          _           = m * q + successor r           := (add_successor (m * q) r).symm
+          _           = m * successor r + successor r := congrArg (m * . + successor r) h_equal.symm
+          _           = successor m * successor r     := (successor_multiply m (successor r)).symm
+          _           = successor m * q               := congrArg (successor m * .) h_equal
+      . exact zero_less_than_successor m
+      -- have successor r = m
+      -- have n = m * q + r
+      -- need to show successor n = m * q + r ∧ r < m
+      -- (successor r) * q + r 
+      -- (r * q) + q + r
+      -- (r * q) + r + q
+      -- r * (successor q) + q
+      
+      -- m * (successor q) + 0
+    | inr h_less_than => sorry
+    -- have successor r = m
+    -- We need a theorem that says n ≤ m → (n = m) ∨ (n < m), and then also backwards prolly
+    -- Then do cases on that, what is written below is the second case
+    -- if q = (successor r), then q + 1, r = 0
+    -- apply Exists.intro ⟨q, (successor r)⟩
+    -- apply And.intro
+    -- . calc
+      -- successor n = successor (m * q + r) := congrArg successor h_exists
