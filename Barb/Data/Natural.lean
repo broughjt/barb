@@ -617,3 +617,10 @@ theorem quotient_remainder {n q : ℕ} (q_positive : positive q) :
           successor n = successor (m * q + r) := congrArg successor h_exists
           _ = m * q + successor r := (add_successor (m * q) r).symm
       . exact h_less_than
+
+def power (m : ℕ) : ℕ → ℕ
+| 0 => 1
+| successor n => (power m n) * m
+
+instance : Pow Natural Natural where
+  pow := power

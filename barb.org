@@ -1257,6 +1257,17 @@ theorem quotient_remainder {n q : ℕ} (q_positive : positive q) :
       . exact h_less_than
 #+end_src
 
+Finally, exponentation. TODO: write about a bunch of this stuff.
+
+#+begin_src lean4
+def power (m : ℕ) : ℕ → ℕ
+| 0 => 1
+| successor n => (power m n) * m
+
+instance : Pow Natural Natural where
+  pow := power
+#+end_src
+
 * COMMENT Local variables
 # Local Variables:
 # eval: (add-hook 'after-save-hook (lambda () (org-babel-tangle)) nil t)
