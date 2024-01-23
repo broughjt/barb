@@ -8,13 +8,13 @@ namespace Natural
 
 open Natural (zero successor)
 
-def nat_to_natural (n : Nat) : Natural :=
+def natToNatural (n : Nat) : Natural :=
   match n with
   | Nat.zero => Natural.zero
-  | Nat.succ n' => Natural.successor (nat_to_natural n')
+  | Nat.succ n' => Natural.successor (natToNatural n')
 
 instance : OfNat Natural n where
-  ofNat := nat_to_natural n
+  ofNat := natToNatural n
 
 notation "ℕ" => Natural
 
@@ -123,6 +123,17 @@ theorem add_left_cancel {n m k : ℕ} : n + m = n + k → m = k := by
       _                 = (successor x) + k := h
       _                 = successor (x + k) := successor_add x k
     exact ih (successor_injective this)
+
+def predecessor : ℕ → ℕ
+  | 0 => 0
+  | successor n => n
+
+def subtractTruncated : ℕ → ℕ → ℕ
+  | _, 0 => 0
+  | n, successor m => predecessor (subtractTruncated n m)
+
+instance : Sub Natural where
+  sub := subtractTruncated
 
 def positive (n : ℕ) : Prop := n ≠ 0
 

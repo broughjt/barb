@@ -90,7 +90,7 @@ theorem or_imply : (a ∨ b → c) ↔ (a → c) ∧ (b → c) :=
 #+begin_src lean4
 theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imply
 #+end_src
-** Natural numbers
+** Natural
 :PROPERTIES:
 :header-args: :tangle Barb/Data/Natural.lean
 :END:
@@ -140,13 +140,13 @@ We do things Lean's way for some syntax sugar, namely parsing digits
 and ~ℕ~ for ~Natural~.
 
 #+begin_src lean4
-def nat_to_natural (n : Nat) : Natural :=
+def natToNatural (n : Nat) : Natural :=
   match n with
   | Nat.zero => Natural.zero
-  | Nat.succ n' => Natural.successor (nat_to_natural n')
+  | Nat.succ n' => Natural.successor (natToNatural n')
 
 instance : OfNat Natural n where
-  ofNat := nat_to_natural n
+  ofNat := natToNatural n
 
 notation "ℕ" => Natural
 #+end_src
@@ -503,6 +503,21 @@ theorem add_left_cancel' {a b c : ℕ} : a + b = a + c → b = c :=
     )
     )
     a
+#+end_src
+
+*** Subtraction
+
+#+begin_src lean4
+def predecessor : ℕ → ℕ
+  | 0 => 0
+  | successor n => n
+
+def subtractTruncated : ℕ → ℕ → ℕ
+  | _, 0 => 0
+  | n, successor m => predecessor (subtractTruncated n m)
+
+instance : Sub Natural where
+  sub := subtractTruncated
 #+end_src
 
 *** Positivity
@@ -1266,6 +1281,83 @@ def power (m : ℕ) : ℕ → ℕ
 
 instance : Pow Natural Natural where
   pow := power
+#+end_src
+
+** Integer
+:PROPERTIES:
+:header-args: :tangle Barb/Data/Integer.lean
+:END:
+
+#+begin_src lean4
+import Barb.Data.Natural
+
+open Natural (zero successor)
+#+end_src
+
+#+begin_src lean4
+inductive Integer : Type where
+  | ofNatural : Natural → Integer
+  | negativeSuccessor : Natural → Integer
+#+end_src
+
+#+begin_src lean4
+namespace Integer
+
+open Integer (ofNatural negativeSuccessor)
+
+notation "ℤ" => Integer
+
+instance : Coe Natural Integer := ⟨Integer.ofNatural⟩
+
+instance : OfNat Integer n where
+  ofNat := Integer.ofNatural (Natural.natToNatural n)
+  
+def negativeOfNatural : ℕ → ℤ
+  | 0 => 0
+  | Natural.successor n => negativeSuccessor n
+
+def negate (n : ℤ) : ℤ :=
+  match n with
+  | ofNatural n => negativeOfNatural n
+  | negativeSuccessor n => successor n
+
+@[default_instance mid]
+instance : Neg Integer where
+  neg := negate
+#+end_src
+
+#+begin_src lean4
+def subtractNaturalToInteger (n m : ℕ) : ℤ :=
+  match (m - n : ℕ) with
+  | 0 => ofNatural (n - m)
+  | successor k => negativeSuccessor k
+
+def add : ℤ → ℤ → ℤ
+  | ofNatural n, ofNatural m => ofNatural (n + m)
+  | ofNatural n, negativeSuccessor m => subtractNaturalToInteger n (successor m)
+  | negativeSuccessor n, ofNatural m => subtractNaturalToInteger m (successor n)
+  | negativeSuccessor n, negativeSuccessor m => negativeSuccessor (successor (n + m))
+
+instance : Add Integer where
+  add := Integer.add
+#+end_src
+
+#+begin_src lean4
+def subtract (a b : ℤ) : ℤ := a + (-b)
+
+instance : Sub Integer where
+  sub := Integer.subtract
+#+end_src
+
+#+begin_src lean4
+def multiply : ℤ → ℤ → ℤ
+  | ofNatural n, ofNatural m => ofNatural (n * m)
+  | ofNatural n, negativeSuccessor m => negativeOfNatural (n * successor m)
+  | negativeSuccessor n, ofNatural m => negativeOfNatural (successor n * m)
+  | negativeSuccessor n, negativeSuccessor m => ofNatural (successor n * successor m)
+
+instance : Mul Integer where
+  mul := Integer.multiply
 #+end_src
 
 * COMMENT Local variables
