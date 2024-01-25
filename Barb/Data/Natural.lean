@@ -254,6 +254,9 @@ theorem less_than_transitive {n m k : ℕ} (h₁ : n < m) (h₂ : m < k) : n < k
       _ = m     := h₁_exists
     exact False.elim (h₁_not_equal this)
 
+theorem zero_less_equal (n : ℕ) : 0 ≤ n := 
+  Exists.intro n (zero_add n)
+
 theorem equal_zero_or_positive (n : ℕ) : n = 0 ∨ n > 0 := by
   cases n with
   | zero => exact Or.inl rfl
@@ -299,6 +302,17 @@ theorem zero_less_than_positive {n : ℕ} : positive n → 0 < n := by
   calc
     0 < successor n' := zero_less_than_successor n'
     _ = n            := h_predecessor
+
+def booleanLessEqual : ℕ → ℕ → Bool
+  | 0, 0 => true
+  | 0, successor _ => false
+  | successor _, 0 => false
+  | successor n, successor m => booleanLessEqual n m
+
+theorem less_equal_of_boolean_less_equal_true (n m : ℕ) (h : (booleanLessEqual n m) = true) : n ≤ m :=
+  match n, m with
+  | 0, _ => zero_less_equal _
+  | successor _, successor _ => sorry
 
 theorem add_left_less_equal {m k : ℕ} (h : m ≤ k) (n : ℕ) : n + m ≤ n + k := by
   let ⟨x, (h₁ : m + x = k)⟩ := h

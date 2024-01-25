@@ -753,6 +753,11 @@ theorem less_than_transitive {n m k : ℕ} (h₁ : n < m) (h₂ : m < k) : n < k
 #+end_src
 
 #+begin_src lean4
+theorem zero_less_equal (n : ℕ) : 0 ≤ n := 
+  Exists.intro n (zero_add n)
+#+end_src
+
+#+begin_src lean4
 theorem equal_zero_or_positive (n : ℕ) : n = 0 ∨ n > 0 := by
   cases n with
   | zero => exact Or.inl rfl
@@ -804,6 +809,27 @@ theorem zero_less_than_positive {n : ℕ} : positive n → 0 < n := by
   calc
     0 < successor n' := zero_less_than_successor n'
     _ = n            := h_predecessor
+#+end_src
+
+This section continues. It feels pretty disorganized and needs
+revision.
+
+Now we talk about decidability for the order relations. First we
+define ~booleanLessEqual~.
+
+#+begin_src lean4
+def booleanLessEqual : ℕ → ℕ → Bool
+  | 0, 0 => true
+  | 0, successor _ => false
+  | successor _, 0 => false
+  | successor n, successor m => booleanLessEqual n m
+#+end_src
+
+#+begin_src lean4
+theorem less_equal_of_boolean_less_equal_true (n m : ℕ) (h : (booleanLessEqual n m) = true) : n ≤ m :=
+  match n, m with
+  | 0, _ => zero_less_equal _
+  | successor _, successor _ => sorry
 #+end_src
 
 *** Ordering and Addition
