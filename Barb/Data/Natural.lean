@@ -39,14 +39,14 @@ def booleanEqual : ℕ → ℕ → Bool
 instance : BEq Natural where
   beq := booleanEqual
 
-theorem equal_of_boolean_equal_true : {n m : ℕ} → (booleanEqual n m) = true → n = m
+theorem equal_of_boolean_equal_true : {n m : ℕ} → (n == m) = true → n = m
   | zero, zero, _ => rfl
   | zero, successor _, h => Bool.noConfusion h
   | successor _, zero, h => Bool.noConfusion h
   | successor _, successor _, h => 
     congrArg successor (equal_of_boolean_equal_true h)
 
-theorem not_equal_of_boolean_equal_false : {n m : ℕ} → (booleanEqual n m) = false → n ≠ m
+theorem not_equal_of_boolean_equal_false : {n m : ℕ} → (n == m) = false → n ≠ m
   | zero, zero, h => Bool.noConfusion h
   | zero, successor x, _ => (successor_not_equal_zero x).symm
   | successor x, zero, _ => successor_not_equal_zero x
