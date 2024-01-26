@@ -291,6 +291,14 @@ theorem less_equal_of_equal_of_less_than {n m : ℕ} (h : n = m ∨ n < m) : n �
   | inl h_equal => exact Exists.intro 0 ((add_zero n).trans h_equal)
   | inr h_less_than => exact h_less_than.left
 
+theorem successor_less_equal_successor {n m : ℕ} : n ≤ m → successor n ≤ successor m := by
+  intro h_less_equal
+  let ⟨a, (h_exists : n + a = m)⟩ := h_less_equal
+  apply Exists.intro a
+  calc
+    (successor n) + a = successor (n + a) := successor_add n a
+    _                 = successor m := congrArg successor h_exists
+
 theorem zero_less_than_successor (n : ℕ) : 0 < successor n := by
   apply And.intro
   . exact Exists.intro (successor n) (zero_add (successor n)).symm
@@ -309,10 +317,28 @@ def booleanLessEqual : ℕ → ℕ → Bool
   | successor _, 0 => false
   | successor n, successor m => booleanLessEqual n m
 
-theorem less_equal_of_boolean_less_equal_true (n m : ℕ) (h : (booleanLessEqual n m) = true) : n ≤ m :=
+theorem less_equal_of_boolean_less_equal_true (h : (booleanLessEqual n m) = true) : n ≤ m :=
   match n, m with
   | 0, _ => zero_less_equal _
-  | successor _, successor _ => sorry
+  | successor _, successor _ => successor_less_equal_successor (less_equal_of_boolean_less_equal_true h)
+
+theorem boolean_less_equal_self_equal_true (n : ℕ) : booleanLessEqual n n = true := by
+  induction n with
+  | zero => rfl
+  | successor _ ih => exact ih
+
+theorem boolean_less_equal_successor_equal_true : {n m : ℕ} → (booleanLessEqual n m) = true → (booleanLessEqual n (successor m)) = true := sorry
+
+theorem boolean_less_equal_true_of_less_equal : {n m : ℕ} → n ≤ m → (booleanLessEqual n m) = true
+  | zero, _, _ => sorry
+  | successor n, successor m, h => sorry
+
+theorem not_less_equal_of_not_boolean_less_equal_true (h : (booleanLessEqual n m) ≠ true) : ¬(n ≤ m) := sorry
+
+instance decideLessEqual (n m : ℕ) : Decidable (n ≤ m) :=
+  dite (booleanLessEqual n m = true)
+    (λ h => isTrue (less_equal_of_boolean_less_equal_true h))
+    (λ h => isFalse (not_less_equal_of_not_boolean_less_equal_true h))
 
 theorem add_left_less_equal {m k : ℕ} (h : m ≤ k) (n : ℕ) : n + m ≤ n + k := by
   let ⟨x, (h₁ : m + x = k)⟩ := h
