@@ -299,75 +299,6 @@ theorem successor_less_equal_successor {n m : ℕ} : n ≤ m → successor n ≤
     (successor n) + a = successor (n + a) := successor_add n a
     _                 = successor m := congrArg successor h_exists
 
-theorem zero_less_than_successor (n : ℕ) : 0 < successor n := by
-  apply And.intro
-  . exact Exists.intro (successor n) (zero_add (successor n)).symm
-  . exact (successor_not_equal_zero n).symm
-
-theorem zero_less_than_positive {n : ℕ} : positive n → 0 < n := by
-  intro h_positive
-  let ⟨n', ⟨(h_predecessor : successor n' = n), _⟩⟩ := unique_predecessor_of_positive h_positive
-  calc
-    0 < successor n' := zero_less_than_successor n'
-    _ = n            := h_predecessor
-
-def booleanLessEqual : ℕ → ℕ → Bool
-  | 0, 0 => true
-  | 0, successor _ => false
-  | successor _, 0 => false
-  | successor n, successor m => booleanLessEqual n m
-
-theorem less_equal_of_boolean_less_equal_true (h : (booleanLessEqual n m) = true) : n ≤ m :=
-  match n, m with
-  | 0, _ => zero_less_equal _
-  | successor _, successor _ => successor_less_equal_successor (less_equal_of_boolean_less_equal_true h)
-
-theorem boolean_less_equal_self_equal_true (n : ℕ) : booleanLessEqual n n = true := by
-  induction n with
-  | zero => rfl
-  | successor _ ih => exact ih
-
-theorem boolean_less_equal_successor_equal_true : {n m : ℕ} → (booleanLessEqual n m) = true → (booleanLessEqual n (successor m)) = true := sorry
-
-theorem boolean_less_equal_true_of_less_equal : {n m : ℕ} → n ≤ m → (booleanLessEqual n m) = true
-  | zero, _, _ => sorry
-  | successor n, successor m, h => sorry
-
-theorem not_less_equal_of_not_boolean_less_equal_true (h : (booleanLessEqual n m) ≠ true) : ¬(n ≤ m) := sorry
-
-instance decideLessEqual (n m : ℕ) : Decidable (n ≤ m) :=
-  dite (booleanLessEqual n m = true)
-    (λ h => isTrue (less_equal_of_boolean_less_equal_true h))
-    (λ h => isFalse (not_less_equal_of_not_boolean_less_equal_true h))
-
-theorem add_left_less_equal {m k : ℕ} (h : m ≤ k) (n : ℕ) : n + m ≤ n + k := by
-  let ⟨x, (h₁ : m + x = k)⟩ := h
-  apply Exists.intro x
-  calc
-    n + m + x = n + (m + x) := add_associative n m x
-    _         = n + k       := congrArg (n + .) h₁
-
-theorem add_right_less_equal {n m : ℕ} (h : n ≤ m) (k : ℕ) : n + k ≤ m + k := by
-  calc
-    n + k = k + n := add_commutative n k
-    _     ≤ k + m := add_left_less_equal h k
-    _     = m + k := add_commutative k m
-
-theorem less_equal_of_add_left_less_equal {n m k : ℕ} (h : n + m ≤ n + k) : m ≤ k := by
-  let ⟨x, (h₁ : n + m + x = n + k)⟩ := h
-  have := calc
-    n + (m + x) = (n + m) + x := (add_associative n m x).symm
-    _           = n + k       := h₁
-  show ∃ (x : ℕ), m + x = k
-  exact Exists.intro x (add_left_cancel this)
-
-theorem less_equal_of_add_right_less_equal {n m k : ℕ} (h : n + k ≤ m + k) : n ≤ m := by
-  have := calc
-    k + n = n + k := add_commutative k n
-    _     ≤ m + k := h
-    _     = k + m := add_commutative m k
-  exact less_equal_of_add_left_less_equal this
-
 theorem less_than_of_successor_less_equal {n m : ℕ} (h : successor n ≤ m) : n < m := by
   let ⟨x, (h₁ : (successor n) + x = m)⟩ := h
   have h₂ := calc
@@ -412,6 +343,78 @@ theorem successor_less_equal_of_less_than : {n m : ℕ} → n < m → successor 
       _                 = successor y       := h₄
     exact Exists.intro z (successor_injective h₅)
   . exact mt (congrArg successor) h₂
+
+theorem zero_less_than_successor (n : ℕ) : 0 < successor n := by
+  apply And.intro
+  . exact Exists.intro (successor n) (zero_add (successor n)).symm
+  . exact (successor_not_equal_zero n).symm
+
+theorem zero_less_than_positive {n : ℕ} : positive n → 0 < n := by
+  intro h_positive
+  let ⟨n', ⟨(h_predecessor : successor n' = n), _⟩⟩ := unique_predecessor_of_positive h_positive
+  calc
+    0 < successor n' := zero_less_than_successor n'
+    _ = n            := h_predecessor
+
+def booleanLessEqual : ℕ → ℕ → Bool
+  | 0, 0 => true
+  | 0, successor _ => false
+  | successor _, 0 => false
+  | successor n, successor m => booleanLessEqual n m
+
+theorem less_equal_of_boolean_less_equal_true (h : (booleanLessEqual n m) = true) : n ≤ m :=
+  match n, m with
+  | 0, _ => zero_less_equal _
+  | successor _, successor _ => successor_less_equal_successor (less_equal_of_boolean_less_equal_true h)
+
+theorem boolean_less_equal_self_equal_true (n : ℕ) : booleanLessEqual n n = true := by
+  induction n with
+  | zero => rfl
+  | successor _ ih => exact ih
+
+theorem boolean_less_equal_successor_equal_true : {n m : ℕ} → (booleanLessEqual n m) = true → (booleanLessEqual n (successor m)) = true := sorry
+
+theorem boolean_less_equal_true_of_less_equal : {n m : ℕ} → n ≤ m → (booleanLessEqual n m) = true
+  | zero, _, _ => sorry
+  | successor n, successor m, h => sorry
+
+theorem not_less_equal_of_not_boolean_less_equal_true (h : (booleanLessEqual n m) ≠ true) : ¬(n ≤ m) := sorry
+
+instance decideLessEqual (n m : ℕ) : Decidable (n ≤ m) :=
+  dite (booleanLessEqual n m = true)
+    (λ h => isTrue (less_equal_of_boolean_less_equal_true h))
+    (λ h => isFalse (not_less_equal_of_not_boolean_less_equal_true h))
+
+instance decideLessThan (n m : ℕ) : Decidable (n < m) :=
+  less_than_of_successor_less_equal (decideLessEqual (successor n) m)
+
+theorem add_left_less_equal {m k : ℕ} (h : m ≤ k) (n : ℕ) : n + m ≤ n + k := by
+  let ⟨x, (h₁ : m + x = k)⟩ := h
+  apply Exists.intro x
+  calc
+    n + m + x = n + (m + x) := add_associative n m x
+    _         = n + k       := congrArg (n + .) h₁
+
+theorem add_right_less_equal {n m : ℕ} (h : n ≤ m) (k : ℕ) : n + k ≤ m + k := by
+  calc
+    n + k = k + n := add_commutative n k
+    _     ≤ k + m := add_left_less_equal h k
+    _     = m + k := add_commutative k m
+
+theorem less_equal_of_add_left_less_equal {n m k : ℕ} (h : n + m ≤ n + k) : m ≤ k := by
+  let ⟨x, (h₁ : n + m + x = n + k)⟩ := h
+  have := calc
+    n + (m + x) = (n + m) + x := (add_associative n m x).symm
+    _           = n + k       := h₁
+  show ∃ (x : ℕ), m + x = k
+  exact Exists.intro x (add_left_cancel this)
+
+theorem less_equal_of_add_right_less_equal {n m k : ℕ} (h : n + k ≤ m + k) : n ≤ m := by
+  have := calc
+    k + n = n + k := add_commutative k n
+    _     ≤ m + k := h
+    _     = k + m := add_commutative m k
+  exact less_equal_of_add_left_less_equal this
 
 theorem equal_add_positive_of_less_than {n m : ℕ} (h : n < m) : 
   ∃ (a : ℕ), positive a ∧ n + a = m := by
