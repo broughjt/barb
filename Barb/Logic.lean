@@ -20,3 +20,16 @@ theorem or_imply : (a ∨ b → c) ↔ (a → c) ∧ (b → c) :=
   ⟨λ h => ⟨h ∘ .inl, h ∘ .inr⟩, λ ⟨ha, hb⟩ => Or.rec ha hb⟩
 
 theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imply
+
+namespace Relator
+
+universe u₁ u₂ v₁ v₂
+variable {α : Sort u₁} {β : Sort u₂} {γ : Sort v₁} {δ : Sort v₂}
+variable (R : α → β → Prop) (S : γ → δ → Prop)
+
+def LiftFunction (f : α → γ) (g : β → δ) : Prop :=
+  ∀ {a b}, R a b → S (f a) (g b)
+
+infixr:40 " ⇒ " => LiftFunction
+
+end Relator

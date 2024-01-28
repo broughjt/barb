@@ -391,7 +391,7 @@ instance decideLessThan (n m : ℕ) : Decidable (n < m) :=
   dite (booleanLessThan n m = true)
     (isTrue ∘ less_than_of_successor_less_equal ∘ less_equal_of_boolean_less_equal_true)
     (isFalse ∘ (mt successor_less_equal_of_less_than ∘ not_less_equal_of_not_boolean_less_equal_true))
-    
+
 instance : Ord Natural where
   compare n m := compareOfLessAndEq n m
 

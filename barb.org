@@ -20,6 +20,35 @@ find a balance.
   literate and scratch
 
 * Library
+** Algebra
+:PROPERTIES:
+:header-args: :tangle Barb/Algebra.lean
+:END:
+
+I'm assuming this file will become much bigger if this project lasts
+longer than a semester.
+
+#+begin_src lean4
+import Barb.Syntax
+#+end_src
+
+The definition of a commutative ring.
+
+#+begin_src lean4
+class CommutativeRing (α : Type u) extends Zero α, One α, Add α, Mul α, Neg α where
+  add_commutative : ∀ (a b : α), a + b = b + a
+  add_associative : ∀ (a b c : α), (a + b) + c = a + (b + c)
+  add_identity : ∀ (a : α), a + 0 = a
+  add_inverse : ∀ (a : α), a + (-a) = 0
+
+  multiply_commutative : ∀ (a b : α), a * b = b * a
+  multiply_associative : ∀ (a b c : α), (a * b) * c = a * (b * c)
+  multiply_identity : ∀ (a : α), a * 1 = a
+
+  left_distributive : ∀ (a b c : α), a * (b + c) = a * b + a * c
+  right_distributive : ∀ (a b c : α), (a + b) * c = a * b + c * a
+#+end_src
+
 ** Logic
 :PROPERTIES:
 :header-args: :tangle Barb/Logic.lean
@@ -90,6 +119,125 @@ theorem or_imply : (a ∨ b → c) ↔ (a → c) ∧ (b → c) :=
 #+begin_src lean4
 theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imply
 #+end_src
+*** Relator
+
+This is totally above my paygrade right now. I don't even know what
+the Relator is, but it looks important. I will return to this at a
+future time. For now, I'm copy-pasting it so that I have a fighting
+chance of using quotient types for the integers and rationals.
+
+#+begin_src lean4
+namespace Relator
+#+end_src
+
+#+begin_src lean4
+universe u₁ u₂ v₁ v₂
+variable {α : Sort u₁} {β : Sort u₂} {γ : Sort v₁} {δ : Sort v₂}
+variable (R : α → β → Prop) (S : γ → δ → Prop)
+#+end_src
+
+Copy-paste documentation from mathlib4:
+
+The binary relations ~R : α → β → Prop~ and ~S : γ → δ → Prop~ induce
+a binary relation on functions ~LiftFunction : (α → γ) → (β → δ) → Prop~.
+
+#+begin_src lean4
+def LiftFunction (f : α → γ) (g : β → δ) : Prop :=
+  ∀ {a b}, R a b → S (f a) (g b)
+#+end_src
+
+The syntax ~(R ⇒ S) f g~ means the same thing as ~LiftFunction R S f g~.
+
+#+begin_src lean4
+infixr:40 " ⇒ " => LiftFunction
+#+end_src
+
+#+begin_src lean4
+end Relator
+#+end_src
+
+** Quotient
+
+#+begin_src lean4
+namespace Quot
+
+variable {ra : α → α → Prop} {rb : β → β → Prop} {φ : Quot ra → Quot rb → Sort foo}
+variable {γ : Sort bar} {r : α → α → Prop} {s : β → β → Prop}
+#+end_src
+
+#+begin_src lean4
+@[elab_as_elim]
+theorem induction_on {α : Sort u} {r : α → α → Prop} {β : Quot r → Prop} (q : Quot r)
+    (h : ∀ a, β (Quot.mk r a)) : β q :=
+  Quot.ind h q
+#+end_src
+
+#+begin_src lean4
+def map (f : α → β) (h : (ra ⇒ rb) f f) : Quot ra → Quot rb :=
+  (Quot.lift λ x => (Quot.mk _ (f x))) λ x y (h₁ : ra x y) ↦ Quot.sound <| h h₁
+#+end_src
+
+#+begin_src lean4
+def lift₂ (f : α → β → γ) (hr : ∀ a b₁ b₂, s b₁ b₂ → f a b₁ = f a b₂)
+    (hs : ∀ a₁ a₂ b, r a₁ a₂ → f a₁ b = f a₂ b) (q₁ : Quot r) (q₂ : Quot s) : γ :=
+  Quot.lift (fun a ↦ Quot.lift (f a) (hr a))
+    (fun a₁ a₂ ha ↦ funext fun q ↦ Quot.induction_on q fun b ↦ hs a₁ a₂ b ha) q₁ q₂
+#+end_src
+
+#+begin_src lean4
+def map₂ (f : α → β → γ) (hr : ∀ a b₁ b₂, s b₁ b₂ → t (f a b₁) (f a b₂))
+    (hs : ∀ a₁ a₂ b, r a₁ a₂ → t (f a₁ b) (f a₂ b)) (q₁ : Quot r) (q₂ : Quot s) : Quot t :=
+  Quot.lift₂ (fun a b ↦ Quot.mk t <| f a b) (fun a b₁ b₂ hb ↦ Quot.sound (hr a b₁ b₂ hb))
+    (fun a₁ a₂ b ha ↦ Quot.sound (hs a₁ a₂ b ha)) q₁ q₂
+#+end_src
+
+#+begin_src lean4
+end Quot
+#+end_src
+
+#+begin_src lean4
+namespace Quotient
+
+variable [sa : Setoid α] [sb : Setoid β]
+variable {φ : Quotient sa → Quotient sb → Sort u}
+#+end_src
+
+#+begin_src lean4
+def map (f : α → β) (h : ((· ≈ ·) ⇒ (· ≈ ·)) f f) : Quotient sa → Quotient sb :=
+  Quot.map f h
+#+end_src
+
+#+begin_src lean4
+end Quotient
+#+end_src
+
+** Syntax
+:PROPERTIES:
+:header-args: :tangle Barb/Syntax.lean
+:END:
+
+Just some syntax for 0 and 1 literals.
+
+#+begin_src lean4
+class Zero.{u} (α : Type u) where
+  zero : α
+
+instance Zero.toOfNat0 {α} [Zero α] : OfNat α (nat_lit 0) where
+  ofNat := ‹Zero α›.1
+
+instance Zero.ofOfNat0 {α} [OfNat α (nat_lit 0)] : Zero α where
+  zero := 0
+
+class One (α : Type u) where
+  one : α
+
+instance One.toOfNat1 {α} [One α] : OfNat α (nat_lit 1) where
+  ofNat := ‹One α›.1
+
+instance One.ofOfNat1 {α} [OfNat α (nat_lit 1)] : One α where
+  one := 1
+#+end_src
+
 ** Natural
 :PROPERTIES:
 :header-args: :tangle Barb/Data/Natural.lean
@@ -921,9 +1069,16 @@ instance decideLessEqual (n m : ℕ) : Decidable (n ≤ m) :=
 def booleanLessThan (n m : ℕ) : Bool := booleanLessEqual (successor n) m
 #+end_src
 
-#+begin_src lean4 :tangle no
+#+begin_src lean4
 instance decideLessThan (n m : ℕ) : Decidable (n < m) :=
-  less_than_of_successor_less_equal (decideLessEqual (successor n) m)
+  dite (booleanLessThan n m = true)
+    (isTrue ∘ less_than_of_successor_less_equal ∘ less_equal_of_boolean_less_equal_true)
+    (isFalse ∘ (mt successor_less_equal_of_less_than ∘ not_less_equal_of_not_boolean_less_equal_true))
+#+end_src
+
+#+begin_src lean4
+instance : Ord Natural where
+  compare n m := compareOfLessAndEq n m
 #+end_src
 
 *** Ordering and Addition
@@ -1355,83 +1510,6 @@ def power (m : ℕ) : ℕ → ℕ
 
 instance : Pow Natural Natural where
   pow := power
-#+end_src
-
-** Integer
-:PROPERTIES:
-:header-args: :tangle Barb/Data/Integer.lean
-:END:
-
-#+begin_src lean4
-import Barb.Data.Natural
-
-open Natural (zero successor)
-#+end_src
-
-#+begin_src lean4
-inductive Integer : Type where
-  | ofNatural : Natural → Integer
-  | negativeSuccessor : Natural → Integer
-#+end_src
-
-#+begin_src lean4
-namespace Integer
-
-open Integer (ofNatural negativeSuccessor)
-
-notation "ℤ" => Integer
-
-instance : Coe Natural Integer := ⟨Integer.ofNatural⟩
-
-instance : OfNat Integer n where
-  ofNat := Integer.ofNatural (Natural.natToNatural n)
-  
-def negativeOfNatural : ℕ → ℤ
-  | 0 => 0
-  | Natural.successor n => negativeSuccessor n
-
-def negate (n : ℤ) : ℤ :=
-  match n with
-  | ofNatural n => negativeOfNatural n
-  | negativeSuccessor n => successor n
-
-@[default_instance mid]
-instance : Neg Integer where
-  neg := negate
-#+end_src
-
-#+begin_src lean4
-def subtractNaturalToInteger (n m : ℕ) : ℤ :=
-  match (m - n : ℕ) with
-  | 0 => ofNatural (n - m)
-  | successor k => negativeSuccessor k
-
-def add : ℤ → ℤ → ℤ
-  | ofNatural n, ofNatural m => ofNatural (n + m)
-  | ofNatural n, negativeSuccessor m => subtractNaturalToInteger n (successor m)
-  | negativeSuccessor n, ofNatural m => subtractNaturalToInteger m (successor n)
-  | negativeSuccessor n, negativeSuccessor m => negativeSuccessor (successor (n + m))
-
-instance : Add Integer where
-  add := Integer.add
-#+end_src
-
-#+begin_src lean4
-def subtract (a b : ℤ) : ℤ := a + (-b)
-
-instance : Sub Integer where
-  sub := Integer.subtract
-#+end_src
-
-#+begin_src lean4
-def multiply : ℤ → ℤ → ℤ
-  | ofNatural n, ofNatural m => ofNatural (n * m)
-  | ofNatural n, negativeSuccessor m => negativeOfNatural (n * successor m)
-  | negativeSuccessor n, ofNatural m => negativeOfNatural (successor n * m)
-  | negativeSuccessor n, negativeSuccessor m => ofNatural (successor n * successor m)
-
-instance : Mul Integer where
-  mul := Integer.multiply
 #+end_src
 
 * COMMENT Local variables
