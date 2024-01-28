@@ -157,6 +157,9 @@ end Relator
 #+end_src
 
 ** Quotient
+:PROPERTIES:
+:header-args: :tangle Barb/Quotient.lean
+:END:
 
 #+begin_src lean4
 namespace Quot
