@@ -918,6 +918,10 @@ instance decideLessEqual (n m : ℕ) : Decidable (n ≤ m) :=
 #+end_src
 
 #+begin_src lean4
+def booleanLessThan (n m : ℕ) : Bool := booleanLessEqual (successor n) m
+#+end_src
+
+#+begin_src lean4 :tangle no
 instance decideLessThan (n m : ℕ) : Decidable (n < m) :=
   less_than_of_successor_less_equal (decideLessEqual (successor n) m)
 #+end_src
