@@ -162,10 +162,14 @@ end Relator
 :END:
 
 #+begin_src lean4
+import Barb.Logic
+
 namespace Quot
 
-variable {ra : α → α → Prop} {rb : β → β → Prop} {φ : Quot ra → Quot rb → Sort foo}
-variable {γ : Sort bar} {r : α → α → Prop} {s : β → β → Prop}
+section
+
+variable {ra : α → α → Prop} {rb : β → β → Prop} {φ : Quot ra → Quot rb → Sort u}
+variable {γ : Sort v} {r : α → α → Prop} {s : β → β → Prop}
 #+end_src
 
 #+begin_src lean4
@@ -195,14 +199,19 @@ def map₂ (f : α → β → γ) (hr : ∀ a b₁ b₂, s b₁ b₂ → t (f a 
 #+end_src
 
 #+begin_src lean4
+end
+
 end Quot
 #+end_src
 
 #+begin_src lean4
 namespace Quotient
 
+section
+
 variable [sa : Setoid α] [sb : Setoid β]
 variable {φ : Quotient sa → Quotient sb → Sort u}
+variable {γ : Sort u} [sc : Setoid γ]
 #+end_src
 
 #+begin_src lean4
@@ -211,6 +220,14 @@ def map (f : α → β) (h : ((· ≈ ·) ⇒ (· ≈ ·)) f f) : Quotient sa �
 #+end_src
 
 #+begin_src lean4
+def map₂ (f : α → β → γ) (h : ((· ≈ ·) ⇒ (· ≈ ·) ⇒ (· ≈ ·)) f f) :
+    Quotient sa → Quotient sb → Quotient sc :=
+  Quotient.lift₂ (fun x y ↦ (Quot.mk _ (f x y))) fun _ _ _ _ h₁ h₂ ↦ Quot.sound <| h h₁ h₂
+#+end_src
+
+#+begin_src lean4
+end
+
 end Quotient
 #+end_src
 

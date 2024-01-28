@@ -1,7 +1,11 @@
+import Barb.Logic
+
 namespace Quot
 
-variable {ra : α → α → Prop} {rb : β → β → Prop} {φ : Quot ra → Quot rb → Sort foo}
-variable {γ : Sort bar} {r : α → α → Prop} {s : β → β → Prop}
+section
+
+variable {ra : α → α → Prop} {rb : β → β → Prop} {φ : Quot ra → Quot rb → Sort u}
+variable {γ : Sort v} {r : α → α → Prop} {s : β → β → Prop}
 
 @[elab_as_elim]
 theorem induction_on {α : Sort u} {r : α → α → Prop} {β : Quot r → Prop} (q : Quot r)
@@ -21,14 +25,25 @@ def map₂ (f : α → β → γ) (hr : ∀ a b₁ b₂, s b₁ b₂ → t (f a 
   Quot.lift₂ (fun a b ↦ Quot.mk t <| f a b) (fun a b₁ b₂ hb ↦ Quot.sound (hr a b₁ b₂ hb))
     (fun a₁ a₂ b ha ↦ Quot.sound (hs a₁ a₂ b ha)) q₁ q₂
 
+end
+
 end Quot
 
 namespace Quotient
 
+section
+
 variable [sa : Setoid α] [sb : Setoid β]
 variable {φ : Quotient sa → Quotient sb → Sort u}
+variable {γ : Sort u} [sc : Setoid γ]
 
 def map (f : α → β) (h : ((· ≈ ·) ⇒ (· ≈ ·)) f f) : Quotient sa → Quotient sb :=
   Quot.map f h
+
+def map₂ (f : α → β → γ) (h : ((· ≈ ·) ⇒ (· ≈ ·) ⇒ (· ≈ ·)) f f) :
+    Quotient sa → Quotient sb → Quotient sc :=
+  Quotient.lift₂ (fun x y ↦ (Quot.mk _ (f x y))) fun _ _ _ _ h₁ h₂ ↦ Quot.sound <| h h₁ h₂
+
+end
 
 end Quotient
