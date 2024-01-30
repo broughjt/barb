@@ -1,4 +1,5 @@
 import Barb.Algebra
+import Barb.Quotient
 import Barb.Syntax
 import Barb.Data.Natural
 
@@ -6,14 +7,11 @@ open Natural (zero successor)
 
 def integerEquivalent : (ℕ × ℕ) → (ℕ × ℕ) → Prop
   | (n, m), (n', m') => n + m' = n' + m
-  
+
 theorem integerEquivalent.reflexive (x : ℕ × ℕ) : integerEquivalent x x := rfl
   
 theorem integerEquivalent.symmetric : ∀ {x y}, (integerEquivalent x y) → (integerEquivalent y x) := Eq.symm
 
-
--- TODO: REALLY need to learn how to use the simplifier
--- TODO: Change a b c to (n, m), (n', m'), and (n'', and m'')
 theorem integerEquivalent.transitive : ∀ {x y z}, 
   integerEquivalent x y → integerEquivalent y z → integerEquivalent x z
   | (a, b), (c, d), (e, f), h1, h2 =>
@@ -62,42 +60,69 @@ notation "ℤ" => Integer
 instance : OfNat Integer n where
   ofNat := Quotient.mk' (Natural.natToNatural n, 0)
 
-def canonicalize : (ℕ × ℕ) → (ℕ × ℕ)
-  | (n, m) => match compare n m with
-    | Ordering.lt => (0, m - n)
-    | Ordering.eq => (0, 0)
-    | Ordering.gt => (n - m, 0)
-
-theorem canonicalize_congruent (a b : ℕ × ℕ) (h_equivalent : a ≈ b) : canonicalize a = canonicalize b := by
-  let ⟨n, m⟩ := a
-  let ⟨k, l⟩ := b
-  have : n + l = k + m := h_equivalent
-  unfold canonicalize
-  split; split
-  . sorry
-  . sorry
-  . sorry
-  
 instance Zero : Integer := Quotient.mk' (0, 0)
 
 instance One : Integer := Quotient.mk' (1, 0)
 
 def negate : ℤ → ℤ := 
-  -- let negate' := λ ((n, m) : ℕ × ℕ) => Quotient.mk' (m, n)
-  Quotient.map 
-  -- let negate' := λ ((n, m) : ℕ × ℕ) => Quotient.mk' (m, n)
-  -- let respects : ∀ a b, 
-    -- a ≈ b → (negate' ∘ canonicalize) a = (negate' ∘ canonicalize) b :=
-    -- λ a b h => congrArg negate' (canonicalize_congruent a b h)
-  -- Quotient.lift (negate' ∘ canonicalize) respects
+  let negate' := λ ((n, m) : ℕ × ℕ) => (m, n)
+  Quotient.map negate' <| by
+  intro (n, m) (n', m') (h_equivalent : n + m' = n' + m)
+  show m + n' = m' + n
+  simp [Natural.add_commutative, h_equivalent]
 
-@[default_instance mid]
 instance : Neg Integer where
   neg := negate
 
 def add : ℤ → ℤ → ℤ :=
-  let add' := λ ((n, m) : ℕ × ℕ) ((k, l) : ℕ × ℕ) => Quotient.mk' (n + k, m + l)
-  let lifts := sorry
-  Quotient.lift₂ add' lifts
+  let add' := λ ((n, m) : ℕ × ℕ) ((k, l) : ℕ × ℕ) => (n + k, m + l)
+  Quotient.map₂ add' <| by
+  intro (n, m) (n', m') (h1 : n + m' = n' + m)
+  intro (k, l) (k', l') (h2 : k + l' = k' + l)
+  show (n + k) + (m' + l') = (n' + k') + (m + l)
+  calc
+    (n + k) + (m' + l') = ((n + k) + m') + l' := (Natural.add_associative (n + k) m' l').symm
+    _ = (n + (k + m')) + l' := congrArg (. + l') (Natural.add_associative n k m')
+    _ = (n + (m' + k)) + l' := congrArg (λ x => (n + x) + l') (Natural.add_commutative k m')
+    _ = ((n + m') + k) + l' := congrArg (. + l') (Natural.add_associative n m' k).symm
+    _ = ((n' + m) + k) + l' := congrArg (λ x => (x + k) + l') h1
+    _ = (n' + m) + (k + l') := Natural.add_associative (n' + m) k l'
+    _ = (n' + m) + (k' + l) := congrArg ((n' + m) + .) h2
+    _ = ((n' + m) + k') + l := (Natural.add_associative (n' + m) k' l).symm
+    _ = (n' + (m + k')) + l := congrArg (. + l) (Natural.add_associative n' m k')
+    _ = (n' + (k' + m)) + l := congrArg (λ x => (n' + x) + l) (Natural.add_commutative m k')
+    _ = ((n' + k') + m) + l := congrArg (. + l) (Natural.add_associative n' k' m).symm
+    _ = (n' + k') + (m + l) := Natural.add_associative (n' + k') m l
 
-end Integer
+instance : Add Integer where add := add
+
+theorem add_commutative : ∀ (a b : ℤ), a + b = b + a := by
+  apply Quotient.ind₂
+  intro (n, m) (k, l)
+  apply Quotient.sound
+  show (n + k) + (l + m) = (k + n) + (m + l)
+  simp [Natural.add_commutative]
+
+theorem add_associative : ∀ (a b c : ℤ), (a + b) + c = a + (b + c) := by
+  intro a b c
+  -- TODO: ind₃
+  let i := Quotient.mk instanceSetoidIntegerEquivalent
+  suffices ∀ (a b c : ℕ × ℕ), add (add (i a) (i b)) (i c) = add (i a) (add (i b) (i c)) from Quotient.inductionOn₃ a b c this
+  intro (n, m) (k, l) (o, p)
+  apply Quotient.sound
+  show ((n + k) + o) + (m + (l + p)) = (n + (k + o)) + ((m + l) + p)
+  simp [Natural.add_associative]
+
+theorem add_identity : ∀ (a : ℤ), a + 0 = a := by
+  apply Quotient.ind
+  intro (n, m)
+  apply Quotient.sound
+  show (n + 0) + m = n + (m + 0)
+  simp [Natural.add_zero]
+
+theorem add_inverse : ∀ (a : ℤ), a + (-a) = 0 := by
+  apply Quotient.ind
+  intro (n, m)
+  apply Quotient.sound
+  show (n + m) + 0 = 0 + (m + n)
+  simp [Natural.add_zero, Natural.zero_add, Natural.add_commutative]
