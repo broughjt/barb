@@ -547,6 +547,10 @@ theorem multiply_commutative (n m : ℕ) : n * m = m * n := by
       _                 = (m * n) + m       := congrArg (. + m) ih
       _                 = m * (successor n) := (multiply_successor m n).symm
 
+theorem one_multiply (n : ℕ) : 1 * n = n := rfl
+
+theorem multiply_one (n : ℕ) : n * 1 = n := (multiply_commutative n 1).trans (one_multiply n)
+
 theorem equal_zero_of_multiply_equal_zero {n m : ℕ} : n * m = 0 → n = 0 ∨ m = 0 := by
   cases n with
   | zero =>
