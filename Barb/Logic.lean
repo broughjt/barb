@@ -21,6 +21,16 @@ theorem or_imply : (a ∨ b → c) ↔ (a → c) ∧ (b → c) :=
 
 theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imply
 
+theorem Or.implies {a b c d : Prop} (f : a → c) (g : b → d) (p : a ∨ b) : c ∨ d := by
+  cases p with
+  | inl a => exact Or.inl (f a)
+  | inr b => exact Or.inr (g b)
+
+theorem Or.resolve_left {a b : Prop} (h : a ∨ b) (not_a : ¬a) : b :=
+  match h with
+  | Or.inl ha => absurd ha not_a
+  | Or.inr hb => hb
+
 namespace Relator
 
 universe u₁ u₂ v₁ v₂

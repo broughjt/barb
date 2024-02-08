@@ -308,27 +308,41 @@ instance : CommutativeRing Integer where
   left_distributive := left_distributive
   right_distributive := right_distributive
 
+theorem multiply_zero : ∀ (a : ℤ), a * 0 = 0 := by
+  apply Quotient.ind
+  intro (n, m)
+  apply Quotient.sound
+  show (n*0 + m*0) + 0 = 0 + (n*0 + m*0)
+  simp [Natural.add_zero, Natural.multiply_zero]
+
+@[simp]
 def subtract (a b : ℤ) : ℤ := a + (-b)
 
 instance : Sub Integer where sub := subtract
 
-theorem negate_equal_of_add_equal_zero {a b : ℤ} (h : a + b = 0) : b = -a := by
-  calc
-    b = b + 0 := (add_zero b).symm
-    _ = b + (a + -a) := congrArg (_ + .) (add_inverse _).symm
-    _ = (b + a) + -a := (add_associative _ _ _).symm
-    _ = (a + b) + -a := congrArg (. + _) (add_commutative _ _)
-    _ = 0 + -a := congrArg (. + _) h
-    _ = -a + 0 := add_commutative _ _
-    _ = -a := add_zero _
+@[simp]
+theorem subtract_definition (a b : ℤ) : a + (-b) = a - b := rfl
+
+theorem subtract_self (a : ℤ) : a - a = 0 := add_inverse a
+
+theorem negate_equal_of_add_equal_zero {a b : ℤ} (h : a + b = 0) : a = -b := by
+  rw [← add_zero a, ← add_inverse (b), ← add_associative, h, add_commutative, add_zero]
     
-theorem subtract_equal_zero_of_equal {a b : ℤ} (h : a = b) : a - b = 0 := sorry
+theorem subtract_equal_zero_of_equal {a b : ℤ} (h : a = b) : a - b = 0 := by
+  rw [← h, subtract_self]
 
-theorem equal_of_subtract_equal_zero {a b : ℤ} (h : a - b = 0) : a = b := sorry
+theorem equal_of_subtract_equal_zero {a b : ℤ} (h : a - b = 0) : a = b := by
+  rw [← add_zero a, ← add_inverse b, add_commutative b, ← add_associative, subtract_definition, h, add_commutative, add_zero]
 
-theorem negate_multiply_equal_negate_multiply (a b : ℤ) : -(a * b) = -a * b := sorry
+-- Looked at proof in lean std which uses negate_equal_of_add_equal_zero. This was foreign to me.
+-- Observation is that conclusion is of the form we would like here, we need a' = a * b and b' = -a * b, and then the theorem will tell us -(a * b) = -a * b, which is our desired result. So we need to provide (-(a * b)) + (-a * b) = 0, which we can do.
+theorem negate_multiply_equal_negate_multiply (a b : ℤ) : -(a * b) = -a * b := by
+  apply Eq.symm
+  apply negate_equal_of_add_equal_zero
+  rw [← right_distributive, add_commutative, add_inverse, multiply_commutative, multiply_zero]
 
-theorem negate_multiply_equal_multiply_negate (a b : ℤ) : -(a * b) = a * -b := sorry
+theorem negate_multiply_equal_multiply_negate (a b : ℤ) : -(a * b) = a * -b := by
+  rw [multiply_commutative, negate_multiply_equal_negate_multiply, multiply_commutative]
 
 theorem equal_zero_of_multiply_equal_zero : ∀ {a b : ℤ}, a * b = 0 → a = 0 ∨ b = 0 := by
   apply Quotient.ind₂
@@ -376,8 +390,6 @@ theorem equal_zero_of_multiply_equal_zero : ∀ {a b : ℤ}, a * b = 0 → a = 0
         _ = n*k + m*l := h_equivalent.symm
         _ = m*l + n*k := Natural.add_commutative _ _
 
-theorem Or.implies {a b c d : Prop} (f : a → c) (g : b → d) (h : a ∨ b) : c ∨ d := sorry
-  
 theorem multiply_equal_zero_of_equal_zero : ∀ {a b : ℤ}, a = 0 ∨ b = 0 → a * b = 0 := by
   apply Quotient.ind₂
   intro (n, m) (k, l) h_quotient

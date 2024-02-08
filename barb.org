@@ -43,10 +43,11 @@ class CommutativeRing (α : Type u) extends Zero α, One α, Add α, Mul α, Neg
 
   multiply_commutative : ∀ (a b : α), a * b = b * a
   multiply_associative : ∀ (a b c : α), (a * b) * c = a * (b * c)
+  -- TODO: DO we need to make sure 1 \ne 0?
   multiply_identity : ∀ (a : α), a * 1 = a
 
   left_distributive : ∀ (a b c : α), a * (b + c) = a * b + a * c
-  right_distributive : ∀ (a b c : α), (a + b) * c = a * b + c * a
+  right_distributive : ∀ (a b c : α), (a + b) * c = a * c + b * c
 #+end_src
 
 ** Logic
@@ -119,6 +120,21 @@ theorem or_imply : (a ∨ b → c) ↔ (a → c) ∧ (b → c) :=
 #+begin_src lean4
 theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imply
 #+end_src
+
+#+begin_src lean4
+theorem Or.implies {a b c d : Prop} (f : a → c) (g : b → d) (p : a ∨ b) : c ∨ d := by
+  cases p with
+  | inl a => exact Or.inl (f a)
+  | inr b => exact Or.inr (g b)
+#+end_src
+
+#+begin_src lean4
+theorem Or.resolve_left {a b : Prop} (h : a ∨ b) (not_a : ¬a) : b :=
+  match h with
+  | Or.inl ha => absurd ha not_a
+  | Or.inr hb => hb
+#+end_src
+
 *** Relator
 
 This is totally above my paygrade right now. I don't even know what
@@ -1064,39 +1080,41 @@ theorem boolean_less_equal_self_equal_true (n : ℕ) : booleanLessEqual n n = tr
   | successor _ ih => exact ih
 #+end_src
 
-#+begin_src lean4
+TODO:
+
+#+begin_src lean4 :tangle no 
 theorem boolean_less_equal_successor_equal_true : {n m : ℕ} → (booleanLessEqual n m) = true → (booleanLessEqual n (successor m)) = true := sorry
 #+end_src
 
-#+begin_src lean4
+#+begin_src lean4 :tangle no
 theorem boolean_less_equal_true_of_less_equal : {n m : ℕ} → n ≤ m → (booleanLessEqual n m) = true
   | zero, _, _ => sorry
   | successor n, successor m, h => sorry
 #+end_src
 
-#+begin_src lean4
+#+begin_src lean4 :tangle no
 theorem not_less_equal_of_not_boolean_less_equal_true (h : (booleanLessEqual n m) ≠ true) : ¬(n ≤ m) := sorry
 #+end_src
 
-#+begin_src lean4
+#+begin_src lean4 :tangle no
 instance decideLessEqual (n m : ℕ) : Decidable (n ≤ m) :=
   dite (booleanLessEqual n m = true)
     (λ h => isTrue (less_equal_of_boolean_less_equal_true h))
     (λ h => isFalse (not_less_equal_of_not_boolean_less_equal_true h))
 #+end_src
 
-#+begin_src lean4
+#+begin_src lean4 :tangle no
 def booleanLessThan (n m : ℕ) : Bool := booleanLessEqual (successor n) m
 #+end_src
 
-#+begin_src lean4
+#+begin_src lean4 :tangle no
 instance decideLessThan (n m : ℕ) : Decidable (n < m) :=
   dite (booleanLessThan n m = true)
     (isTrue ∘ less_than_of_successor_less_equal ∘ less_equal_of_boolean_less_equal_true)
     (isFalse ∘ (mt successor_less_equal_of_less_than ∘ not_less_equal_of_not_boolean_less_equal_true))
 #+end_src
 
-#+begin_src lean4
+#+begin_src lean4 :tangle no
 instance : Ord Natural where
   compare n m := compareOfLessAndEq n m
 #+end_src
@@ -1349,6 +1367,14 @@ theorem multiply_commutative (n m : ℕ) : n * m = m * n := by
 #+end_src
 
 #+begin_src lean4
+theorem one_multiply (n : ℕ) : 1 * n = n := rfl
+#+end_src
+
+#+begin_src lean4
+theorem multiply_one (n : ℕ) : n * 1 = n := (multiply_commutative n 1).trans (one_multiply n)
+#+end_src
+
+#+begin_src lean4
 theorem equal_zero_of_multiply_equal_zero {n m : ℕ} : n * m = 0 → n = 0 ∨ m = 0 := by
   cases n with
   | zero =>
@@ -1533,10 +1559,6 @@ instance : Pow Natural Natural where
 #+end_src
 
 ** Integer
-:PROPERTIES:
-:header-args: :tangle Barb/Data/Integer.lean
-:END:
-
 *** Imports
 
 #+begin_src lean4
@@ -1720,10 +1742,21 @@ theorem add_inverse : ∀ (a : ℤ), a + (-a) = 0 := by
   apply Quotient.sound
   show (n + m) + 0 = 0 + (m + n)
   simp [Natural.add_zero, Natural.zero_add, Natural.add_commutative]
-
 #+end_src
 
 *** Multiplication
+
+We define multiplication in the following way. Suppose we have
+$(n - m)(k - l)$. Distributing gives $nk - nl - mk + ml$, and moving
+the positive terms to the left, the negative terms to the right, and
+factoring the sign outside of the right hand side parentheses, we have
+$(nk + ml) - (nl + mk)$, which we use for our definition of
+multiplication for integers.
+
+#+begin_src lean4
+def multiply 
+#+end_src
+
 *** Commutative Ring
 * COMMENT Local variables
 # Local Variables:
