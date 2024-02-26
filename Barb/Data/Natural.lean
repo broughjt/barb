@@ -1,4 +1,6 @@
+import Barb.Function
 import Barb.Logic
+import Barb.Order
 
 inductive Natural where
   | zero : Natural
@@ -8,8 +10,7 @@ namespace Natural
 
 open Natural (zero successor)
 
-def natToNatural (n : Nat) : Natural :=
-  match n with
+def natToNatural : Nat → Natural
   | Nat.zero => Natural.zero
   | Nat.succ n' => Natural.successor (natToNatural n')
 
@@ -21,7 +22,7 @@ notation "ℕ" => Natural
 theorem successor_not_equal_zero (n : ℕ) : successor n ≠ 0 :=
   Natural.noConfusion
 
-theorem successor_injective {n m : ℕ} : successor n = successor m → n = m :=
+theorem successor_injective : Function.Injective successor :=
   λ h => (Natural.noConfusion h) id
 
 theorem successor_not_equal_self (n : ℕ) : successor n ≠ n :=
@@ -41,13 +42,10 @@ instance : BEq Natural where
 
 theorem equal_of_boolean_equal_true : {n m : ℕ} → (n == m) = true → n = m
   | zero, zero, _ => rfl
-  | zero, successor _, h => Bool.noConfusion h
-  | successor _, zero, h => Bool.noConfusion h
   | successor _, successor _, h => 
     congrArg successor (equal_of_boolean_equal_true h)
 
 theorem not_equal_of_boolean_equal_false : {n m : ℕ} → (n == m) = false → n ≠ m
-  | zero, zero, h => Bool.noConfusion h
   | zero, successor x, _ => (successor_not_equal_zero x).symm
   | successor x, zero, _ => successor_not_equal_zero x
   | successor _, successor _, h => 
@@ -57,28 +55,39 @@ def decideEqual (n m : ℕ) : Decidable (n = m) :=
   match h : booleanEqual n m with
   | true => isTrue (equal_of_boolean_equal_true h)
   | false => isFalse (not_equal_of_boolean_equal_false h)
+  
+instance : DecidableEq Natural := decideEqual
 
-@[inline] instance : DecidableEq Natural := decideEqual
+theorem booleanEqual.reflexive (n : ℕ) : booleanEqual n n = true := by
+  induction n with 
+  | zero => rfl
+  | successor _ ih => exact ih
+  
+instance : LawfulBEq Natural where
+  eq_of_beq := equal_of_boolean_equal_true
+  rfl := booleanEqual.reflexive _
 
-def add (n m : ℕ) : ℕ :=
-  match n with
-  | zero => m
-  | successor n' => successor (add n' m)
+def add : ℕ → ℕ → ℕ
+  | zero, m => m
+  | successor n, m => successor (add n m)
 
 instance : Add Natural where
   add := add
+
+@[simp] theorem add_definition : add n m = n + m := rfl
 
 theorem zero_add (n : ℕ) : 0 + n = n := rfl
 
 theorem successor_add (n m : ℕ) : (successor n) + m = successor (n + m) := rfl
 
-theorem add_zero (n : ℕ) : n + 0 = n := by
+@[simp] theorem add_zero (n : ℕ) : n + 0 = n := by
   induction n with
   | zero => exact zero_add 0
   | successor x ih => calc
     (successor x) + 0 = successor (x + 0) := successor_add x 0
     _                 = successor x       := congrArg successor ih
 
+-- TODO: Why does this one not have simp in init?
 theorem add_successor (n m : ℕ) : n + (successor m) = successor (n + m) := by
   induction n with
   | zero => calc
@@ -107,6 +116,12 @@ theorem add_associative (n m k : ℕ) : (n + m) + k = n + (m + k) := by
     ((successor x) + m) + k = (successor (x + m)) + k := congrArg (. + k) (successor_add x m)
     _                       = successor ((x + m) + k) := successor_add (x + m) k
     _                       = successor (x + (m + k)) := congrArg successor ih
+    
+theorem add_left_commutative (n m k : ℕ) : n + (m + k) = m + (n + k) := by
+  rw [← add_associative, add_commutative n m, add_associative]
+  
+theorem add_right_commutative (n m k : ℕ) : (n + m) + k = (n + k) + m := by
+  rw [add_associative, add_commutative m k, ← add_associative]
 
 theorem add_left_cancel {n m k : ℕ} : n + m = n + k → m = k := by
   induction n with
@@ -123,375 +138,288 @@ theorem add_left_cancel {n m k : ℕ} : n + m = n + k → m = k := by
       _                 = (successor x) + k := h
       _                 = successor (x + k) := successor_add x k
     exact ih (successor_injective this)
+    
+theorem add_right_cancel {n m k : ℕ} (h : n + k = m + k) : n = m := by
+  rw [add_commutative n k, add_commutative m k] at h
+  exact add_left_cancel h
 
+/-
 def predecessor : ℕ → ℕ
   | 0 => 0
   | successor n => n
 
 def subtractTruncated : ℕ → ℕ → ℕ
-  | _, 0 => 0
+  | n, 0 => n
   | n, successor m => predecessor (subtractTruncated n m)
 
 instance : Sub Natural where
   sub := subtractTruncated
 
-def positive (n : ℕ) : Prop := n ≠ 0
+theorem predecessor_zero : predecessor 0 = 0 := rfl
 
-theorem add_positive {n m : ℕ} : positive n → positive (n + m) := by
-  cases n with
-  | zero => intro h; exact False.elim (h rfl)
-  | successor x => intro; exact successor_not_equal_zero (x + m)
-
-theorem equal_zero_of_not_positive {n : ℕ} : ¬(positive n) → n = 0 := by
-  cases n with
-  | zero => intro; rfl
-  | successor x => intro h; exact False.elim (h (successor_not_equal_zero x))
+theorem predecessor_successor (n : ℕ) : predecessor (successor n) = n := rfl
   
-theorem not_positive_of_equal_zero {n : ℕ} : n = 0 → ¬(positive n) := by
-  cases n with
-  | zero => intro _ h; exact False.elim (h rfl)
-  | successor x => intro h; exact False.elim (successor_not_equal_zero x h)
+theorem subtract_zero (n : ℕ) : n - 0 = n := rfl
 
-theorem equal_zero_of_add_equal_zero {n m : ℕ} : n + m = 0 → (n = 0 ∧ m = 0) := by
-  intro h
-  apply And.intro
-  exact equal_zero_of_not_positive (mt add_positive (not_positive_of_equal_zero h))
-  have : m + n = 0 := (add_commutative n m).symm.trans h
-  exact equal_zero_of_not_positive (mt add_positive (not_positive_of_equal_zero this))
+theorem subtract_successor (n m : ℕ) : n - successor m = predecessor (n - m) := rfl
 
-theorem unique_predecessor_of_positive {n : ℕ} : positive n → ∃! (m : ℕ), successor m = n := by
-  cases n with
-  | zero => intro h; exact False.elim (h rfl)
-  | successor x => intro; exact ExistsUnique.introduction x rfl (λ _ => successor_injective)
-
-def less_equal (n m : ℕ) : Prop := ∃ (a : ℕ), n + a = m
-
-instance : LE Natural where
-  le := less_equal
-
-def less_than (n m : ℕ) : Prop := less_equal n m ∧ n ≠ m
-
-instance : LT Natural where
-  lt := less_than
-
-theorem less_equal_reflexive (n : ℕ) : n ≤ n := Exists.intro 0 (add_zero n)
-
-theorem less_equal_transitive {n m k : ℕ} (h₁ : n ≤ m) (h₂ : m ≤ k) : n ≤ k := by
-  let ⟨x, (h₃ : n + x = m)⟩ := h₁
-  let ⟨y, (h₄ : m + y = k)⟩ := h₂
-  show ∃ (z : ℕ), n + z = k
-  let z := (x + y)
-  apply Exists.intro z
-  calc
-    n + z = n + (x + y) := rfl
-    _     = (n + x) + y := (add_associative n x y).symm
-    _     = m + y       := congrArg (. + y) h₃
-    _     = k           := h₄
-
-instance : Trans less_equal less_equal less_equal where
-  trans := less_equal_transitive
-
-theorem less_equal_antisymmetric {n m : ℕ} (h₁ : n ≤ m) (h₂ : m ≤ n) : n = m := by
-  let ⟨x, (h₃ : n + x = m)⟩ := h₁
-  let ⟨y, (h₄ : m + y = n)⟩ := h₂
-
-  suffices x + y = 0 by calc
-    n = n + 0 := (add_zero n).symm
-    _ = n + x := congrArg (n + .) (equal_zero_of_add_equal_zero this).left.symm
-    _ = m     := h₃
-
-  have := calc
-    n + 0 = n           := add_zero n
-    _     = m + y       := h₄.symm
-    _     = (n + x) + y := congrArg (. + y) h₃.symm
-    _     = n + (x + y) := add_associative n x y
-  show x + y = 0
-  exact add_left_cancel this.symm
-
-instance : Antisymm (. ≤ . : ℕ → ℕ → Prop) where
-  antisymm := less_equal_antisymmetric
-
-theorem less_than_irreflexive (n : ℕ) : ¬(n < n) := by
-  intro h
-  have : n ≠ n := h.right
-  exact False.elim (this rfl)
-
-theorem less_than_asymmetric (n m : ℕ) : n < m → ¬(n > m) := by
-  intro h₁ h₂
-  suffices n = m by
-  { let ⟨_, (h_not_equal : n ≠ m)⟩ := h₁
-    exact absurd this h_not_equal }
-    
-  let ⟨⟨a, (h₁_exists : n + a = m)⟩, _⟩ := h₁
-  let ⟨⟨b, (h₂_exists : m + b = n)⟩, _⟩ := h₂
-  have := calc
-    n + (a + b) = (n + a) + b := (add_associative n a b).symm
-    _           = m + b       := congrArg (. + b) h₁_exists
-    _           = n           := h₂_exists
-    _           = n + 0       := (add_zero n).symm
-  have : a + b = 0 := add_left_cancel this
-  calc
-    n = n + 0 := (add_zero n).symm
-    _ = n + a := congrArg (n + .) (equal_zero_of_add_equal_zero this).left.symm
-    _ = m     := h₁_exists
-
-theorem less_than_transitive {n m k : ℕ} (h₁ : n < m) (h₂ : m < k) : n < k := by
-  apply And.intro
-  . exact less_equal_transitive h₁.left h₂.left
-  . intro h_equal
-    let ⟨⟨a, (h₁_exists : n + a = m)⟩, h₁_not_equal⟩ := h₁
-    let ⟨⟨b, (h₂_exists : m + b = k)⟩, _⟩ := h₂
-    have := calc
-      n + (a + b) = (n + a) + b := (add_associative n a b).symm
-      _           = m + b       := congrArg (. + b) h₁_exists
-      _           = k           := h₂_exists
-      _           = n           := h_equal.symm
-      _           = n + 0       := (add_zero n).symm
-    have : a + b = 0 := add_left_cancel this
-    have : n = m := calc
-      n = n + 0 := (add_zero n).symm
-      _ = n + a := congrArg (n + .) (equal_zero_of_add_equal_zero this).left.symm
-      _ = m     := h₁_exists
-    exact False.elim (h₁_not_equal this)
-
-theorem zero_less_equal (n : ℕ) : 0 ≤ n := 
-  Exists.intro n (zero_add n)
-
-theorem equal_zero_or_positive (n : ℕ) : n = 0 ∨ n > 0 := by
-  cases n with
-  | zero => exact Or.inl rfl
-  | successor n =>
-    apply Or.inr
-    show (∃ a, 0 + a = successor n) ∧ 0 ≠ successor n
-    apply And.intro
-    . exact Exists.intro (successor n) (zero_add (successor n))
-    . exact (successor_not_equal_zero n).symm
-
-theorem equal_or_less_than_of_less_equal {n m : ℕ} (h : n ≤ m) : n = m ∨ n < m := by
-  let ⟨a, (h_exists : n + a = m)⟩ := h
-  cases a with
-  | zero =>
-    apply Or.inl
-    calc
-      n = n + 0 := (add_zero n).symm
-      _ = m     := h_exists
-  | successor a =>
-    apply Or.inr
-    apply And.intro
-    . exact Exists.intro (successor a) h_exists
-    . intro h_equal
-      have := calc
-        n + (successor a) = m := h_exists
-        _ = n := h_equal.symm
-        _ = n + 0 := (add_zero n).symm
-      exact False.elim (successor_not_equal_zero a (add_left_cancel this))
-
-theorem less_equal_of_equal_of_less_than {n m : ℕ} (h : n = m ∨ n < m) : n ≤ m := by
-  cases h with
-  | inl h_equal => exact Exists.intro 0 ((add_zero n).trans h_equal)
-  | inr h_less_than => exact h_less_than.left
-
-theorem successor_less_equal_successor {n m : ℕ} : n ≤ m → successor n ≤ successor m := by
-  intro h_less_equal
-  let ⟨a, (h_exists : n + a = m)⟩ := h_less_equal
-  apply Exists.intro a
-  calc
-    (successor n) + a = successor (n + a) := successor_add n a
-    _                 = successor m := congrArg successor h_exists
-
-theorem less_than_of_successor_less_equal {n m : ℕ} (h : successor n ≤ m) : n < m := by
-  let ⟨x, (h₁ : (successor n) + x = m)⟩ := h
-  have h₂ := calc
-    n + (successor x) = successor (n + x) := add_successor n x
-    _                 = (successor n) + x := (successor_add n x).symm
-    _                 = m                 := h₁
-  apply And.intro
-  . exact (Exists.intro (successor x) h₂)
-  . show n ≠ m
-    intro (h₃ : n = m)
-    have := calc
-      n + (successor x) = m     := h₂
-      _                 = n     := h₃.symm
-      _                 = n + 0 := (add_zero n).symm
-    exact successor_not_equal_zero x (add_left_cancel this)
-
-theorem successor_less_equal_of_less_than : {n m : ℕ} → n < m → successor n ≤ m
-| zero, zero, ⟨_, h⟩ => False.elim (h rfl)
-| zero, successor y, _ => by
-  apply Exists.intro y
-  calc
-    successor zero + y = successor (zero + y) := successor_add zero y
-    _                  = successor y          := congrArg successor (zero_add y)
-| successor x, zero, ⟨h, _⟩ => by
-  let ⟨z, (h₁ : (successor x) + z = zero)⟩ := h
-  have : successor (x + z) = 0 := (successor_add x z).symm.trans h₁
-  exact False.elim (successor_not_equal_zero (x + z) this)
-| successor x, successor y, ⟨h₁, h₂⟩ => by
-  show successor (successor x) ≤ successor y
-  
-  suffices h₃ : x ≤ y ∧ x ≠ y by
-  { let ⟨w, (h₄ : (successor x) + w = y)⟩ := successor_less_equal_of_less_than h₃
-    have := calc
-      (successor (successor x)) + w = successor (successor x + w) := successor_add (successor x) w
-      _                             = successor y                 := congrArg successor h₄
-    exact Exists.intro w this }
-
-  let ⟨z, (h₄ : successor x + z = successor y)⟩ := h₁
-  apply And.intro
-  . have h₅ := calc
-      successor (x + z) = (successor x) + z := (successor_add x z).symm
-      _                 = successor y       := h₄
-    exact Exists.intro z (successor_injective h₅)
-  . exact mt (congrArg successor) h₂
-
-theorem zero_less_than_successor (n : ℕ) : 0 < successor n := by
-  apply And.intro
-  . exact Exists.intro (successor n) (zero_add (successor n)).symm
-  . exact (successor_not_equal_zero n).symm
-
-theorem zero_less_than_positive {n : ℕ} : positive n → 0 < n := by
-  intro h_positive
-  let ⟨n', ⟨(h_predecessor : successor n' = n), _⟩⟩ := unique_predecessor_of_positive h_positive
-  calc
-    0 < successor n' := zero_less_than_successor n'
-    _ = n            := h_predecessor
-
-def booleanLessEqual : ℕ → ℕ → Bool
-  | 0, 0 => true
-  | 0, successor _ => false
-  | successor _, 0 => false
-  | successor n, successor m => booleanLessEqual n m
-
-theorem less_equal_of_boolean_less_equal_true (h : (booleanLessEqual n m) = true) : n ≤ m :=
-  match n, m with
-  | 0, _ => zero_less_equal _
-  | successor _, successor _ => successor_less_equal_successor (less_equal_of_boolean_less_equal_true h)
-
-theorem boolean_less_equal_self_equal_true (n : ℕ) : booleanLessEqual n n = true := by
+theorem zero_subtract (n : ℕ) : 0 - n = 0 := by
   induction n with
   | zero => rfl
-  | successor _ ih => exact ih
+  | successor _ ih => rw [subtract_successor, ih, predecessor_zero]
+  
+theorem successor_subtract_successor_equal_subtract (n m : ℕ) :
+  successor n - successor m = n - m := by
+  induction m with
+  | zero => rfl
+  | successor _ ih => exact congrArg predecessor ih
 
-theorem add_left_less_equal {m k : ℕ} (h : m ≤ k) (n : ℕ) : n + m ≤ n + k := by
-  let ⟨x, (h₁ : m + x = k)⟩ := h
-  apply Exists.intro x
+theorem subtract_self (n : ℕ) : n - n = 0 := by
+  induction n with
+  | zero => rfl
+  | successor _ ih => rw [successor_subtract_successor_equal_subtract, ih]
+  
+theorem add_subtract_self_left (n m : ℕ) : (n + m) - n = m := by
+  induction n with
+  | zero => rfl
+  | successor _ ih => rw [successor_add, successor_subtract_successor_equal_subtract, ih]
+
+theorem add_subtract_self_right (n m : ℕ) : (n + m) - m = n := by
+  rw [add_commutative, add_subtract_self_left]
+-/
+
+theorem add_positive {n m : ℕ} : n ≠ 0 → (n + m) ≠ 0 :=
+  match n with
+  | zero => absurd rfl
+  | successor x => λ _ => successor_not_equal_zero (x + m)
+
+theorem equal_zero_of_add_equal_zero {n m : ℕ} (h : n + m = 0) : n = 0 ∧ m = 0 := by
+  apply And.intro
+  . exact Decidable.of_not_not (mt add_positive (not_not_intro h))
+  . have : m + n = 0 := (add_commutative n m).symm.trans h
+    exact Decidable.of_not_not (mt add_positive (not_not_intro this))
+
+theorem unique_predecessor_of_positive {n : ℕ} : n ≠ 0 → ∃! (m : ℕ), successor m = n :=
+  match n with
+  | zero => absurd rfl
+  | successor x => λ _ => ExistsUnique.introduction x rfl (λ _ => successor_injective)
+
+def LessEqual (n m : ℕ) : Prop := ∃ (a : ℕ), n + a = m
+
+instance : LE Natural where
+  le := LessEqual
+  
+@[simp] theorem less_equal_definition : (LessEqual n m) = (n ≤ m) := rfl
+
+@[simp] theorem LessEqual.reflexive : Relation.Reflexive LessEqual :=
+  λ n => Exists.intro 0 (add_zero n)
+
+theorem LessEqual.antisymmetric : Relation.AntiSymmetric LessEqual := by
+  intro n m ⟨a, (ha : n + a = m)⟩ ⟨b, (hb : m + b = n)⟩
+  suffices a + b = 0 by calc
+    n = n + 0 := (add_zero n).symm
+    _ = n + a := congrArg (n + .) (equal_zero_of_add_equal_zero this).left.symm
+    _ = m     := ha
+  have := calc
+    n + 0 = n           := add_zero n
+    _     = m + b       := hb.symm
+    _     = (n + a) + b := congrArg (. + _) ha.symm
+    _     = n + (a + b) := add_associative n a b
+  exact add_left_cancel this.symm
+
+theorem LessEqual.transitive : Relation.Transitive LessEqual := by
+  intro n m k ⟨a, (ha : n + a = m)⟩ ⟨b, (hb : m + b = k)⟩
+  apply Exists.intro (a + b)
   calc
-    n + m + x = n + (m + x) := add_associative n m x
+    n + (a + b) = (n + a) + b := (add_associative n a b).symm
+    _           = m + b       := congrArg (. + _) ha
+    _           = k           := hb
+    
+@[simp] theorem zero_less_equal (n : ℕ) : 0 ≤ n := 
+  Exists.intro n (zero_add n)
+  
+theorem equal_zero_of_less_equal_zero : ∀ {n : ℕ}, n ≤ 0 → n = 0 := by
+  intro n ⟨a, (h: n + a = 0)⟩
+  have := equal_zero_of_add_equal_zero h
+  exact this.left
+  
+theorem less_equal_of_successor_less_equal_successor {n m : ℕ} : successor n ≤ successor m → n ≤ m := by
+  intro ⟨a, (h : successor n + a = successor m)⟩
+  have := calc
+    successor (n + a) = successor n + a := (successor_add n a).symm
+    _ = successor m := h
+  exact Exists.intro a (successor_injective this)
+  
+theorem successor_less_equal_successor_of_less_equal {n m : ℕ} : n ≤ m → successor n ≤ successor m := by
+  intro ⟨a, (h : n + a = m)⟩
+  have := calc
+    successor n + a = successor (n + a) := successor_add _ _
+    _ = successor m := congrArg successor h
+  exact Exists.intro a this
+  
+theorem less_equal_successor_of_less_equal {n m : ℕ} : n ≤ m → n ≤ successor m := by
+  intro ⟨a, (h : n + a = m)⟩
+  have := calc
+    n + successor a = successor (n + a) := add_successor _ _
+    _ = successor m := congrArg successor h
+  exact Exists.intro (successor a) this
+
+def booleanLessEqual : ℕ → ℕ → Bool
+  | zero, zero => true
+  | zero, successor _ => true
+  | successor _, zero => false
+  | successor n, successor m => booleanLessEqual n m
+
+theorem less_equal_of_boolean_less_equal_true {n m : ℕ} (h : (booleanLessEqual n m) = true) : n ≤ m :=
+  match n, m with
+  | zero, _ => zero_less_equal _
+  | successor _, successor _ => successor_less_equal_successor_of_less_equal (less_equal_of_boolean_less_equal_true h)
+  
+theorem boolean_less_equal_true_of_less_equal : ∀ {n m : ℕ}, n ≤ m → (booleanLessEqual n m) = true
+  | zero, m, _ => by cases m <;> rfl
+  | successor n, successor m, h => by
+    rw [booleanLessEqual]
+    have := less_equal_of_successor_less_equal_successor h
+    exact boolean_less_equal_true_of_less_equal this
+    
+instance decideLessEqual (n m : ℕ) : Decidable (n ≤ m) :=
+  if h : (booleanLessEqual n m) = true then
+    isTrue (less_equal_of_boolean_less_equal_true h)
+  else
+    isFalse (mt boolean_less_equal_true_of_less_equal h)
+
+theorem LessEqual.strongly_connected : Relation.StronglyConnected LessEqual
+  | zero, _ => Or.inl (zero_less_equal _)
+  | successor _, zero => Or.inr (zero_less_equal _)
+  | successor n, successor m =>
+    Or.implies 
+      successor_less_equal_successor_of_less_equal 
+      successor_less_equal_successor_of_less_equal 
+      (LessEqual.strongly_connected n m)
+    
+instance instanceTotalOrder : TotalOrder Natural where
+  less_equal_reflexive := LessEqual.reflexive
+  less_equal_antisymmetric := LessEqual.antisymmetric
+  less_equal_transitive := LessEqual.transitive
+  less_equal_strongly_connected := LessEqual.strongly_connected
+  decidableEqual := decideEqual
+  decidableLessEqual := decideLessEqual
+
+def LessThan := instanceTotalOrder.less_than
+
+theorem equal_zero_or_positive (n : ℕ) : n = 0 ∨ n > 0 :=
+  Or.implies_left 
+  Eq.symm
+  (Or.commutative.mp (Decidable.less_than_or_equal_of_less_equal (zero_less_equal n)))
+
+theorem zero_less_than_successor (n : ℕ) : successor n > 0 :=
+  Or.resolve_left (equal_zero_or_positive (successor n)) (successor_not_equal_zero _)
+
+theorem less_than_successor (n : ℕ) : n < successor n :=
+  have := Decidable.less_than_or_equal_of_less_equal (less_equal_successor_of_less_equal (less_equal_reflexive n))
+  Or.resolve_right this (successor_not_equal_self n).symm
+
+theorem less_than_of_successor_less_equal {n m : ℕ} (h : successor n ≤ m) : n < m :=
+  less_than_of_less_than_of_less_equal (less_than_successor n) h
+
+theorem successor_less_equal_of_less_than {n m : ℕ} (h : n < m) : successor n ≤ m :=
+  have ⟨a, (h_exists : n + a = m)⟩ := less_equal_of_less_than h
+  have not_equal := not_equal_of_less_than h
+  match a with
+  | zero => absurd ((add_zero _).symm.trans h_exists) not_equal
+  | successor a => 
+    have := calc
+      successor n + a = successor (n + a) := successor_add _ _
+      _ = n + successor a := (add_successor _ _).symm
+      _ = m := h_exists
+    Exists.intro a this
+
+theorem zero_less_than_positive {n : ℕ} : n ≠ 0 → 0 < n :=
+  Or.resolve_left (equal_zero_or_positive n)
+
+theorem add_left_less_equal {m k : ℕ} (h : m ≤ k) (n : ℕ) : n + m ≤ n + k :=
+  let ⟨a, (h₁ : m + a = k)⟩ := h
+  have := calc
+    n + m + a = n + (m + a) := add_associative n m a
     _         = n + k       := congrArg (n + .) h₁
+  Exists.intro a this
 
 theorem add_right_less_equal {n m : ℕ} (h : n ≤ m) (k : ℕ) : n + k ≤ m + k := by
+  rw [add_commutative n k, add_commutative m k]
+  exact add_left_less_equal h k
+    
+theorem add_left_less_than {m k : ℕ} (h : m < k) (n : ℕ) : n + m < n + k := by
+  have := add_left_less_equal (successor_less_equal_of_less_than h) n
+  apply less_than_of_successor_less_equal
   calc
-    n + k = k + n := add_commutative n k
-    _     ≤ k + m := add_left_less_equal h k
-    _     = m + k := add_commutative k m
+    successor (n + m) = n + successor m := (add_successor _ _).symm
+    _ ≤ n + k := this
 
-theorem less_equal_of_add_left_less_equal {n m k : ℕ} (h : n + m ≤ n + k) : m ≤ k := by
-  let ⟨x, (h₁ : n + m + x = n + k)⟩ := h
+theorem add_right_less_than {n m : ℕ} (h : n < m) (k : ℕ) : n + k < m + k := by
+  rw [add_commutative n k, add_commutative m k]
+  exact add_left_less_than h k
+
+theorem less_equal_of_add_left_less_equal {n m k : ℕ} (h : n + m ≤ n + k) : m ≤ k :=
+  let ⟨a, (ha : (n + m) + a = n + k)⟩ := h
   have := calc
-    n + (m + x) = (n + m) + x := (add_associative n m x).symm
-    _           = n + k       := h₁
-  show ∃ (x : ℕ), m + x = k
-  exact Exists.intro x (add_left_cancel this)
+    n + (m + a) = (n + m) + a := (add_associative n m a).symm
+    _           = n + k       := ha
+  Exists.intro a (add_left_cancel this)
 
 theorem less_equal_of_add_right_less_equal {n m k : ℕ} (h : n + k ≤ m + k) : n ≤ m := by
+  rw [add_commutative n k, add_commutative m k] at h 
+  exact less_equal_of_add_left_less_equal h
+  
+theorem less_than_of_add_left_less_than {n m k : ℕ} (h : n + m < n + k) : m < k :=
   have := calc
-    k + n = n + k := add_commutative k n
-    _     ≤ m + k := h
-    _     = k + m := add_commutative m k
-  exact less_equal_of_add_left_less_equal this
+    n + successor m = successor (n + m) := add_successor _ _
+    _ ≤ n + k := successor_less_equal_of_less_than h
+  less_than_of_successor_less_equal (less_equal_of_add_left_less_equal this)
+
+theorem less_than_of_add_right_less_than {n m k : ℕ} (h : n + k < m + k) : n < m := by
+  rw [add_commutative n k, add_commutative m k] at h 
+  exact less_than_of_add_left_less_than h
 
 theorem equal_add_positive_of_less_than {n m : ℕ} (h : n < m) : 
-  ∃ (a : ℕ), positive a ∧ n + a = m := by
-  let ⟨b, (h₁ : (successor n) + b = m)⟩ := successor_less_equal_of_less_than h
-  apply Exists.intro (successor b)
+  ∃ (a : ℕ), a ≠ 0 ∧ n + a = m := by
+  let ⟨a, (ha : (successor n) + a = m)⟩ := successor_less_equal_of_less_than h
+  apply Exists.intro (successor a)
   apply And.intro
-  . exact successor_not_equal_zero b
+  . exact successor_not_equal_zero a
   . calc
-      n + (successor b) = successor (n + b) := add_successor n b
-      _                 = (successor n) + b := (successor_add n b).symm
-      _                 = m                 := h₁
+      n + (successor a) = successor (n + a) := add_successor _ _
+      _                 = (successor n) + a := (successor_add _ _).symm
+      _                 = m                 := ha
 
 theorem less_than_of_equal_add_positive {n m : ℕ} 
-  (h : ∃ (a : ℕ), positive a ∧ n + a = m) : n < m := by
-  let ⟨a, (h₁ : positive a), (h₂ : n + a = m)⟩ := h
-  let ⟨b, (h₃ : successor b = a), _⟩ := (unique_predecessor_of_positive h₁)
-  apply And.intro
-  . exact Exists.intro a h₂
-  . intro (h₄ : n = m)
-    have := calc
-      n + (successor b) = n + a := congrArg (n + .) h₃
-      _                 = m     := h₂
-      _                 = n     := h₄.symm
-      _                 = n + 0 := (add_zero n).symm
-    exact successor_not_equal_zero b (add_left_cancel this)
+  (h : ∃ (a : ℕ), a ≠ 0 ∧ n + a = m) : n < m :=
+  let ⟨a, (h_not_zero : a ≠ 0), (ha : n + a = m)⟩ := h
+  let ⟨b, (hb : successor b = a), _⟩ := (unique_predecessor_of_positive h_not_zero)
+  have := calc
+    successor n + b = successor (n + b) := successor_add _ _
+    _ = n + successor b := (add_successor _ _ ).symm
+    _ = n + a := congrArg (_ + .) hb
+    _ = m := ha
+  less_than_of_successor_less_equal (Exists.intro b this)
 
-theorem less_than_trichotomous (n m : ℕ) : n < m ∨ n = m ∨ n > m := by
-  induction n with
-  | zero => cases m with
-    | zero => exact Or.inr (Or.inl rfl)
-    | successor y =>
-      apply Or.inl
-      apply And.intro
-      . exact Exists.intro (successor y) (zero_add (successor y))
-      . exact (successor_not_equal_zero y).symm
-  | successor x ihl =>
-      cases ihl with
-      | inl h_less_than =>
-        let ⟨a, (h₁ : (successor x) + a = m)⟩ := successor_less_equal_of_less_than h_less_than
-        cases a with
-        | zero =>
-          apply Or.inr
-          apply Or.inl
-          exact calc
-            (successor x) = (successor x) + 0 := (add_zero (successor x)).symm
-            _             = m                 := h₁
-        | successor a' =>
-          apply Or.inl
-          apply less_than_of_equal_add_positive
-          apply Exists.intro (successor a')
-          apply And.intro
-          . exact successor_not_equal_zero a'
-          . exact h₁
-      | inr ihr => cases ihr with
-        | inl h_equal =>
-          apply Or.inr; apply Or.inr;
-          apply less_than_of_equal_add_positive
-          apply Exists.intro 1
-          apply And.intro
-          . exact successor_not_equal_zero 0
-          . exact calc
-              m + 1 = successor (m + 0) := add_successor m 0
-              _     = successor m       := congrArg successor (add_zero m)
-              _     = successor x       := congrArg successor h_equal.symm
-        | inr h_greater_than =>
-          let ⟨a, (h₁ : m + a = x)⟩ := h_greater_than.left
-          apply Or.inr; apply Or.inr;
-          have := calc
-            m + (successor a) = successor (m + a) := add_successor m a
-            _                 = successor x := congrArg successor h₁
-          apply less_than_of_equal_add_positive
-          apply Exists.intro (successor a)
-          apply And.intro
-          . exact successor_not_equal_zero a
-          . exact this
-
-def multiply (n m : ℕ) : ℕ :=
-  match n with
-  | zero => 0
-  | successor n' => (multiply n' m) + m
+def multiply : ℕ → ℕ → ℕ
+  | zero, _ => 0
+  | successor n, m => (multiply n m) + m
 
 instance : Mul Natural where
   mul := multiply
+  
+@[simp] theorem multiply_definition : multiply n m = n * m := rfl
 
-theorem zero_multiply (n : ℕ) : 0 * n = 0 := rfl
+@[simp] theorem zero_multiply (n : ℕ) : 0 * n = 0 := rfl
 
 theorem successor_multiply (n m : ℕ) : (successor n) * m = (n * m) + m := rfl
 
-theorem multiply_zero (n : ℕ) : n * 0 = 0 := by
+@[simp] theorem multiply_zero (n : ℕ) : n * 0 = 0 := by
   induction n with
   | zero => rfl
   | successor x ih =>
-    exact calc
+    calc
       (successor x) * 0 = (x * 0) + 0 := successor_multiply x 0
       _                 = x * 0       := add_zero (x * 0)
       _                 = 0           := ih
@@ -501,7 +429,7 @@ theorem multiply_successor (n m : ℕ) : n * (successor m) = (n * m) + n := by
   | zero => rfl
   | successor x ih => 
     show (successor x) * (successor m) = ((successor x) * m) + (successor x)
-    exact calc
+    calc
       (successor x) * (successor m)
         = x * (successor m) + (successor m)   := successor_multiply x (successor m)
       _ = ((x * m) + x) + (successor m)       := congrArg (. + successor m) ih
@@ -515,56 +443,53 @@ theorem multiply_successor (n m : ℕ) : n * (successor m) = (n * m) + n := by
 theorem multiply_commutative (n m : ℕ) : n * m = m * n := by
   induction n with
   | zero =>
-    exact calc
+    calc
       0 * m = 0     := zero_multiply m
       _     = m * 0 := (multiply_zero m).symm
   | successor n ih =>
-    exact calc
+    calc
       (successor n) * m = (n * m) + m       := successor_multiply n m
       _                 = (m * n) + m       := congrArg (. + m) ih
       _                 = m * (successor n) := (multiply_successor m n).symm
 
-theorem one_multiply (n : ℕ) : 1 * n = n := rfl
+@[simp] theorem one_multiply (n : ℕ) : 1 * n = n := rfl
 
-theorem multiply_one (n : ℕ) : n * 1 = n := (multiply_commutative n 1).trans (one_multiply n)
+@[simp] theorem multiply_one (n : ℕ) : n * 1 = n := (multiply_commutative n 1).trans (one_multiply n)
 
-theorem equal_zero_of_multiply_equal_zero {n m : ℕ} : n * m = 0 → n = 0 ∨ m = 0 := by
-  cases n with
-  | zero =>
-    intro _
-    exact Or.inl rfl
+theorem equal_zero_of_multiply_equal_zero {n m : ℕ} : n * m = 0 → n = 0 ∨ m = 0 :=
+  match n with
+  | zero => λ _ => Or.inl rfl
   | successor n =>
-    intro h
+    λ h =>
     have h₁ : (n * m) + m = 0 := (successor_multiply n m).symm.trans h
     have h₂ : (n * m) = 0 ∧ m = 0 := equal_zero_of_add_equal_zero h₁
-    exact Or.inr h₂.right
+    Or.inr h₂.right
 
 theorem multiply_equal_zero_of_equal_zero {n m : ℕ} : n = 0 ∨ m = 0 → n * m = 0 := by
   intro h
   cases h with
-  | inl n_equal_zero => exact calc
+  | inl n_equal_zero => calc
     n * m = 0 * m := congrArg (. * m) n_equal_zero
     _     = 0     := zero_multiply m
-  | inr m_equal_zero => exact calc
+  | inr m_equal_zero => calc
     n * m = n * 0 := congrArg (n * .) m_equal_zero
     _     = 0     := multiply_zero n
 
-theorem and_positive_of_multiply_positive {n m : ℕ} (h : positive (n * m)) : positive n ∧ positive m := by
+theorem and_positive_of_multiply_positive {n m : ℕ} (h : n * m ≠ 0) : n ≠ 0 ∧ m ≠ 0 :=
   have : ¬(n = 0 ∨ m = 0) := mt multiply_equal_zero_of_equal_zero h
-  exact not_or.mp this
+  not_or.mp this
 
-theorem multiply_positive_of_and_positive {n m : ℕ} : positive n ∧ positive m → positive (n * m) := by
-  intro h
+theorem multiply_positive_of_and_positive {n m : ℕ} (h : n ≠ 0 ∧ m ≠ 0) : n * m ≠ 0 :=
   have : ¬(n = 0 ∨ m = 0) := not_or.mpr h
-  exact mt equal_zero_of_multiply_equal_zero this
+  mt equal_zero_of_multiply_equal_zero this
 
 theorem left_distributive (n m k : ℕ) : n * (m + k) = n * m + n * k := by
   induction k with
-  | zero => exact calc
+  | zero => calc
     n * (m + 0) = n * m         := congrArg (n * .) (add_zero m)
     _           = n * m + 0     := (add_zero (n * m)).symm
     _           = n * m + n * 0 := congrArg ((n * m) + .) (multiply_zero n).symm
-  | successor k ih => exact calc
+  | successor k ih => calc
     n * (m + successor k)
       = n * successor (m + k)     := congrArg (n * .) (add_successor m k)
     _ = (n * (m + k)) + n         := multiply_successor n (m + k)
@@ -591,39 +516,43 @@ theorem multiply_associative (n m k : ℕ) : (n * m) * k = n * (m * k) := by
     _ = ((n * m) * k) + m * k := right_distributive (n * m) m k
     _ = (n * (m * k)) + m * k := congrArg (. + m * k) ih
     _ = successor n * (m * k) := successor_multiply n (m * k)
+    
+theorem multiply_left_commutative (n m k : ℕ) : n * (m * k) = m * (n * k) := by
+  rw [← multiply_associative, multiply_commutative n m, multiply_associative]
 
-theorem multiply_left_less_than {m k : ℕ} (h_less_than : m < k) (n : ℕ) (h_n_positive : positive n) : n * m < n * k := by
-  let ⟨a, ⟨(h_a_positive : positive a), (h_exists : m + a = k)⟩⟩
-  := equal_add_positive_of_less_than h_less_than
+theorem multiply_right_commutative (n m k : ℕ) : (n * m) * k = (n * k) * m := by
+  rw [multiply_associative, multiply_commutative m k, ← multiply_associative]
+
+theorem multiply_left_less_than {m k : ℕ} (h_less_than : m < k) (n : ℕ) (hn_positive : n ≠ 0) : n * m < n * k := by
+  let ⟨a, ⟨(ha_positive : a ≠ 0), (h_exists : m + a = k)⟩⟩ := equal_add_positive_of_less_than h_less_than
   apply less_than_of_equal_add_positive
   apply Exists.intro (n * a)
   apply And.intro
-  . show positive (n * a)
-    exact multiply_positive_of_and_positive (And.intro h_n_positive h_a_positive)
+  . show n * a ≠ 0
+    exact multiply_positive_of_and_positive (And.intro hn_positive ha_positive)
   . calc
     n * m + n * a = n * (m + a) := (left_distributive n m a).symm
     _             = n * k       := congrArg (n * .) h_exists
 
-theorem multiply_left_cancel {n m k : ℕ} (h_equal : n * m = n * k) (h_positive : positive n) : m = k := by
-  have : m < k ∨ m = k ∨ m > k := less_than_trichotomous m k
-  cases this with
-  | inl h_less_than =>
-    have : n * m ≠ n * k := (multiply_left_less_than h_less_than n h_positive).right
-    exact absurd h_equal this
-  | inr h_right => cases h_right with
-    | inl h_equal => exact h_equal
-    | inr h_greater_than =>
-      have : n * k ≠ n * m := (multiply_left_less_than h_greater_than n h_positive).right
-      exact absurd h_equal this.symm
+theorem multiply_left_cancel {n m k : ℕ} (h_equal : n * m = n * k) (h_positive : n ≠ 0) : m = k :=
+  match less_than_trichotomous m k with
+  | Or.inl h_less_than =>
+    have : n * m ≠ n * k := not_equal_of_less_than (multiply_left_less_than h_less_than n h_positive)
+    absurd h_equal this
+  | Or.inr (Or.inl h_equal) => h_equal
+  | Or.inr (Or.inr h_greater_than) =>
+    have : n * k ≠ n * m := not_equal_of_less_than (multiply_left_less_than h_greater_than n h_positive)
+    absurd h_equal this.symm
 
-theorem multiply_right_cancel {n m k : ℕ} (h_equal : n * k = m * k) (h_positive : positive k) : n = m := by
+theorem multiply_right_cancel {n m k : ℕ} (h_equal : n * k = m * k) (h_positive : k ≠ 0) : n = m :=
   have := calc
     k * n = n * k := multiply_commutative k n
     _     = m * k := h_equal
     _     = k * m := multiply_commutative m k
-  exact multiply_left_cancel this h_positive
+  multiply_left_cancel this h_positive
 
-theorem quotient_remainder {n q : ℕ} (q_positive : positive q) :
+-- TODO: Rename to divideWithRemainder and turn into type-level algorithm with subtypes
+theorem quotient_remainder {n q : ℕ} (q_positive : q ≠ 0) :
   ∃ (p : ℕ × ℕ),
   let ⟨m, r⟩ := p; n = m * q + r ∧ r < q := by
   induction n with
@@ -639,7 +568,7 @@ theorem quotient_remainder {n q : ℕ} (q_positive : positive q) :
     let ⟨⟨m, r⟩, ⟨(h_exists : n = m * q + r), (h_less_than : r < q)⟩⟩ := ih
     show ∃ p, let ⟨m, r⟩ := p; successor n = m * q + r ∧ r < q
     have : successor r = q ∨ successor r < q := 
-      (equal_or_less_than_of_less_equal ∘ successor_less_equal_of_less_than) h_less_than
+      (Or.commutative.mp ∘ Decidable.less_than_or_equal_of_less_equal ∘ successor_less_equal_of_less_than) h_less_than
     cases this with
     | inl h_equal => 
       apply Exists.intro ⟨successor m, 0⟩

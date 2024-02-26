@@ -21,15 +21,58 @@ theorem or_imply : (a ∨ b → c) ↔ (a → c) ∧ (b → c) :=
 
 theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imply
 
-theorem Or.implies {a b c d : Prop} (f : a → c) (g : b → d) (p : a ∨ b) : c ∨ d := by
-  cases p with
-  | inl a => exact Or.inl (f a)
-  | inr b => exact Or.inr (g b)
+theorem Or.symmetric : a ∨ b → b ∨ a
+  | inl a => inr a
+  | inr b => inl b
+
+theorem Or.commutative {a b : Prop} : a ∨ b ↔ b ∨ a := ⟨Or.symmetric, Or.symmetric⟩
+
+theorem Or.implies {a b c d : Prop} (f : a → c) (g : b → d) : a ∨ b → c ∨ d
+  | inl a => Or.inl (f a)
+  | inr b => Or.inr (g b)
+  
+theorem Or.implies_left {a b c : Prop} (f : a → b) : a ∨ c → b ∨ c
+  | inl a => Or.inl (f a)
+  | inr c => Or.inr c
+  
+theorem Or.implies_right {a b c : Prop} (f : b → c) : a ∨ b → a ∨ c
+  | inl a => Or.inl a
+  | inr b => Or.inr (f b)
 
 theorem Or.resolve_left {a b : Prop} (h : a ∨ b) (not_a : ¬a) : b :=
   match h with
   | Or.inl ha => absurd ha not_a
   | Or.inr hb => hb
+
+theorem Or.resolve_right {a b : Prop} (h : a ∨ b) (not_b : ¬b) : a :=
+  match h with
+  | Or.inl ha => ha
+  | Or.inr hb => absurd hb not_b
+
+namespace Relation
+
+variable {α : Sort u} (r : α → α → Prop)
+
+local infix:50 " ≺ " => r
+local notation:50 a:50 " ⊀ " b:50 => ¬(a ≺ b)
+
+def Reflexive := ∀ x, x ≺ x
+
+def Symmetric := ∀ {x y}, x ≺ y → y ≺ x
+
+def Transitive := ∀ {x y z}, x ≺ y → y ≺ z → x ≺ z
+
+def Irreflexive := ∀ x, x ⊀ x
+
+def AntiSymmetric := ∀ {x y}, x ≺ y → y ≺ x → x = y
+
+def Asymmetric := ∀ {x y}, x ≺ y → y ⊀ x
+
+def Connected := ∀ {x y}, x ≠ y → x ≺ y ∨ y ≺ x
+
+def StronglyConnected := ∀ x y, x ≺ y ∨ y ≺ x
+
+end Relation
 
 namespace Relator
 
