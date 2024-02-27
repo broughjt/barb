@@ -402,6 +402,20 @@ theorem less_than_of_equal_add_positive {n m : ℕ}
     _ = m := ha
   less_than_of_successor_less_equal (Exists.intro b this)
 
+theorem left_greater_equal_of_add_right_less_equal {n m k l : ℕ} : n + m = k + l → m ≤ l → n ≥ k :=
+  λ h_equal ⟨a, (ha : m + a = l)⟩ =>
+  have := calc
+    m + (k + a) = k + (m + a) := add_left_commutative _ _ _
+    _ = k + l := congrArg (_ + .) ha
+    _ = n + m := h_equal.symm
+    _ = m + n := add_commutative _ _
+  Exists.intro a (add_left_cancel this)
+  
+theorem right_greater_equal_of_add_left_less_equal {n m k l : ℕ} : n + m = k + l → n ≤ k → m ≥ l := by
+  intro h_equal h_less_equal
+  rw [add_commutative n m, add_commutative k l] at h_equal
+  exact left_greater_equal_of_add_right_less_equal h_equal h_less_equal
+
 def multiply : ℕ → ℕ → ℕ
   | zero, _ => 0
   | successor n, m => (multiply n m) + m

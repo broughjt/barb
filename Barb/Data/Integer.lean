@@ -1,75 +1,66 @@
 import Barb.Algebra
+import Barb.Data.Natural
+import Barb.Logic
 import Barb.Quotient
 import Barb.Syntax
-import Barb.Data.Natural
 
 open Natural (zero successor)
 
-def integerEquivalent : (ℕ × ℕ) → (ℕ × ℕ) → Prop
+def IntegerEquivalent : (ℕ × ℕ) → (ℕ × ℕ) → Prop
   | (n, m), (n', m') => n + m' = n' + m
 
-theorem integerEquivalent.reflexive (x : ℕ × ℕ) : integerEquivalent x x := rfl
+theorem IntegerEquivalent.reflexive : Relation.Reflexive IntegerEquivalent :=
+  λ _ => rfl
   
-theorem integerEquivalent.symmetric : ∀ {x y}, (integerEquivalent x y) → (integerEquivalent y x) := Eq.symm
+theorem IntegerEquivalent.symmetric : Relation.Symmetric IntegerEquivalent := Eq.symm
 
-theorem integerEquivalent.transitive : ∀ {x y z}, 
-  integerEquivalent x y → integerEquivalent y z → integerEquivalent x z
-  | (a, b), (c, d), (e, f), h1, h2 =>
-    have h3 : a + d = c + b := h1
-    have h4 : c + f = e + d := h2
-    have h5 := calc
-      (a + d) + (c + f) = (c + b) + (c + f) := congrArg (. + (c + f)) h3
-      _                 = (c + b) + (e + d) := congrArg ((c + b) + .) h4
-    have h6 := calc
-      (a + d) + (c + f) = (d + a) + (c + f) := congrArg (. + (c + f)) (Natural.add_commutative a d)
-      _ = d + (a + (c + f)) := Natural.add_associative d a (c + f)
-      _ = d + ((a + c) + f) := congrArg (d + .) (Natural.add_associative a c f).symm
-      _ = d + ((c + a) + f) := congrArg (λ x => d + (x + f)) (Natural.add_commutative a c)
-      _ = d + (c + (a + f)) := congrArg (d + .) (Natural.add_associative c a f)
-      _ = (d + c) + (a + f) := (Natural.add_associative d c (a + f)).symm
-      _ = (c + d) + (a + f) := congrArg (. + (a + f)) (Natural.add_commutative d c)
-    have h7 := calc
-      (c + b) + (e + d) = (c + b) + (d + e) := congrArg ((c + b) + .) (Natural.add_commutative e d)
-      _ = ((c + b) + d) + e := (Natural.add_associative (c + b) d e).symm
-      _ = (c + (b + d)) + e := congrArg (. + e) (Natural.add_associative c b d)
-      _ = (c + (d + b)) + e := congrArg (λ x => (c + x) + e) (Natural.add_commutative b d)
-      _ = ((c + d) + b) + e := congrArg (. + e) (Natural.add_associative c d b).symm
-      _ = (c + d) + (b + e) := Natural.add_associative (c + d) b e
-      _ = (c + d) + (e + b) := congrArg ((c + d) + .) (Natural.add_commutative b e)
-    have : (c + d) + (a + f) = (c + d) + (e + b) := (h6.symm.trans h5).trans h7
-    Natural.add_left_cancel this
+theorem IntegerEquivalent.transitive : Relation.Transitive IntegerEquivalent
+  | (a, b), (c, d), (e, f), (h₁ : a + d = c + b), (h₂ : c + f = e + d) => by
+    have := calc
+      (c + d) + (a + f) = (a + d) + (c + f) := by simp [Natural.add_associative, Natural.add_commutative, Natural.add_left_commutative]
+      _ = (c + b) + (e + d) := by simp [h₁, h₂]
+      _ = (c + d) + (e + b) := by simp [Natural.add_associative, Natural.add_commutative, Natural.add_left_commutative]
+    show a + f = e + b
+    exact Natural.add_left_cancel this
 
-theorem integerEquivalence.is_equivalence : Equivalence integerEquivalent :=
-  { refl := integerEquivalent.reflexive, symm := integerEquivalent.symmetric, trans := integerEquivalent.transitive }
+theorem IntegerEquivalent.is_equivalence : Equivalence IntegerEquivalent :=
+  { refl := IntegerEquivalent.reflexive, symm := IntegerEquivalent.symmetric, trans := IntegerEquivalent.transitive }
 
 instance instanceHasEquivIntegerEquivalent : HasEquiv (ℕ × ℕ) where
-  Equiv := integerEquivalent
+  Equiv := IntegerEquivalent
   
 instance instanceSetoidIntegerEquivalent : Setoid (ℕ × ℕ) where
-  r := integerEquivalent
-  iseqv := integerEquivalence.is_equivalence
+  r := IntegerEquivalent
+  iseqv := IntegerEquivalent.is_equivalence
+
+instance decideIntegerEquivalent (a b : ℕ × ℕ) : Decidable (a ≈ b) :=
+  let (n, m) := a
+  let (k, l) := b
+  Natural.decideEqual (n + l) (k + m)
+
+instance decideIntegerEquivalentQuotientEqual: DecidableEq (Quotient instanceSetoidIntegerEquivalent) := inferInstance
 
 def Integer := Quotient instanceSetoidIntegerEquivalent
+
+instance decideEqual : DecidableEq Integer := decideIntegerEquivalentQuotientEqual
 
 namespace Integer
 
 notation "ℤ" => Integer
 
--- instance : Coe Natural Integer := ⟨Integer.ofNatural⟩
-
 instance : OfNat Integer n where
-  ofNat := Quotient.mk' (Natural.natToNatural n, 0)
+  ofNat := ⟦(Natural.natToNatural n, 0)⟧
 
-instance Zero : Integer := Quotient.mk' (0, 0)
+instance Zero : Integer := ⟦(0, 0)⟧
 
-instance One : Integer := Quotient.mk' (1, 0)
+instance One : Integer := ⟦(1, 0)⟧
 
 def negate : ℤ → ℤ := 
   let negate' := λ ((n, m) : ℕ × ℕ) => (m, n)
   Quotient.map negate' <| by
-  intro (n, m) (n', m') (h_equivalent : n + m' = n' + m)
+  intro (n, m) (n', m') (h : n + m' = n' + m)
   show m + n' = m' + n
-  simp [Natural.add_commutative, h_equivalent]
+  simp [Natural.add_commutative, h]
 
 instance : Neg Integer where
   neg := negate
@@ -77,24 +68,19 @@ instance : Neg Integer where
 def add : ℤ → ℤ → ℤ :=
   let add' := λ ((n, m) : ℕ × ℕ) ((k, l) : ℕ × ℕ) => (n + k, m + l)
   Quotient.map₂ add' <| by
-  intro (n, m) (n', m') (h1 : n + m' = n' + m)
-  intro (k, l) (k', l') (h2 : k + l' = k' + l)
+  intro (n, m) (n', m') (h₁ : n + m' = n' + m)
+  intro (k, l) (k', l') (h₂ : k + l' = k' + l)
   show (n + k) + (m' + l') = (n' + k') + (m + l)
   calc
-    (n + k) + (m' + l') = ((n + k) + m') + l' := (Natural.add_associative (n + k) m' l').symm
-    _ = (n + (k + m')) + l' := congrArg (. + l') (Natural.add_associative n k m')
-    _ = (n + (m' + k)) + l' := congrArg (λ x => (n + x) + l') (Natural.add_commutative k m')
-    _ = ((n + m') + k) + l' := congrArg (. + l') (Natural.add_associative n m' k).symm
-    _ = ((n' + m) + k) + l' := congrArg (λ x => (x + k) + l') h1
-    _ = (n' + m) + (k + l') := Natural.add_associative (n' + m) k l'
-    _ = (n' + m) + (k' + l) := congrArg ((n' + m) + .) h2
-    _ = ((n' + m) + k') + l := (Natural.add_associative (n' + m) k' l).symm
-    _ = (n' + (m + k')) + l := congrArg (. + l) (Natural.add_associative n' m k')
-    _ = (n' + (k' + m)) + l := congrArg (λ x => (n' + x) + l) (Natural.add_commutative m k')
-    _ = ((n' + k') + m) + l := congrArg (. + l) (Natural.add_associative n' k' m).symm
-    _ = (n' + k') + (m + l) := Natural.add_associative (n' + k') m l
+    (n + k) + (m' + l') 
+      = (n + m') + (k + l') := by simp [Natural.add_associative, Natural.add_commutative, Natural.add_left_commutative]
+    _ = (n' + m) + (k + l') := congrArg (. + _) h₁
+    _ = (n' + m) + (k' + l) := congrArg (_ + .) h₂
+    _ = (n' + k') + (m + l) := by simp [Natural.add_associative, Natural.add_commutative, Natural.add_left_commutative]
 
 instance : Add Integer where add := add
+
+@[simp] theorem add_definition : add a b = a + b := rfl
 
 theorem add_commutative : ∀ (a b : ℤ), a + b = b + a := by
   apply Quotient.ind₂
@@ -104,10 +90,7 @@ theorem add_commutative : ∀ (a b : ℤ), a + b = b + a := by
   simp [Natural.add_commutative]
 
 theorem add_associative : ∀ (a b c : ℤ), (a + b) + c = a + (b + c) := by
-  intro a b c
-  -- TODO: ind₃
-  let i := Quotient.mk instanceSetoidIntegerEquivalent
-  suffices ∀ (a b c : ℕ × ℕ), add (add (i a) (i b)) (i c) = add (i a) (add (i b) (i c)) from Quotient.inductionOn₃ a b c this
+  apply Quotient.ind₃
   intro (n, m) (k, l) (o, p)
   apply Quotient.sound
   show ((n + k) + o) + (m + (l + p)) = (n + (k + o)) + ((m + l) + p)
@@ -192,6 +175,8 @@ def multiply : ℤ → ℤ → ℤ :=
   exact Natural.add_left_cancel h₄
   
 instance : Mul Integer where mul := multiply
+
+@[simp] theorem multiply_definition : multiply a b = a * b := rfl
   
 theorem multiply_commutative : ∀ (a b : ℤ), a * b = b * a := by
   apply Quotient.ind₂
@@ -308,12 +293,33 @@ instance : CommutativeRing Integer where
   left_distributive := left_distributive
   right_distributive := right_distributive
 
+theorem zero_add (a : ℤ) : 0 + a = a := by
+  rw [add_commutative, add_zero]
+
 theorem multiply_zero : ∀ (a : ℤ), a * 0 = 0 := by
   apply Quotient.ind
   intro (n, m)
   apply Quotient.sound
   show (n*0 + m*0) + 0 = 0 + (n*0 + m*0)
   simp [Natural.add_zero, Natural.multiply_zero]
+
+theorem zero_multiply (a : ℤ) : 0 * a = 0 := by
+  rw [multiply_commutative, multiply_zero]
+
+theorem one_multiply (a : ℤ) : 1 * a = a := by
+  rw [multiply_commutative, multiply_one]
+  
+theorem add_inverse_left (a : ℤ) : -a + a = 0 := by
+  rw [add_commutative, add_inverse]
+  
+theorem add_left_cancel {a b c : ℤ} (h : a + b = a + c) : b = c := by
+  have : -a + (a + b) = -a + (a + c) := by rw [h]
+  simp [← add_associative, add_inverse_left, zero_add] at this
+  exact this
+  
+theorem add_right_cancel {a b c : ℤ} (h : a + c = b + c) : a = b := by
+  rewrite [add_commutative a c, add_commutative b c] at h
+  exact add_left_cancel h
 
 @[simp]
 def subtract (a b : ℤ) : ℤ := a + (-b)
@@ -326,20 +332,20 @@ theorem subtract_definition (a b : ℤ) : a + (-b) = a - b := rfl
 theorem subtract_self (a : ℤ) : a - a = 0 := add_inverse a
 
 theorem negate_equal_of_add_equal_zero {a b : ℤ} (h : a + b = 0) : a = -b := by
-  rw [← add_zero a, ← add_inverse (b), ← add_associative, h, add_commutative, add_zero]
+  rw [← add_zero a, ← add_inverse (b), ← add_associative, h, zero_add]
     
 theorem subtract_equal_zero_of_equal {a b : ℤ} (h : a = b) : a - b = 0 := by
   rw [← h, subtract_self]
 
 theorem equal_of_subtract_equal_zero {a b : ℤ} (h : a - b = 0) : a = b := by
-  rw [← add_zero a, ← add_inverse b, add_commutative b, ← add_associative, subtract_definition, h, add_commutative, add_zero]
+  rw [← add_zero a, ← add_inverse b, add_commutative b, ← add_associative, subtract_definition, h, zero_add]
 
 -- Looked at proof in lean std which uses negate_equal_of_add_equal_zero. This was foreign to me.
 -- Observation is that conclusion is of the form we would like here, we need a' = a * b and b' = -a * b, and then the theorem will tell us -(a * b) = -a * b, which is our desired result. So we need to provide (-(a * b)) + (-a * b) = 0, which we can do.
 theorem negate_multiply_equal_negate_multiply (a b : ℤ) : -(a * b) = -a * b := by
   apply Eq.symm
   apply negate_equal_of_add_equal_zero
-  rw [← right_distributive, add_commutative, add_inverse, multiply_commutative, multiply_zero]
+  rw [← right_distributive, add_commutative, add_inverse, zero_multiply]
 
 theorem negate_multiply_equal_multiply_negate (a b : ℤ) : -(a * b) = a * -b := by
   rw [multiply_commutative, negate_multiply_equal_negate_multiply, multiply_commutative]
@@ -368,7 +374,7 @@ theorem equal_zero_of_multiply_equal_zero : ∀ {a b : ℤ}, a * b = 0 → a = 0
       y + 0 = y := Natural.add_zero _
       _ = z := h₃.symm
       _ = 0 + z := (Natural.zero_add _).symm }
-  cases Natural.less_than_trichotomous n m with
+  cases less_than_trichotomous n m with
   | inl h_less =>
     apply Or.inr
     apply Quotient.sound
@@ -412,11 +418,6 @@ theorem multiply_equal_zero_of_equal_zero : ∀ {a b : ℤ}, a = 0 ∨ b = 0 →
     _ = w*z + x*y := h_equivalent
     _ = 0 + (w*z + x*y) := (Natural.zero_add _).symm
   
-theorem Or.resolve_left {a b : Prop} (h : a ∨ b) (not_a : ¬a) : b :=
-  match h with
-  | Or.inl ha => absurd ha not_a
-  | Or.inr hb => hb
-
 -- Looked at hints, attempted a lifting proof and that's probably way overkill
 theorem multiply_left_cancel {a b c : ℤ} (h_equivalent :  a * b = a * c) (h_not_equal_zero : a ≠ 0) : b = c := by
   have := calc
@@ -436,6 +437,269 @@ theorem multiply_right_cancel {a b c : ℤ} (h_equivalent : a * c = b * c) (h_no
     _ = b * c := h_equivalent
     _ = c * b := multiply_commutative _ _
   exact multiply_left_cancel this h_not_equal_zero
+  
+-- TODO: Is it possible to remove this and decide a ≥ 0?
+-- 0 + ↑n = a
+-- (n, 0) ≈ (p, q)
+-- ∃ n, q + n = p
+-- q ≤ p
+--
+-- Yes, we can remove this concept entirely and jump straight to deciding a ≤ b by first proving that a ≤ b ↔ 0 ≤ b - a and then lowering 0 ≤ b - a to natural number less equal
+--
+-- We should keep this in and write about it
+/-
+def NonNegative : ℤ → Prop :=
+  let nonNegative' := λ ((n, m) : ℕ × ℕ) => n ≥ m
+  Quotient.lift nonNegative' <| by
+  intro (n, m) (k, l) (h : n + l = k + m)
+  apply propext
+  apply Iff.intro
+  . exact Natural.right_greater_equal_of_add_left_less_equal ((Natural.add_commutative _ _).trans h.symm)
+  . exact Natural.right_greater_equal_of_add_left_less_equal ((Natural.add_commutative _ _).trans h)
+-/
+  
+instance decideNonNegative (a : ℤ) : Decidable (NonNegative a) :=
+  Quotient.recOnSubsingleton a λ ((n, m) : ℕ × ℕ) => Natural.decideLessEqual m n
 
--- TODO: Need to either define HAdd ℤ ℕ, or look into casting. There's cons to both but I think casting might be the way
--- def lessThan (a b : ℤ) : Prop := ∃ (n : ℕ), a + (cast n) = b
+def ofNatural (n : ℕ) : ℤ := ⟦(n, 0)⟧
+
+instance : Coe Natural Integer := ⟨ofNatural⟩
+
+theorem ofNatural_add (n m : ℕ) : ofNatural (n + m) = ofNatural n + ofNatural m := rfl
+
+theorem ofNatural_multiply (n m : ℕ) : ofNatural (n * m) = ofNatural n * ofNatural m := by
+  unfold ofNatural
+  apply Quotient.sound
+  show (n * m) + (n * 0 + 0 * m) = (n * m + 0 * 0) + 0
+  simp [Natural.add_zero, Natural.zero_add, Natural.multiply_zero, Natural.zero_multiply]
+
+theorem ofNatural_injective : Function.Injective ofNatural := by
+  intro a b h
+  calc
+    a = a + 0 := (Natural.add_zero _).symm
+    _ = b + 0 := Quotient.exact h
+    _ = b := Natural.add_zero _
+
+theorem ofNatural_nonnegative : ∀ n : ℕ, NonNegative (ofNatural n) := 
+  Natural.zero_less_equal
+  
+theorem equal_ofNatural_of_nonnegative : ∀ {a : ℤ}, NonNegative a → ∃ n : ℕ, ↑n = a := by
+  apply Quotient.ind
+  intro (n, m) ⟨a, (ha : m + a = n)⟩
+  apply Exists.intro a
+  apply Quotient.sound
+  show a + m = n + 0
+  rw [Natural.add_commutative, Natural.add_zero, ha]
+
+def LessEqual (a b : ℤ) : Prop := ∃ (n : ℕ), a + ↑n = b
+
+instance : LE Integer where
+  le := LessEqual
+  
+@[simp] theorem less_equal_definition : (LessEqual a b) = (a ≤ b) := rfl 
+
+-- Curse you proof irrelevance!
+-- Next step needed in calc proof is `Nat.add_sub_assoc`, but that requires a proof that k ≤ m
+-- def positiveToNatural (a : ℤ) (h : a ≥ 0) : ℕ :=
+  -- let positiveToNatural' := λ ((n, m) : ℕ × ℕ) => n - m
+  -- Quotient.recOnSubsingleton a positiveToNatural' <| by
+  --Quotient.liftOn a positiveToNatural' <| by
+  --intro (n, m) (k, l) (h_equivalent : n + l = k + m)
+  --show n - m = k - l
+  --calc
+    --n - m = ((n + l) - l) - m := congrArg (. - _) (Natural.add_subtract_self_right _ _).symm
+    --_ = ((k + m) - l) - m := congrArg (λ x => (x - l) - m) h_equivalent
+    --_ = (k + (m - l)) - m := sorry
+    --_ = k - l := sorry
+
+theorem LessEqual.reflexive : Relation.Reflexive LessEqual :=
+  λ _ => Exists.intro 0 (add_zero _)
+
+theorem LessEqual.antisymmetric : Relation.AntiSymmetric LessEqual := by
+  intro a b ⟨n, hn⟩ ⟨m, hm⟩
+  have := calc
+    b + ↑(m + n) = b + (↑m + ↑n) := congrArg (_ + .) (ofNatural_add _ _)
+    _ = (b + ↑m) + ↑n := (add_associative _ _ _).symm
+    _ = a + ↑n := congrArg (. + _) hm
+    _ = b := hn
+    _ = b + 0 := (add_zero _).symm
+  have : m = 0 ∧ n = 0 := 
+    Natural.equal_zero_of_add_equal_zero (ofNatural_injective (add_left_cancel this))
+  calc
+    a = a + 0 := (add_zero _).symm
+    _ = a + ↑n := congrArg (λ x => a + ↑x) this.right.symm
+    _ = b := hn
+
+theorem LessEqual.transitive : Relation.Transitive LessEqual := by
+  intro a b c ⟨n, (h₁ : a + ↑n = b)⟩ ⟨m, (h₂ : b + ↑m = c)⟩
+  apply Exists.intro ↑(n + m)
+  calc
+    a + ↑(n + m) = a + (↑n + ↑m) := congrArg (_ + .) (ofNatural_add _ _)
+    _ = (a + ↑n) + ↑m := (add_associative _ _ _).symm
+    _ = b + ↑m := congrArg (. + _) h₁
+    _ = c := h₂
+  
+theorem greater_equal_zero_of_nonnegative : ∀ a : ℤ, NonNegative a → a ≥ 0 := by
+  apply Quotient.ind
+  intro (n, m) h_nonnegative
+  exact equal_ofNatural_of_nonnegative h_nonnegative
+  
+theorem nonnegative_of_greater_equal_zero : ∀ a : ℤ, a ≥ 0 → NonNegative a := by
+  apply Quotient.ind
+  intro (n, m) h_greater_equal
+  let ⟨a, (h_exists : 0 + ofNatural a = ⟦(n, m)⟧)⟩ := h_greater_equal
+  -- TODO: Need to give the full type hint (i.e without nice ⟦(n, m)⟧ syntax) for this to work, how to change?
+  have : ofNatural a = Quotient.mk instanceSetoidIntegerEquivalent (n, m) := ((zero_add _).symm.trans h_exists)
+  exact this ▸ ofNatural_nonnegative a
+
+theorem less_equal_of_subtract_greater_equal_zero {a b : ℤ} : b - a ≥ 0 → a ≤ b := by
+  intro ⟨n, (h : 0 + ↑n = b - a)⟩
+  apply Exists.intro n
+  calc
+    a + ↑n = ↑n + a := add_commutative _ _
+    _ = 0 + (↑n + a) := (zero_add _).symm
+    _ = (0 + ↑n) + a := (add_associative _ _ _).symm
+    _ = (b - a) + a := congrArg (. + _) h
+    _ = b + (-a + a) := add_associative _ _ _
+    _ = b + (a + -a) := congrArg (_ + .) (add_commutative _ _)
+    _ = b + 0 := congrArg (_ + .) (add_inverse _)
+    _ = b := add_zero _
+
+theorem subtract_greater_equal_zero_of_less_equal {a b : ℤ} : a ≤ b → b - a ≥ 0 := by
+  intro ⟨n, (h : a + ↑n = b)⟩
+  apply Exists.intro n
+  calc
+    0 + ↑n = (a + -a) + ↑n := congrArg (. + _) (add_inverse _).symm
+    _ = (-a + a) + ↑n := congrArg (. + _) (add_commutative _ _)
+    _ = -a + (a + ↑n) := add_associative _ _ _
+    _ = -a + b := congrArg (_ + .) h
+    _ = b - a := add_commutative _ _
+    
+instance decideLessEqual (a b : ℤ) : Decidable (a ≤ b) :=
+  if h : NonNegative (b - a) then 
+    isTrue ((less_equal_of_subtract_greater_equal_zero ∘ greater_equal_zero_of_nonnegative (b - a)) h)
+  else 
+    isFalse (mt (nonnegative_of_greater_equal_zero _ ∘ subtract_greater_equal_zero_of_less_equal) h)
+
+instance decideNonNegative' (a : ℤ) : Decidable (0 ≤ a) :=
+  have integer_nonnegative_of_positive_greater_equal_negative : ∀ {n m : ℕ}, n ≥ m → (0 : ℤ) ≤ ⟦(n, m)⟧ := by
+  { intro n m ⟨a, (ha : m + a = n)⟩
+    apply Exists.intro a
+    apply Quotient.sound
+    show (0 + a) + m = n + 0
+    simp [Natural.add_zero, Natural.add_commutative, ha] }
+  have positive_greater_equal_negative_of_integer_nonnegative : ∀ {n m : ℕ}, (0 : ℤ) ≤ ⟦(n, m)⟧ → n ≥ m := by
+  { intro n m ⟨a, (ha : (0 : ℤ) + ↑a = ⟦(n, m)⟧)⟩
+    have : (0 + a) + m = n + (0 + 0) := Quotient.exact ha
+    simp [Natural.zero_add, Natural.add_commutative] at this
+    exact (Exists.intro a this) }
+  Quotient.recOnSubsingleton a 
+  λ ((n, m) : ℕ × ℕ) =>
+  if h : n ≥ m then
+    isTrue (integer_nonnegative_of_positive_greater_equal_negative h)
+  else
+    isFalse (mt positive_greater_equal_negative_of_integer_nonnegative h)
+    
+instance decideLessEqual' (a b : ℤ) : Decidable (a ≤ b) :=
+  if h : 0 ≤ b - a then
+    isTrue (less_equal_of_subtract_greater_equal_zero h)
+  else
+    isFalse (mt subtract_greater_equal_zero_of_less_equal h)
+
+theorem LessEqual.strongly_connected : Relation.StronglyConnected LessEqual :=
+  have helper {n m k l : ℕ} : n + l ≤ k + m → LessEqual ⟦(n, m)⟧ ⟦(k, l)⟧ := by
+  { intro ⟨a, (ha : (n + l) + a = k + m)⟩
+    apply Exists.intro a
+    apply Quotient.sound
+    simp
+    show (n + a) + l = k + m
+    rw [Natural.add_right_commutative, ha]
+  }
+  Quotient.ind₂ λ (p, q) (s, t) =>
+  Or.implies helper helper (Natural.LessEqual.strongly_connected (p + t) (s + q))
+  
+instance instanceTotalOrder : TotalOrder Integer where
+  less_equal_reflexive := LessEqual.reflexive
+  less_equal_antisymmetric := LessEqual.antisymmetric
+  less_equal_transitive := LessEqual.transitive
+  less_equal_strongly_connected := LessEqual.strongly_connected
+  decidableEqual := decideEqual
+  decidableLessEqual := decideLessEqual
+
+def LessThan := instanceTotalOrder.less_than
+
+/-
+theorem less_than_of_subtract_positive {a b : ℤ} : 0 < b - a → a < b := by
+  intro h
+  have := less_than_equivalent_less_equal_not_less_equal.mp h
+  apply less_than_equivalent_less_equal_not_less_equal.mpr
+  apply And.intro
+  . exact less_equal_of_subtract_greater_equal_zero this.left
+  . intro g
+    sorry
+
+theorem subtract_positive_of_less_than {a b : ℤ} : a < b → 0 < b - a := by
+  intro ⟨h_less_equal, (h_not_equal : a ≠ b)⟩
+  apply And.intro
+  . exact subtract_nonnegative_of_less_equal h_less_equal
+  . intro h_equal
+    have := (equal_of_subtract_equal_zero h_equal.symm).symm
+    exact absurd this h_not_equal
+-/
+
+theorem add_left_less_equal (a b c : ℤ) (h : b ≤ c) : a + b ≤ a + c := by
+  let ⟨n, hn⟩ := h
+  apply Exists.intro n
+  calc
+    (a + b) + ↑n = a + (b + ↑n) := add_associative _ _ _
+    _ = a + c := congrArg (_ + .) hn
+
+theorem add_right_less_equal (a b c : ℤ) (h : a ≤ b) : a + c ≤ b + c := by
+  rw [add_commutative a c, add_commutative b c]
+  exact add_left_less_equal c a b h
+
+/-
+theorem add_left_less_than (a b c : ℤ) (h : b < c) : a + b < a + c := by
+  let ⟨h_less_equal, h_not_equal⟩ := h
+  apply And.intro
+  . exact add_left_less_equal a b c h_less_equal
+  . intro h_equal
+    exact absurd (add_left_cancel h_equal) h_not_equal
+
+theorem add_right_less_than (a b c : ℤ) (h : a < b) : a + c < b + c := by
+  rw [add_commutative a c, add_commutative b c]
+  exact add_left_less_than c a b h
+-/
+
+theorem multiply_less_equal_of_nonnegative_left {a b c : ℤ} (h_less_equal : b ≤ c) (h_positive : a ≥ 0) : a * b ≤ a * c := by
+  let ⟨n, hn⟩ := h_less_equal
+  let ⟨m, hm⟩ := h_positive
+  apply Exists.intro ↑(m * n)
+  calc
+    a * b + ↑(m * n) = a * b + (↑m * ↑n) := congrArg (_ + .) (ofNatural_multiply _ _)
+    _ = a * b + a * ↑n := congrArg (λ x => _ + x * _) ((zero_add _).symm.trans hm)
+    _ = a * (b + ↑n) := (left_distributive _ _ _).symm
+    _ = a * c := congrArg (_ * .) hn
+
+theorem multiply_less_equal_of_nonnegative_right {a b c : ℤ} (h_less_equal : a ≤ b) (h_positive : c ≥ 0) : a * c ≤ b * c := by
+  rw [multiply_commutative a c, multiply_commutative b c]
+  exact multiply_less_equal_of_nonnegative_left h_less_equal h_positive
+
+/-
+theorem multiply_less_than_of_positive_left (a b c : ℤ) : b < c → a > 0 → a * b < a * c := sorry
+
+theorem multiply_less_than_of_positive_right (a b c : ℤ) : a < b → c > 0 → a * c < b * c := sorry
+-/
+
+theorem negate_less_equal (a b : ℤ) (h_less_than : a ≤ b) : -b ≤ -a := by
+  have := subtract_greater_equal_zero_of_less_equal h_less_than
+  calc
+    -b = -b + 0 := (add_zero _).symm
+    _ ≤ -b + (b - a) := add_left_less_equal _ _ _ this
+    _ = (-b + b) - a := (add_associative _ _ _).symm
+    _ = 0 - a := congrArg (. - _) (add_inverse_left _)
+    _ = -a := zero_add _
+
+/-
+theorem negate_less_than (a b : ℤ) : a < b → -b < -a := sorry
+-/

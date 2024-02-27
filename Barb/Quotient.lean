@@ -78,6 +78,18 @@ def map (f : α → β) (h : ((· ≈ ·) ⇒ (· ≈ ·)) f f) : Quotient sa �
 def map₂ (f : α → β → γ) (h : ((· ≈ ·) ⇒ (· ≈ ·) ⇒ (· ≈ ·)) f f) :
     Quotient sa → Quotient sb → Quotient sc :=
   Quotient.lift₂ (λ x y => ⟦(f x y)⟧) (λ _ _ _ _ h₁ h₂ => Quot.sound <| h h₁ h₂)
+  
+@[elab_as_elim]
+def ind₃ {motive : Quotient sa → Quotient sb → Quotient sc → Prop}
+  (h : (a : α) → (b : β) → (c : γ) → motive ⟦a⟧ ⟦b⟧ ⟦c⟧)
+  (q₁ : Quotient sa)
+  (q₂ : Quotient sb)
+  (q₃ : Quotient sc)
+  : motive q₁ q₂ q₃ := by
+  induction q₁ using Quotient.ind
+  induction q₂ using Quotient.ind
+  induction q₃ using Quotient.ind
+  apply h
 
 instance lift.decidablePred (p : α → Prop) (h : ∀ a b, a ≈ b → p a = p b) [DecidablePred p] :
     DecidablePred (Quotient.lift p h) :=
