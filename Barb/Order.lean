@@ -67,6 +67,11 @@ theorem less_than_of_less_equal_of_less_than : ∀ {x y z : α}, x ≤ y → y <
 theorem less_equal_of_less_than_or_equal : ∀ {x y : α}, x < y ∨ x = y → x ≤ y
   | _, _, Or.inl h => less_equal_of_less_than h
   | _, _, Or.inr h => less_equal_of_equal h
+
+theorem not_less_equal_of_greater_than {x y : α} (h : x > y) : ¬x ≤ y :=
+  (less_equal_not_less_equal_of_less_than h).right
+  
+theorem not_less_than_of_greater_equal {x y : α} (h : x ≥ y) : ¬x < y := λ hxy => not_less_equal_of_greater_than hxy h
   
 theorem less_equal_of_equal_or_less_than : ∀ {x y : α}, x = y ∨ x < y → x ≤ y := less_equal_of_less_than_or_equal ∘ Or.commutative.mp
 
@@ -107,14 +112,15 @@ namespace Decidable
 
 variable [@DecidableRel α (· ≤ ·)]
 
-theorem less_than_or_equal_of_less_equal {a b : α} (hab : a ≤ b) : a < b ∨ a = b :=
-  if hba : b ≤ a 
-  then Or.inr (less_equal_antisymmetric hab hba) 
-  else Or.inl (less_than_of_less_equal_not_less_equal hab hba)
+theorem less_than_or_equal_of_less_equal {x y : α} (hxy : x ≤ y) : x < y ∨ x = y :=
+  if hyx : y ≤ x then 
+    Or.inr (less_equal_antisymmetric hxy hyx) 
+  else 
+    Or.inl (less_than_of_less_equal_not_less_equal hxy hyx)
 
-theorem equal_or_less_than_of_less_equal : ∀ {a b : α}, a ≤ b → a = b ∨ a < b := Or.commutative.mp ∘ less_than_or_equal_of_less_equal
+theorem equal_or_less_than_of_less_equal : ∀ {x y : α}, x ≤ y → x = y ∨ x < y := Or.commutative.mp ∘ less_than_or_equal_of_less_equal
 
-theorem less_equal_equivalent_less_than_or_equal : ∀ {a b : α}, a ≤ b ↔ a < b ∨ a = b := 
+theorem less_equal_equivalent_less_than_or_equal : ∀ {x y : α}, x ≤ y ↔ x < y ∨ x = y := 
   ⟨less_than_or_equal_of_less_equal, less_equal_of_less_than_or_equal⟩
 
 end Decidable

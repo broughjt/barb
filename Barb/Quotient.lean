@@ -40,6 +40,10 @@ def recOnSubsingleton₂ {φ : Quot r → Quot s → Sort w} [h : ∀ a b, Subsi
     (λ a => Quot.ind (β := λ b => Subsingleton (φ ⟦a⟧ b)) (h a) q₂) q₁
     (λ a => Quot.recOnSubsingleton q₂ (λ b => f a b))
 
+theorem lift_construct (f : α → β) (h : ∀ a b, r a b → f a = f b) (a : α) :
+    Quot.lift f h (Quot.mk r a) = f a :=
+  rfl
+
 instance lift.decidablePredicate (r : α → α → Prop) (p : α → Prop) (h : ∀ a b, r a b → p a = p b)
     [hp : DecidablePred p] :
     DecidablePred (Quot.lift p h) :=
@@ -90,6 +94,15 @@ def ind₃ {motive : Quotient sa → Quotient sb → Quotient sc → Prop}
   induction q₂ using Quotient.ind
   induction q₃ using Quotient.ind
   apply h
+  
+@[simp]
+theorem lift_construct (f : α → β) (h : ∀ a b : α, a ≈ b → f a = f b) (x : α) :
+    Quotient.lift f h (Quotient.mk sa x) = f x := 
+  rfl
+
+@[simp]
+theorem equivalent [r : Setoid α] {x y : α} : Quotient.mk r x = ⟦y⟧ ↔ x ≈ y :=
+  ⟨Quotient.exact, Quotient.sound⟩
 
 instance lift.decidablePred (p : α → Prop) (h : ∀ a b, a ≈ b → p a = p b) [DecidablePred p] :
     DecidablePred (Quotient.lift p h) :=
@@ -99,7 +112,7 @@ instance lift₂.decidablePred (p : α → β → Prop)
     (h : ∀ a₁ b₁ a₂ b₂, a₁ ≈ a₂ → b₁ ≈ b₂ → p a₁ b₁ = p a₂ b₂)
     [hf : ∀ a, DecidablePred (p a)]
     (q₁ : Quotient sa) : DecidablePred (Quotient.lift₂ p h q₁) :=
-  fun q₂ ↦ Quotient.recOnSubsingleton₂ q₁ q₂ hf
+  λ q₂ ↦ Quotient.recOnSubsingleton₂ q₁ q₂ hf
 
 instance (q : Quotient sa) (p : α → Prop) (h : ∀ a b, a ≈ b → p a = p b) [DecidablePred p] :
     Decidable (Quotient.liftOn q p h) :=
