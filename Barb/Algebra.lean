@@ -1,15 +1,20 @@
 import Barb.Syntax
 
 class CommutativeRing (α : Type u) extends Zero α, One α, Add α, Mul α, Neg α where
-  add_commutative : ∀ (a b : α), a + b = b + a
-  add_associative : ∀ (a b c : α), (a + b) + c = a + (b + c)
-  add_identity : ∀ (a : α), a + 0 = a
-  add_inverse : ∀ (a : α), a + (-a) = 0
+  add_associative : ∀ (x y z : α), (x + y) + z = x + (y + z)
+  add_commutative : ∀ (x y : α), x + y = y + x
+  add_identity : ∀ (x : α), x + 0 = x
+  add_inverse : ∀ (x : α), x + (-x) = 0
 
-  multiply_commutative : ∀ (a b : α), a * b = b * a
-  multiply_associative : ∀ (a b c : α), (a * b) * c = a * (b * c)
-  -- TODO: DO we need to make sure 1 \ne 0?
-  multiply_identity : ∀ (a : α), a * 1 = a
+  multiply_associative : ∀ (x y z : α), (x * y) * z = x * (y * z)
+  multiply_commutative : ∀ (x y : α), x * y = y * x
+  -- TODO: Do we need to make sure 1 \ne 0? Answer, yes, see Nontrivial class in mathlib
+  multiply_identity : ∀ (x : α), x * 1 = x
 
-  left_distributive : ∀ (a b c : α), a * (b + c) = a * b + a * c
-  right_distributive : ∀ (a b c : α), (a + b) * c = a * c + b * c
+  left_distributive : ∀ (x y z : α), x * (y + z) = x * y + x * z
+  right_distributive : ∀ (x y z : α), (x + y) * z = x * z + y * z
+
+class Field (α : Type u) extends CommutativeRing α where
+  -- TODO: Pull out into reciprocal operation class which takes a nonzero proof and has nice Inv-like syntax
+  reciprocal : (x : α) → x ≠ 0 → α
+  multiply_inverse : ∀ (x : α) (h : x ≠ 0), x * (reciprocal x h) = 1

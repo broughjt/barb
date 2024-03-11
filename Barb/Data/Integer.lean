@@ -1,10 +1,10 @@
 import Barb.Algebra
 import Barb.Data.Natural
+import Barb.Data.Option
 import Barb.Function
 import Barb.Logic
 import Barb.Quotient
 import Barb.Syntax
-import Init.Data.Option.Basic
 
 open Natural (zero successor)
 
@@ -659,6 +659,7 @@ abbrev NonZeroInteger := {a : ℤ // a ≠ 0}
 abbrev NegativeInteger := {a : ℤ // a < 0}
 abbrev NonPositiveInteger := {a : ℤ // a ≤ 0}
 
+-- TODO: Remove Natural substraction entirely in favor of the distance metric
 namespace NonNegativeInteger
 
 def predecessor : ℕ → ℕ
@@ -777,6 +778,14 @@ theorem add_subtract_of_less_equal {n m : ℕ} (h : n ≤ m) : n + (m - n) = m :
 @[simp] theorem subtract_add_cancel {n m : ℕ} (h : m ≤ n) : (n - m) + m = n := by
   rw [Natural.add_commutative, add_subtract_of_less_equal h]
 
+/-
+Worth talking about how we figured this all out and how it might be further 
+cleaned up. It's all a bit silly if you consider what this would all look like 
+without proof-irrelevance.
+
+https://github.com/Julian-Kuelshammer/summer_maths_it_camp/blob/main/src/easy_mode/sheet10.lean
+-/
+
 def preToNatural' : ℕ × ℕ → Option ℕ
   | (n, m) => if n ≥ m then some (n - m) else none
 
@@ -812,67 +821,23 @@ def toNatural' : ℤ → Option ℕ :=
 
 def toNatural : NonNegativeInteger → ℕ
   | (⟨a, a_nonnegative⟩) => 
-    let o := toNatural' a
-    have : Option.isSome o = true := by
-    { have ⟨n, hn⟩ := a_nonnegative
-      rw [zero_add, ofNatural] at hn
-      simp [toNatural']
-      rw [← hn, Quotient.lift_construct]
-      rw [preToNatural']
-      have : n ≥ 0 := Natural.zero_less_equal n
-      simp only [this, subtract_zero, ite_true, Option.isSome] }
-    match o with
-    | some n => n
+    Option.get (toNatural' a) <| by
+    have ⟨n, hn⟩ := a_nonnegative
+    rw [zero_add, ofNatural] at hn
+    rw [toNatural', ← hn, Quotient.lift_construct, preToNatural']
+    simp [Natural.zero_less_equal, subtract_zero, ite_true, Option.isSome]
     
 def fromNatural (n : ℕ) : NonNegativeInteger :=
   ⟨n, ofNatural_nonnegative n⟩
 
--- https://github.com/Julian-Kuelshammer/summer_maths_it_camp/blob/main/src/easy_mode/sheet10.lean
 theorem fromNatural_toNatural_left_inverse : Function.LeftInverse toNatural fromNatural := by
   intro n
   simp [fromNatural, ofNatural, toNatural, toNatural']
-  have := preToNatural_some (n, 0) (Natural.zero_less_equal n)
-  simp only [subtract_zero] at this
-  skip
 
 theorem toNatural_fromNatural_left_inverse : Function.LeftInverse fromNatural toNatural := by
-  unfold Function.LeftInverse
-  intro a
-  simp [toNatural, toNatural']
-
+  intro ⟨a, b, h⟩
+  rw [zero_add, ofNatural] at h
+  subst h
+  simp [toNatural, toNatural', fromNatural, ofNatural]
   
--- also prove bijections for each?
-
 end NonNegativeInteger
-
-/-
-This is all really confusing, want I want is a bijection between positive integers and natural numbers
-
-def positiveToNatural (a : ℤ) : ℕ
-
-positiveToNatural 
--/
-
-/-
-theorem equal_ofNatural_of_nonnegative : ∀ {a : ℤ}, a ≥ 0 → ∃ n : ℕ, ↑n = a := by
-  apply Quotient.ind
-  intro (n, m) ⟨a, (ha : m + a = n)⟩
-  apply Exists.intro a
-  apply Quotient.sound
-  show a + m = n + 0
-  rw [Natural.add_commutative, Natural.add_zero, ha]
--/
-
--- Curse you proof irrelevance!
--- Next step needed in calc proof is `Nat.add_sub_assoc`, but that requires a proof that k ≤ m
--- def positiveToNatural (a : ℤ) (h : a ≥ 0) : ℕ :=
-  -- let positiveToNatural' := λ ((n, m) : ℕ × ℕ) => n - m
-  -- Quotient.recOnSubsingleton a positiveToNatural' <| by
-  --Quotient.liftOn a positiveToNatural' <| by
-  --intro (n, m) (k, l) (h_equivalent : n + l = k + m)
-  --show n - m = k - l
-  --calc
-    --n - m = ((n + l) - l) - m := congrArg (. - _) (Natural.add_subtract_self_right _ _).symm
-    --_ = ((k + m) - l) - m := congrArg (λ x => (x - l) - m) h_equivalent
-    --_ = (k + (m - l)) - m := sorry
-    --_ = k - l := sorry
