@@ -278,4 +278,24 @@ instance field : Field Rational where
   reciprocal := reciprocal
   multiply_inverse := multiply_inverse
 
+theorem negate_zero : (0 : ℚ) = (-0 : ℚ) := rfl
+
+theorem negate_negate : Function.Involutive negate := by
+  apply Quotient.ind
+  intro (a, ⟨b, b_nonzero⟩)
+  apply Quotient.sound
+  show (- - a)*b = a * b
+  rw [← Integer.negate_definition, ← Integer.negate_definition, Integer.negate_negate]
+
+def subtract (x y : ℚ) : ℚ := x + (-y)
+
+instance : Sub Rational where sub := subtract
+
+@[simp]
+theorem subtract_definition (x y : ℚ) : x + (-y) = x - y := rfl
+
+def divide (x y : ℚ) (y_nonzero : y ≠ 0) : ℚ := x * (reciprocal y y_nonzero)
+
+
+
 end Rational
