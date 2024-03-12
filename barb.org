@@ -697,11 +697,45 @@ def predecessor : ℕ → ℕ
   | successor n => n
 
 def subtractTruncated : ℕ → ℕ → ℕ
-  | _, 0 => 0
+  | n, 0 => n
   | n, successor m => predecessor (subtractTruncated n m)
 
 instance : Sub Natural where
   sub := subtractTruncated
+#+end_src
+
+#+begin_src lean4
+theorem predecessor_zero : predecessor 0 = 0 := rfl
+
+theorem predecessor_successor (n : ℕ) : predecessor (successor n) = n := rfl
+  
+theorem subtract_zero (n : ℕ) : n - 0 = n := rfl
+
+theorem subtract_successor (n m : ℕ) : n - successor m = predecessor (n - m) := rfl
+
+theorem zero_subtract (n : ℕ) : 0 - n = 0 := by
+  induction n with
+  | zero => rfl
+  | successor _ ih => rw [subtract_successor, ih, predecessor_zero]
+  
+theorem successor_subtract_successor_equal_subtract (n m : ℕ) :
+  successor n - successor m = n - m := by
+  induction m with
+  | zero => rfl
+  | successor _ ih => exact congrArg predecessor ih
+
+theorem subtract_self (n : ℕ) : n - n = 0 := by
+  induction n with
+  | zero => rfl
+  | successor _ ih => rw [successor_subtract_successor_equal_subtract, ih]
+  
+theorem add_subtract_self_left (n m : ℕ) : (n + m) - n = m := by
+  induction n with
+  | zero => rfl
+  | successor _ ih => rw [successor_add, successor_subtract_successor_equal_subtract, ih]
+
+theorem add_subtract_self_right (n m : ℕ) : (n + m) - m = n := by
+  rw [add_commutative, add_subtract_self_left]
 #+end_src
 
 *** Positivity
@@ -989,6 +1023,11 @@ theorem successor_less_equal_successor {n m : ℕ} : n ≤ m → successor n ≤
     _                 = successor m := congrArg successor h_exists
 #+end_src
 
+Next we show that $n < m$ and $s(n) \le m$ are logically
+equivalent. The second proof is long and involved, and I would like to
+revisit it to see if I can make it more concise (preferably by finding
+a way to avoid the double induction).
+
 #+begin_src lean4
 theorem less_than_of_successor_less_equal {n m : ℕ} (h : successor n ≤ m) : n < m := by
   let ⟨x, (h₁ : (successor n) + x = m)⟩ := h
@@ -1162,12 +1201,6 @@ theorem less_equal_of_add_right_less_equal {n m k : ℕ} (h : n + k ≤ m + k) :
     _     = k + m := add_commutative m k
   exact less_equal_of_add_left_less_equal this
 #+end_src
-
-Next we show that $n < m$ and $s(n) \le m$ are logically
-equivalent. The second proof is long and involved, and I would like to
-revisit it to see if I can make it more concise (preferably by finding
-a way to avoid the double induction).
-
 
 The final statement of Proposition 2.2.12
 ([cite:@tao2022analysis p. 27]) says that $n < m$ and $n + a = m$ for
