@@ -17,6 +17,10 @@ def natToNatural : Nat → Natural
 instance : OfNat Natural n where
   ofNat := natToNatural n
 
+theorem zero_definition : 0 = zero := rfl
+
+theorem one_definition : 1 = successor zero := rfl
+
 notation "ℕ" => Natural
 
 theorem successor_not_equal_zero (n : ℕ) : successor n ≠ 0 :=
@@ -30,42 +34,6 @@ theorem successor_not_equal_self (n : ℕ) : successor n ≠ n :=
     (successor_not_equal_zero 0) 
     (λ _ ih => λ h => ih (successor_injective h))
     n
-
-def booleanEqual : ℕ → ℕ → Bool
-  | zero, zero => true
-  | successor _, zero => false
-  | zero, successor _ => false
-  | successor n, successor m => booleanEqual n m
-
-instance : BEq Natural where
-  beq := booleanEqual
-
-theorem equal_of_boolean_equal_true : {n m : ℕ} → (n == m) = true → n = m
-  | zero, zero, _ => rfl
-  | successor _, successor _, h => 
-    congrArg successor (equal_of_boolean_equal_true h)
-
-theorem not_equal_of_boolean_equal_false : {n m : ℕ} → (n == m) = false → n ≠ m
-  | zero, successor x, _ => (successor_not_equal_zero x).symm
-  | successor x, zero, _ => successor_not_equal_zero x
-  | successor _, successor _, h => 
-    mt successor_injective (not_equal_of_boolean_equal_false h)
-
-def decideEqual (n m : ℕ) : Decidable (n = m) :=
-  match h : booleanEqual n m with
-  | true => isTrue (equal_of_boolean_equal_true h)
-  | false => isFalse (not_equal_of_boolean_equal_false h)
-  
-instance : DecidableEq Natural := decideEqual
-
-theorem booleanEqual.reflexive (n : ℕ) : booleanEqual n n = true := by
-  induction n with 
-  | zero => rfl
-  | successor _ ih => exact ih
-  
-instance : LawfulBEq Natural where
-  eq_of_beq := equal_of_boolean_equal_true
-  rfl := booleanEqual.reflexive _
 
 def add : ℕ → ℕ → ℕ
   | zero, m => m
@@ -142,51 +110,74 @@ theorem add_left_cancel {n m k : ℕ} : n + m = n + k → m = k := by
 theorem add_right_cancel {n m k : ℕ} (h : n + k = m + k) : n = m := by
   rw [add_commutative n k, add_commutative m k] at h
   exact add_left_cancel h
+  
+@[simp]
+def distance : ℕ → ℕ → ℕ
+  | zero, zero => 0
+  | successor n, zero => successor n
+  | zero, successor m => successor m
+  | successor n, successor m => distance n m
+
+theorem equal_of_distance_equal_zero : ∀ {n m : ℕ}, distance n m = 0 → n = m
+  | zero, zero, _ => rfl
+  | successor n, successor m, h => by
+    unfold distance at h
+    exact congrArg successor (equal_of_distance_equal_zero h)
+    
+theorem distance_equal_zero_of_equal : ∀ {n m : ℕ}, n = m → distance n m = 0
+  | zero, zero, _ => rfl
+  | successor n, successor m, h => by
+    unfold distance
+    exact distance_equal_zero_of_equal (successor_injective h)
+
+theorem distance_self : ∀ (n : ℕ), distance n n = 0 := 
+  λ _ => distance_equal_zero_of_equal rfl
+
+theorem distance_zero_left : ∀ (n : ℕ), distance n 0 = n
+  | zero => rfl
+  | successor n => by unfold distance; rfl
+
+theorem distance_commutative : ∀ (n m : ℕ), distance n m = distance m n
+  | zero, zero => distance_zero_left _
+  | zero, successor _ => distance_zero_left (successor _)
+  | successor _, zero => distance_zero_left (successor _)
+  | successor _, successor _ => by
+    simp
+    apply distance_commutative
+
+theorem distance_zero_right (n : ℕ) : distance 0 n = n := by
+  rw [distance_commutative, distance_zero_left]
+
+theorem distance_add_add_right (n m k : ℕ) : distance (n + k) (m + k) = distance n m := by
+  induction k with
+  | zero => rw [← zero_definition, add_zero, add_zero]
+  | successor k ih =>
+    simp [add_successor]
+    exact ih
+    
+theorem distance_add_add_left (n m k : ℕ) : distance (n + m) (n + k) = distance m k := by
+  rw [add_commutative n m, add_commutative n k, distance_add_add_right]
 
 /-
-def predecessor : ℕ → ℕ
-  | 0 => 0
-  | successor n => n
+TODO: What is a good name for this theorem?
 
-def subtractTruncated : ℕ → ℕ → ℕ
-  | n, 0 => n
-  | n, successor m => predecessor (subtractTruncated n m)
+Intuition:
+Arrange two equal lines cut into two segments, name the segments n m k l respectively, and then arrange those segments individually along the vertical axis so that their starting points line up.
 
-instance : Sub Natural where
-  sub := subtractTruncated
+Since the sums are equal, the difference, or distance between, the first terms of each sum must be made up for exactly in the distance between the second terms the sums.
 
-theorem predecessor_zero : predecessor 0 = 0 := rfl
-
-theorem predecessor_successor (n : ℕ) : predecessor (successor n) = n := rfl
-  
-theorem subtract_zero (n : ℕ) : n - 0 = n := rfl
-
-theorem subtract_successor (n m : ℕ) : n - successor m = predecessor (n - m) := rfl
-
-theorem zero_subtract (n : ℕ) : 0 - n = 0 := by
-  induction n with
-  | zero => rfl
-  | successor _ ih => rw [subtract_successor, ih, predecessor_zero]
-  
-theorem successor_subtract_successor_equal_subtract (n m : ℕ) :
-  successor n - successor m = n - m := by
-  induction m with
-  | zero => rfl
-  | successor _ ih => exact congrArg predecessor ih
-
-theorem subtract_self (n : ℕ) : n - n = 0 := by
-  induction n with
-  | zero => rfl
-  | successor _ ih => rw [successor_subtract_successor_equal_subtract, ih]
-  
-theorem add_subtract_self_left (n m : ℕ) : (n + m) - n = m := by
-  induction n with
-  | zero => rfl
-  | successor _ ih => rw [successor_add, successor_subtract_successor_equal_subtract, ih]
-
-theorem add_subtract_self_right (n m : ℕ) : (n + m) - m = n := by
-  rw [add_commutative, add_subtract_self_left]
+Actual proof laid out visually is also complelling, adding m to both sides, substuting the line n + m for k + l, which are equal, and removing k from the start of both lines leaves the same distance between the two lines as before.
 -/
+theorem distance_equal_of_add_equal {n m k l : ℕ} (h : n + m = k + l) : distance n k = distance l m := by
+  calc
+    distance n k = distance (n + m) (k + m) := (distance_add_add_right n k m).symm
+    _ = distance (k + l) (k + m) := congrArg (λ x => distance x _) h
+    _ = distance l m := distance_add_add_left k l m
+
+instance decideEqual : DecidableEq Natural
+  | n, m => match h : distance n m with
+    | zero => isTrue (equal_of_distance_equal_zero h)
+    | successor a => isFalse (mt distance_equal_zero_of_equal (h ▸ successor_not_equal_zero a))
 
 theorem add_positive {n m : ℕ} : n ≠ 0 → (n + m) ≠ 0 :=
   match n with
@@ -208,6 +199,8 @@ theorem one_add (n : ℕ) : 1 + n = successor n := rfl
 
 theorem add_one (n : ℕ) : n + 1 = successor n := by
   rw [add_commutative n 1, one_add]
+  
+-- It really helps to visualize a line when thinking about these propositions and their proofs.
 
 def LessEqual (n m : ℕ) : Prop := ∃ (a : ℕ), n + a = m
 
@@ -409,16 +402,15 @@ theorem equal_add_positive_of_less_than {n m : ℕ} (h : n < m) :
       _                 = (successor n) + a := (successor_add _ _).symm
       _                 = m                 := ha
 
-theorem less_than_of_equal_add_positive {n m : ℕ} 
-  (h : ∃ (a : ℕ), a ≠ 0 ∧ n + a = m) : n < m :=
-  let ⟨a, (h_not_zero : a ≠ 0), (ha : n + a = m)⟩ := h
-  let ⟨b, (hb : successor b = a), _⟩ := (unique_predecessor_of_positive h_not_zero)
+theorem less_than_of_equal_add_positive {n m a : ℕ} : a ≠ 0 → n + a = m → n < m := by
+  intro a_not_zero ha
+  let ⟨b, (hb : successor b = a), _⟩ := (unique_predecessor_of_positive a_not_zero)
   have := calc
     successor n + b = successor (n + b) := successor_add _ _
     _ = n + successor b := (add_successor _ _ ).symm
     _ = n + a := congrArg (_ + .) hb
     _ = m := ha
-  less_than_of_successor_less_equal (Exists.intro b this)
+  exact less_than_of_successor_less_equal (Exists.intro b this)
 
 theorem left_greater_equal_of_add_right_less_equal {n m k l : ℕ} : n + m = k + l → m ≤ l → n ≥ k := by
   intro h_equal ⟨a, (ha : m + a = l)⟩
@@ -555,8 +547,6 @@ theorem multiply_right_commutative (n m k : ℕ) : (n * m) * k = (n * k) * m := 
 theorem multiply_left_less_than {m k : ℕ} (h_less_than : m < k) (n : ℕ) (hn_positive : n ≠ 0) : n * m < n * k := by
   let ⟨a, ⟨(ha_positive : a ≠ 0), (h_exists : m + a = k)⟩⟩ := equal_add_positive_of_less_than h_less_than
   apply less_than_of_equal_add_positive
-  apply Exists.intro (n * a)
-  apply And.intro
   . show n * a ≠ 0
     exact multiply_positive_of_and_positive (And.intro hn_positive ha_positive)
   . calc
@@ -592,7 +582,7 @@ theorem quotient_remainder {n q : ℕ} (q_positive : q ≠ 0) :
       0 = 0 * q := (zero_multiply q).symm
       _ = (0 * q) + 0 := (add_zero (0 * q)).symm
     . have h_exists : 0 + q = q := zero_add q
-      exact less_than_of_equal_add_positive (Exists.intro q (And.intro q_positive h_exists))
+      exact less_than_of_equal_add_positive q_positive h_exists
   | successor n ih =>
     let ⟨⟨m, r⟩, ⟨(h_exists : n = m * q + r), (h_less_than : r < q)⟩⟩ := ih
     show ∃ p, let ⟨m, r⟩ := p; successor n = m * q + r ∧ r < q
