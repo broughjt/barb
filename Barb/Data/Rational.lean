@@ -8,7 +8,7 @@ open Integer (NonZeroInteger)
 def RationalEquivalent : (ℤ × NonZeroInteger) → (ℤ × NonZeroInteger) → Prop
   | (a, ⟨b, _⟩), (a', ⟨b', _⟩) => a * b' = a' * b
 
-theorem RationalEquivalent.reflexive : Relation.Reflexive RationalEquivalent := 
+theorem RationalEquivalent.reflexive : Relation.Reflexive RationalEquivalent :=
   λ _ => rfl
 
 theorem RationalEquivalent.symmetric : Relation.Symmetric RationalEquivalent := by
@@ -42,19 +42,19 @@ theorem RationalEquivalent.is_equivalence : Equivalence RationalEquivalent :=
 
 instance instanceHasEquivRationalEquivalent : HasEquiv (Integer × NonZeroInteger) where
   Equiv := RationalEquivalent
-  
+
 instance instanceSetoidRationalEquivalent : Setoid (Integer × NonZeroInteger) where
   r := RationalEquivalent
   iseqv := RationalEquivalent.is_equivalence
 
 @[simp] def RationalEquivalent.definition : (x ≈ y) = RationalEquivalent x y := rfl
 
-instance decideRationalEquivalent (x y : ℤ × NonZeroInteger) : Decidable (x ≈ y) := 
+instance decideRationalEquivalent (x y : ℤ × NonZeroInteger) : Decidable (x ≈ y) :=
   let (a, ⟨b, _⟩) := x
   let (c, ⟨d, _⟩) := y
   Integer.decideEqual (a * d) (c * b)
 
-instance decideRationalEquivalentQuotientEqual : DecidableEq (Quotient instanceSetoidRationalEquivalent) := 
+instance decideRationalEquivalentQuotientEqual : DecidableEq (Quotient instanceSetoidRationalEquivalent) :=
   inferInstance
 
 def Rational := Quotient instanceSetoidRationalEquivalent
@@ -67,21 +67,19 @@ instance decideEqual : DecidableEq Rational := decideRationalEquivalentQuotientE
 
 instance : OfNat Rational n where
   ofNat := ⟦(Integer.ofNatural (Natural.natToNatural n), ⟨1, by decide⟩)⟧
-  
+
 instance zero : Rational := ⟦(0, ⟨1, by decide⟩)⟧
 
-@[simp]
 theorem zero_definition : (0 : ℚ) = Quotient.mk instanceSetoidRationalEquivalent (0, ⟨1, by decide⟩) := rfl
 
 instance one : Rational := ⟦(1, ⟨1, by decide⟩)⟧
 
-@[simp]
 theorem one_definition : (1 : ℚ) = Quotient.mk instanceSetoidRationalEquivalent (1, ⟨1, by decide⟩) := rfl
 
 def add : ℚ → ℚ → ℚ :=
-  let add' := λ 
-  ((a, ⟨b, b_nonzero⟩) : ℤ × NonZeroInteger) 
-  ((c, ⟨d, d_nonzero⟩) : ℤ × NonZeroInteger) => 
+  let add' := λ
+  ((a, ⟨b, b_nonzero⟩) : ℤ × NonZeroInteger)
+  ((c, ⟨d, d_nonzero⟩) : ℤ × NonZeroInteger) =>
   let bd_nonzero := Integer.multiply_not_equal_zero_of_not_equal_zero b_nonzero d_nonzero
   (a*d + c*b, ⟨b*d, bd_nonzero⟩)
   Quotient.map₂ add' <| by
@@ -96,8 +94,8 @@ instance : Add Rational where add := add
 
 def multiply : ℚ → ℚ → ℚ :=
   let multiply' := λ
-  ((a, ⟨b, b_nonzero⟩) : ℤ × NonZeroInteger) 
-  ((c, ⟨d, d_nonzero⟩) : ℤ × NonZeroInteger) => 
+  ((a, ⟨b, b_nonzero⟩) : ℤ × NonZeroInteger)
+  ((c, ⟨d, d_nonzero⟩) : ℤ × NonZeroInteger) =>
   let bd_nonzero := Integer.multiply_not_equal_zero_of_not_equal_zero b_nonzero d_nonzero
   (a*c, ⟨b*d, bd_nonzero⟩)
   Quotient.map₂ multiply' <| by
@@ -105,12 +103,12 @@ def multiply : ℚ → ℚ → ℚ :=
   intro (c, ⟨d, d_nonzero⟩) (c', ⟨d', d'_nonzero⟩) (hcd : c * d' = c' * d)
   show (a*c) * (b'*d') = (a'*c') * (b*d)
   calc
-    (a*c) * (b'*d') 
+    (a*c) * (b'*d')
       = (a*b') * (c*d') := by simp [Integer.multiply_associative, Integer.multiply_commutative, Integer.multiply_left_commutative]
     _ = (a'*b) * (c*d') := congrArg (. * _) hab
     _ = (a'*b) * (c'*d) := congrArg (_ * .) hcd
     _ = (a'*c') * (b*d) := by simp [Integer.multiply_associative, Integer.multiply_commutative, Integer.multiply_left_commutative]
-    
+
 instance : Mul Rational where mul := multiply
 
 @[simp] theorem multiply_definition : multiply x y = x * y := rfl
@@ -125,12 +123,12 @@ def negate : ℚ → ℚ :=
 instance : Neg Rational where neg := negate
 
 @[simp] theorem negate_definition : negate x = -x := rfl
-  
+
 abbrev NonZeroRational := {x : ℚ // x ≠ 0}
 
 def preReciprocal : ℤ × NonZeroInteger → Option ℚ
   | (a, ⟨b, _⟩) => if ha : a ≠ 0 then some ⟦(b, ⟨a, ha⟩)⟧ else none
-  
+
 @[simp]
 theorem preReciprocal_none (x : ℤ × NonZeroInteger) (h : x.1 = 0) : preReciprocal x = none := by
   simp [preReciprocal, h]
@@ -139,7 +137,7 @@ theorem preReciprocal_none (x : ℤ × NonZeroInteger) (h : x.1 = 0) : preRecipr
 theorem preReciprocal_some (x : ℤ × NonZeroInteger) (h : x.1 ≠ 0) :
     preReciprocal x = some ⟦(x.2.1, ⟨x.1, h⟩)⟧ := by
   simp [preReciprocal, h]
-  
+
 theorem numerator_nonzero_of_nonzero : ∀ {x : ℤ × NonZeroInteger}, ⟦x⟧ ≠ (0 : ℚ) → x.1 ≠ 0 := by
   intro (a, ⟨b, b_nonzero⟩) h
   have h' : Quotient.mk instanceSetoidRationalEquivalent (a, ⟨b, b_nonzero⟩) ≠ (0 : ℚ) := h
@@ -156,14 +154,14 @@ def reciprocal' : ℚ → Option ℚ :=
   cases Decidable.em (a = 0)
   <;> cases Decidable.em (b = 0)
   <;> simp_all [preReciprocal, preReciprocal_none, preReciprocal_some]
-  case inl.inr _ => 
+  case inl.inr _ =>
     rw [Integer.zero_multiply] at h
     have := Or.resolve_right (Integer.equal_zero_of_multiply_equal_zero h.symm) hb
     simp [this]
   case inr.inr ha =>
     suffices c ≠ 0 by
     { simp [this]
-      apply Quotient.sound 
+      apply Quotient.sound
       show b * c = d * a
       simp [h, Integer.multiply_commutative] }
     apply And.left
@@ -190,11 +188,11 @@ theorem add_associative : ∀ (x y z : ℚ), (x + y) + z = x + (y + z) := by
   suffices n_left = n_right ∧ d_left = d_right by simp [this.left, this.right]
   apply And.intro
   . simp [n_left, n_right]
-    rw [Integer.right_distributive, Integer.multiply_associative a d f, 
-    Integer.add_associative, Integer.multiply_right_commutative, ← Integer.multiply_associative e b d, 
+    rw [Integer.right_distributive, Integer.multiply_associative a d f,
+    Integer.add_associative, Integer.multiply_right_commutative, ← Integer.multiply_associative e b d,
     Integer.multiply_right_commutative e b d, ← Integer.right_distributive]
   . exact (Integer.multiply_associative _ _ _).symm
-  
+
 theorem add_commutative : ∀ (x y : ℚ), x + y = y + x := by
   apply Quotient.ind₂
   intro (a, ⟨b, _⟩) (c, ⟨d, _⟩)
@@ -202,20 +200,20 @@ theorem add_commutative : ∀ (x y : ℚ), x + y = y + x := by
   show (a*d + c*b)*(d*b) = (c*b + a*d)*(b*d)
   suffices (a*d + c*b) = (c*b + a*d) ∧ d*b = b*d by rw [this.left, this.right]
   apply And.intro (Integer.add_commutative _ _) (Integer.multiply_commutative _ _)
-  
-theorem add_identity : ∀ (x : ℚ), x + 0 = x := by
+
+theorem add_zero : ∀ (x : ℚ), x + 0 = x := by
   apply Quotient.ind
   intro (a, ⟨b, _⟩)
   apply Quotient.sound
   show (a*1 + 0*b)*b = a*(b*1)
   simp [Integer.multiply_one, Integer.zero_multiply, Integer.add_zero]
-  
+
 theorem add_inverse : ∀ (x : ℚ), x + (-x) = 0 := by
   apply Quotient.ind
   intro (a, ⟨b, _⟩)
   apply Quotient.sound
   show (a*b + (-a)*b) * 1 = 0 * (b*b)
-  rw [Integer.multiply_one, ← Integer.right_distributive, Integer.add_inverse, 
+  rw [Integer.multiply_one, ← Integer.right_distributive, Integer.add_inverse,
     Integer.zero_multiply, Integer.zero_multiply]
 
 theorem multiply_associative : ∀ (x y z : ℚ), (x * y) * z = x * (y * z) := by
@@ -224,15 +222,15 @@ theorem multiply_associative : ∀ (x y z : ℚ), (x * y) * z = x * (y * z) := b
   apply Quotient.sound
   show ((a*c)*e) * (b*(d*f)) = (a*(c*e)) * ((b*d)*f)
   simp [Integer.multiply_associative]
-  
+
 theorem multiply_commutative : ∀ (x y : ℚ), x * y = y * x := by
   apply Quotient.ind₂
   intro (a, ⟨b, _⟩) (c, ⟨d, _⟩)
   apply Quotient.sound
   show (a*c) * (d*b) = (c*a) * (b*d)
   simp [Integer.multiply_commutative]
-  
-theorem multiply_identity : ∀ (x : ℚ), x * 1 = x := by
+
+theorem multiply_one : ∀ (x : ℚ), x * 1 = x := by
   apply Quotient.ind
   intro (a, ⟨b, _⟩)
   apply Quotient.sound
@@ -245,7 +243,7 @@ theorem left_distributive : ∀ (x y z : ℚ), x * (y + z) = x * y + x * z := by
   apply Quotient.sound
   show (a*(c*f + e*d)) * ((b*d)*(b*f)) = ((a*c)*(b*f) + (a*e)*(b*d))*(b*(d*f))
   simp [Integer.multiply_associative, Integer.multiply_commutative, Integer.left_distributive, Integer.multiply_left_commutative]
-  
+
 theorem right_distributive : ∀ (x y z : ℚ), (x + y) * z = x * z + y * z := by
   intro x y z
   rw [multiply_commutative, left_distributive, multiply_commutative z x, multiply_commutative z y]
@@ -261,31 +259,22 @@ theorem multiply_inverse : ∀ (x : ℚ) (h : x ≠ 0), x * (reciprocal x h) = 1
   apply Quotient.sound
   show (a*b)*1 = 1*(b*a)
   simp [Integer.multiply_commutative]
-  
+
 instance field : Field Rational where
   add_associative := add_associative
   add_commutative := add_commutative
-  add_identity := add_identity
+  add_zero := add_zero
   add_inverse := add_inverse
 
   multiply_associative := multiply_associative
   multiply_commutative := multiply_commutative
-  multiply_identity := multiply_identity
+  multiply_one := multiply_one
 
   left_distributive := left_distributive
   right_distributive := right_distributive
-  
+
   reciprocal := reciprocal
   multiply_inverse := multiply_inverse
-
-theorem negate_zero : (0 : ℚ) = (-0 : ℚ) := rfl
-
-theorem negate_negate : Function.Involutive negate := by
-  apply Quotient.ind
-  intro (a, ⟨b, b_nonzero⟩)
-  apply Quotient.sound
-  show (- - a)*b = a * b
-  rw [← Integer.negate_definition, ← Integer.negate_definition, Integer.negate_negate]
 
 def subtract (x y : ℚ) : ℚ := x + (-y)
 
@@ -296,6 +285,212 @@ theorem subtract_definition (x y : ℚ) : x + (-y) = x - y := rfl
 
 def divide (x y : ℚ) (y_nonzero : y ≠ 0) : ℚ := x * (reciprocal y y_nonzero)
 
+theorem negate_negate : Function.Involutive negate := by
+  apply Quotient.ind
+  intro (a, ⟨b, b_nonzero⟩)
+  apply Quotient.sound
+  show (- - a)*b = a * b
+  rw [← Integer.negate_definition, ← Integer.negate_definition, Integer.negate_negate]
 
+-- TODO: Copy pasted from Integers, this is all general to rings I think
+-- Lesson (worth writing about): If you start building up a collection theorems which only appeal to a few lemmas you proved earlier, it's time to abstract because you are dealing with a more general structure of which your original type is an example
+
+theorem zero_add (a : ℚ) : 0 + a = a := by
+  rw [add_commutative, add_zero]
+
+theorem multiply_zero : ∀ (a : ℚ), a * 0 = 0 := by
+  apply Quotient.ind
+  intro (n, m)
+  apply Quotient.sound
+  show (n * 0) * 1 = 0 * (m * 1)
+  simp [Integer.multiply_zero, Integer.zero_multiply]
+
+theorem zero_multiply (a : ℚ) : 0 * a = 0 := by
+  rw [multiply_commutative, multiply_zero]
+
+theorem one_multiply (a : ℚ) : 1 * a = a := by
+  rw [multiply_commutative, multiply_one]
+
+theorem add_left_commutative (n m k : ℚ) : n + (m + k) = m + (n + k) := by
+  rw [← add_associative, add_commutative n m, add_associative]
+
+theorem add_right_commutative (n m k : ℚ) : (n + m) + k = (n + k) + m := by
+  rw [add_associative, add_commutative m k, ← add_associative]
+
+theorem add_inverse_left (a : ℚ) : -a + a = 0 := by
+  rw [add_commutative, add_inverse]
+
+theorem add_left_cancel {a b c : ℚ} (h : a + b = a + c) : b = c := by
+  have : -a + (a + b) = -a + (a + c) := by rw [h]
+  simp [← add_associative, add_inverse_left, zero_add] at this
+  exact this
+
+theorem add_right_cancel {a b c : ℚ} (h : a + c = b + c) : a = b := by
+  rewrite [add_commutative a c, add_commutative b c] at h
+  exact add_left_cancel h
+
+theorem negate_add_cancel_left (a b : ℚ) : -a + (a + b) = b := by
+  rw [← add_associative (-a) a b, add_inverse_left, zero_add]
+
+theorem negate_add_cancel_right (a b : ℚ) : (a + -b) + b = a := by
+  rw [add_associative, add_inverse_left, add_zero]
+
+theorem add_negate_cancel_left (a b : ℚ) : a + (-a + b) = b := by
+  rw [← add_associative, add_inverse, zero_add]
+
+theorem add_negate_cancel_right (a b : ℚ) : (a + b) + -b = a := by
+  rw [add_associative, add_inverse, add_zero]
+
+theorem negate_zero : (0 : ℚ) = (-0 : ℚ) := rfl
+
+theorem subtract_self (a : ℚ) : a - a = 0 := add_inverse a
+
+theorem subtract_zero (a : ℚ) : a - 0 = a := by
+  rw [← subtract_definition, ← negate_zero, add_zero]
+
+theorem zero_subtract (a : ℚ) : 0 - a = -a := by
+  rw [← subtract_definition, zero_add]
+
+theorem negate_equal_of_add_equal_zero {a b : ℚ} (h : a + b = 0) : a = -b := by
+  rw [← add_zero a, ← add_inverse (b), ← add_associative, h, zero_add]
+
+theorem subtract_equal_zero_of_equal {a b : ℚ} (h : a = b) : a - b = 0 := by
+  rw [← h, subtract_self]
+
+theorem equal_of_subtract_equal_zero {a b : ℚ} (h : a - b = 0) : a = b := by
+  rw [← add_zero a, ← add_inverse b, add_commutative b, ← add_associative, subtract_definition, h, zero_add]
+
+theorem negate_add (a b : ℚ) : -(a + b) = -a + -b := by
+  apply add_left_cancel (a := a + b)
+  rw [add_inverse, add_associative, ← add_associative b (-a) (-b), add_commutative b (-a),
+     ← add_associative a, ← add_associative, add_inverse, zero_add, add_inverse]
+
+theorem subtract_subtract (a b c : ℚ) : (a - b) - c = a - (b + c) := by
+  apply Eq.symm
+  rw [← subtract_definition, negate_add, ← add_associative, subtract_definition, subtract_definition]
+
+theorem negate_subtract {a b : ℚ} : -(a - b) = b - a := by
+  calc
+    -(a - b) = -(a + -b) := rfl
+    _ = -a + (- -b) := negate_add a (-b)
+    _ = -a + b := congrArg (_ + .) (negate_negate _)
+    _ = b + -a := add_commutative _ _
+    _ = b - a := subtract_definition _ _
+
+theorem subtract_subtract_self (a b : ℚ) : a - (a - b) = b := by
+  rw [← subtract_definition, negate_subtract, ← subtract_definition,
+    add_commutative (b) (-a), add_negate_cancel_left]
+
+-- Looked at proof in lean std which uses negate_equal_of_add_equal_zero. This was foreign to me.
+-- Observation is that conclusion is of the form we would like here, we need a' = a * b and b' = -a * b, and then the theorem will tell us -(a * b) = -a * b, which is our desired result. So we need to provide (-(a * b)) + (-a * b) = 0, which we can do.
+theorem negate_multiply_equal_negate_multiply (a b : ℚ) : -(a * b) = -a * b := by
+  apply Eq.symm
+  apply negate_equal_of_add_equal_zero
+  rw [← right_distributive, add_commutative, add_inverse, zero_multiply]
+
+theorem negate_multiply_equal_multiply_negate (a b : ℚ) : -(a * b) = a * -b := by
+  rw [multiply_commutative, negate_multiply_equal_negate_multiply, multiply_commutative]
+
+-- End copy pasted nonsense from integers, need to generalize to rings and fields
+
+-- Why does Tao elect to define less than before less equal?
+
+/-
+def LessEqual (x y : ℚ) : Prop :=
+  -- TODO: rename nonnegative
+  let positive'
+    | u => ∃ v : Integer.NonNegativeInteger × Integer.PositiveInteger, u ≈ (v.1.val, ⟨v.2.val, (not_equal_of_less_than v.2.property).symm⟩)
+  Quotient.liftOn (y - x) positive' <| by
+  intro a b (h : a ≈ b)
+  apply propext
+  apply Iff.intro
+  . simp
+    intro ⟨v, hv⟩
+    apply Exists.intro v (h.symmetric.transitive hv)
+  . simp
+    intro ⟨v, hv⟩
+    apply Exists.intro v (h.transitive hv)
+
+theorem LessEqual.reflexive : Relation.Reflexive LessEqual := by
+  unfold LessEqual
+  intro x
+  rw [subtract_self, zero_definition, Quotient.lift_construct_on]
+  exact Exists.intro (⟨0, by decide⟩, ⟨1, by decide⟩) rfl
+
+-- TODO: Don't try to simplify, work out on paper what the show statement needs to be and prove that
+theorem LessEqual.antisymmetric : Relation.AntiSymmetric LessEqual := by
+  unfold Relation.AntiSymmetric
+  unfold LessEqual
+  apply Quotient.ind₂
+  intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩
+  intro ⟨(⟨s, hs⟩, ⟨t, ht⟩), hst'⟩ ⟨(⟨u, hu⟩, ⟨v, hv⟩), huv'⟩
+  have hst : (c*b + -a*d)*t = s * (d*b) := hst'
+  have huv : (a*d + -c*b)*v = u*(b*d) := huv'
+  apply Quotient.sound
+  show a*d = c*b
+-/
+
+def LessThan (x y : ℚ) : Prop :=
+  let positive'
+    | (a, ⟨b, b_nonzero⟩) => ∃ v : Integer.PositiveInteger × Integer.PositiveInteger,
+      let (⟨c, _⟩, ⟨d, d_positive⟩) := v;
+      RationalEquivalent (a, ⟨b, b_nonzero⟩) (c, ⟨d, (not_equal_of_less_than d_positive).symm⟩)
+  Quotient.liftOn (y - x) positive' <| by
+  intro a b (h : a ≈ b)
+  apply propext
+  apply Iff.intro
+  . simp
+    intro ⟨v, hv⟩
+    apply Exists.intro v (h.symmetric.transitive hv)
+  . simp
+    intro ⟨v, hv⟩
+    apply Exists.intro v (h.transitive hv)
+
+instance : LT Rational where
+  lt := LessThan
+
+@[simp] theorem less_than_definition : (x < y) = (LessThan x y) := rfl
+
+theorem LessThan.irreflexive : Relation.Irreflexive LessThan := by
+  intro x
+  unfold LessThan
+  simp
+  rw [subtract_self, zero_definition, Quotient.lift_construct_on]
+  intro ⟨(⟨a, a_positive⟩, ⟨b, _⟩), (hv : 0 * b = a * 1)⟩
+  rw [Integer.zero_multiply, Integer.multiply_one] at hv
+  exact absurd hv (not_equal_of_less_than a_positive)
+
+/-
+theorem LessThan.Asymmetric : Relation.Asymmetric LessThan := by
+  -- Think about why this is true in the first place
+  -- It's because y - x > 0 and x - y > 0 can't both be true
+  apply Quotient.ind₂
+  intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩
+  unfold LessThan
+  simp
+  intro ⟨(⟨u, u_positive⟩, ⟨v, v_positive⟩), (huv : (c*b + -a*d)*v = u*(d*b))⟩
+  intro ⟨(⟨s, s_positive⟩, ⟨t, t_positive⟩), (hst : (a*d + -c*b)*t = s*(b*d))⟩
+  rw [Integer.multiply_commutative d b] at huv
+  match Decidable.em (0 < (b * d)) with
+  | Or.inl hbd => skip
+  | Or.inr hbd => skip
+  -/
+  /-
+  have db_nonzero : d * b ≠ 0 := Integer.multiply_not_equal_zero_of_not_equal_zero d_nonzero b_nonzero
+  have udb_nonzero : u * (d * b) ≠ 0 := Integer.multiply_not_equal_zero_of_not_equal_zero (not_equal_of_less_than u_positive).symm db_nonzero
+  have foo := huv.symm ▸ udb_nonzero
+  have ⟨bar, _⟩ := Integer.not_equal_zero_of_multiply_not_equal_zero foo
+  -/
+  -- (b*d) and (c*b + -a*d) and (a*d + -c * b) share signs, but x - y and y - x sharing signs means x = y, but c * b ≠ a * d
+  -- have foo : (c * b + -a * d) ≠ 0 ∧ v ≠ 0 :=
+  /-
+  -- have foo : ((c * b + -a * d) * v) - ((a * d + -c * b) * t) = u * (d * b) - s * (b * d) := by simp [huv, hst]
+  have huv' := huv
+  rw [Integer.right_distributive] at huv'
+  have huv'' : (c*b*v + -a*d*v) + a*d*v = u*(d*b) + a*d*v := congrArg (. + a*d*v) huv'
+  rw [Integer.add_associative, ← Integer.negate_multiply_equal_negate_multiply, ← Integer.negate_multiply_equal_negate_multiply, Integer.add_inverse_left, Integer.add_zero] at huv''
+  -/
+
+  -- rw [Integer.multiply_commutative d b, ← Integer.subtract_multiply, Integer.right_distributive _ _ v, Integer.right_distributive _ _ t, ← Integer.subtract_subtract, ← Integer.subtract_definition, ← Integer.subtract_definition, Integer.add_associative (c*b*v) _ _, Integer.add_right_commutative, ← Integer.negate_multiply_equal_negate_multiply, ← Integer.negate_multiply_equal_negate_multiply, ← Integer.negate_definition, ← Integer.negate_definition, Integer.negate_negate, ← Integer.left_distributive, ← Integer.negate_multiply_equal_negate_multiply, ← Integer.negate_multiply_equal_negate_multiply, ← Integer.negate_add, ← Integer.left_distributive, Integer.negate_multiply_equal_negate_multiply, ← Integer.right_distributive] at foo
 
 end Rational

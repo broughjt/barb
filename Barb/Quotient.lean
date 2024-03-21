@@ -101,6 +101,11 @@ theorem lift_construct (f : α → β) (h : ∀ a b : α, a ≈ b → f a = f b)
   rfl
 
 @[simp]
+theorem lift_construct_on (f : α → β) (h : ∀ a b : α, a ≈ b → f a = f b) (x : α) :
+    Quotient.liftOn (Quotient.mk sa x) f h = f x :=
+  rfl
+
+@[simp]
 theorem equivalent [r : Setoid α] {x y : α} : Quotient.mk r x = ⟦y⟧ ↔ x ≈ y :=
   ⟨Quotient.exact, Quotient.sound⟩
 
