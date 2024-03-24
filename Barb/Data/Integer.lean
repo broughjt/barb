@@ -294,12 +294,7 @@ theorem subtract_subtract (a b c : ℤ) : (a - b) - c = a - (b + c) := by
   rw [← subtract_definition, negate_add, ← add_associative, subtract_definition, subtract_definition]
 
 theorem negate_subtract {a b : ℤ} : -(a - b) = b - a := by
-  calc
-    -(a - b) = -(a + -b) := rfl
-    _ = -a + (- -b) := negate_add a (-b)
-    _ = -a + b := congrArg (_ + .) (negate_negate _)
-    _ = b + -a := add_commutative _ _
-    _ = b - a := subtract_definition _ _
+  rw [← subtract_definition, negate_add, negate_negate, add_commutative, subtract_definition]
 
 theorem subtract_subtract_self (a b : ℤ) : a - (a - b) = b := by
   rw [← subtract_definition, negate_subtract, ← subtract_definition,
@@ -383,13 +378,13 @@ theorem multiply_right_cancel {a b c : ℤ} (h : a * c = b * c) (c_nonzero : c �
   exact h
   exact c_nonzero
 
-theorem multiply_not_equal_zero_of_not_equal_zero {a b : ℤ} (ha : a ≠ 0) (hb : b ≠ 0) : a * b ≠ 0 := by
+theorem multiply_nonzero_of_nonzero {a b : ℤ} (ha : a ≠ 0) (hb : b ≠ 0) : a * b ≠ 0 := by
   intro h
   apply hb
   apply (Integer.multiply_left_cancel (a := a) . ha)
   rw [h, multiply_zero]
 
-theorem not_equal_zero_of_multiply_not_equal_zero {a b : ℤ} (h : a * b ≠ 0) : a ≠ 0 ∧ b ≠ 0 :=
+theorem nonzero_of_multiply_nonzero {a b : ℤ} (h : a * b ≠ 0) : a ≠ 0 ∧ b ≠ 0 :=
   not_or.mp (mt multiply_equal_zero_of_equal_zero h)
 
 def ofNatural (n : ℕ) : ℤ := Quotient.mk instanceSetoidIntegerEquivalent (n, 0)
@@ -479,12 +474,11 @@ theorem LessEqual.strongly_connected : Relation.StronglyConnected LessEqual :=
     apply Quotient.sound
     simp
     show (n + a) + l = k + m
-    rw [Natural.add_right_commutative, ha]
-  }
+    rw [Natural.add_right_commutative, ha] }
   Quotient.ind₂ λ (p, q) (s, t) =>
   Or.implies lift_less_equal lift_less_equal (Natural.LessEqual.strongly_connected (p + t) (s + q))
 
-instance instanceTotalOrder : TotalOrder Integer where
+instance totalOrder : TotalOrder Integer where
   less_equal_reflexive := LessEqual.reflexive
   less_equal_antisymmetric := LessEqual.antisymmetric
   less_equal_transitive := LessEqual.transitive
@@ -494,6 +488,16 @@ instance instanceTotalOrder : TotalOrder Integer where
 
 theorem ofNatural_nonnegative (n : ℕ) : ↑n ≥ (0 : ℤ) :=
   Exists.intro n (zero_add n)
+  
+theorem ofNatural_successor_positive (n : ℕ) : ↑(successor n) > (0 : ℤ) := by
+  match Decidable.equal_or_less_than_of_less_equal (ofNatural_nonnegative (successor n)) with
+  | Or.inl h =>
+    have : 0 + 0 = successor n + 0 := Quotient.exact h
+    simp [add_zero] at this
+    have bar := (Natural.successor_not_equal_zero n)
+    exact absurd this.symm bar
+  | Or.inr h =>
+    exact h
 
 theorem equal_ofNatural_of_nonnegative : ∀ {a : ℤ}, a ≥ 0 → ∃ n : ℕ, ↑n = a := by
   apply Quotient.ind
@@ -573,10 +577,20 @@ theorem add_left_less_equal {b c : ℤ} (h : b ≤ c) (a : ℤ) : a + b ≤ a + 
   let ⟨n, hn⟩ := h
   apply Exists.intro n
   rw [add_associative, hn]
-
+  
 theorem add_right_less_equal {a b : ℤ} (h : a ≤ b) (c : ℤ) : a + c ≤ b + c := by
   rw [add_commutative a c, add_commutative b c]
   exact add_left_less_equal h c
+
+theorem less_equal_of_subtract_nonpositive {a b : ℤ} (h : a - b ≤ 0) : a ≤ b := by
+  have := add_right_less_equal h b
+  rw [zero_add, ← subtract_definition, negate_add_cancel_right] at this
+  exact this
+
+theorem subtract_nonpositive_of_less_equal {a b : ℤ} (h : a ≤ b) : a - b ≤ 0 := by
+  have := add_right_less_equal h (-b)
+  rw [add_inverse] at this
+  exact this
 
 theorem less_equal_of_add_less_equal_left {a b c : ℤ} (h : a + b ≤ a + c) : b ≤ c := by
   have := add_left_less_equal h (-a)
@@ -632,7 +646,7 @@ theorem multiply_less_equal_of_nonnegative_right {a b c : ℤ} (h : a ≤ b) (c_
 
 -- Tricky: We only require that c is nonnegatie, a is totally cool to be negative because that will make a*b negative which preserves order
 theorem multiply_less_equal_multiply {a b c d : ℤ} (hac : a ≤ c) (hbd : b ≤ d) (b_nonnegative : 0 ≤ b) (c_nonnegative : 0 ≤ c) : a * b ≤ c * d :=
-  LessEqual.transitive
+  less_equal_transitive
   (multiply_less_equal_of_nonnegative_right hac b_nonnegative)
   (multiply_less_equal_of_nonnegative_left hbd c_nonnegative)
 
@@ -654,8 +668,8 @@ theorem multiply_less_equal_multiply_of_nonpositive_right {a b c : ℤ}
     (h : b ≤ a) (c_nonpositive : c ≤ 0) : a * c ≤ b * c := by
   rw [multiply_commutative a c, multiply_commutative b c]
   exact multiply_less_equal_multiply_of_nonpositive_left h c_nonpositive
-
-def LessThan := instanceTotalOrder.less_than
+  
+def LessThan := totalOrder.less_than
 
 theorem less_than_of_subtract_positive {a b : ℤ} : 0 < b - a → a < b := by
   intro h
@@ -674,14 +688,30 @@ theorem subtract_positive_of_less_than {a b : ℤ} : a < b → 0 < b - a := by
   apply less_than_of_less_equal_not_less_equal
   . exact subtract_nonnegative_of_less_equal hp
   . intro h'
-    have := calc
-      b = b + 0 := (add_zero _).symm
-      _ = b + (a - a) := congrArg (_ + .) (subtract_self a).symm
-      _ = b + (-a + a) := congrArg (_ + .) (add_commutative _ _)
-      _ = (b + -a) + a := (add_associative _ _ _).symm
-      _ ≤ 0 + a := add_right_less_equal h' a
-      _ = a := zero_add _
+    have := add_right_less_equal h' a
+    rw [← subtract_definition, negate_add_cancel_right, zero_add] at this
     exact absurd this hn
+    
+theorem equal_add_positive_of_less_than {a b : ℤ} (h : a < b) :
+    ∃ (n : ℕ), n ≠ 0 ∧ a + ↑n = b := by
+  let ⟨n, hab⟩ := less_equal_of_less_than h
+  have n_nonzero : n ≠ 0 := by
+  { intro  hn
+    rw [hn, ofNatural_zero, add_zero] at hab
+    exact absurd hab (not_equal_of_less_than h) }
+  apply Exists.intro n (And.intro n_nonzero hab)
+
+theorem less_than_of_equal_add_positive {a b : ℤ} {n : ℕ} : n ≠ 0 → a + ↑n = b → a < b := by
+  intro n_nonzero hab
+  apply less_than_of_less_equal_of_not_equal
+  . exact Exists.intro n hab
+  . intro hab'
+    have := congrArg (-b + .) (hab' ▸ hab)
+    simp [negate_add_cancel_left, add_inverse_left] at this
+    exact absurd (ofNatural_injective this) n_nonzero
+    
+theorem equal_ofNatural_positive_of_positive {a : ℤ} (h : a > 0) : ∃ n : ℕ, n ≠ 0 ∧ ↑n = a := 
+  equal_add_positive_of_less_than h
 
 theorem add_left_less_than {b c : ℤ} (h : b < c) (a : ℤ) : a + b < a + c := by
   let ⟨h_less_equal, h_not_greater_equal⟩ := h
@@ -695,50 +725,142 @@ theorem add_right_less_than {a b : ℤ} (h : a < b) (c : ℤ) : a + c < b + c :=
   rw [add_commutative a c, add_commutative b c]
   exact add_left_less_than h c
 
-theorem negate_less_than (a b : ℤ) (h : a < b) : -b < -a := by
+theorem less_than_of_subtract_negative {a b : ℤ} (h : a - b < 0) : a < b := by
+  have := add_right_less_than h b
+  rw [zero_add, ← subtract_definition, negate_add_cancel_right] at this
+  exact this
+
+theorem subtract_negative_of_less_than {a b : ℤ} (h : a < b) : a - b < 0 := by
+  have := add_right_less_than h (-b)
+  rw [add_inverse] at this
+  exact this
+  
+theorem less_than_of_add_less_than_left {a b c : ℤ} (h : a + b < a + c) : b < c := by
+  have := add_left_less_than h (-a)
+  simp [negate_add_cancel_left] at this
+  exact this
+
+theorem less_than_of_add_less_than_right {a b c : ℤ} (h : a + c < b + c) : a < b := by
+  rw [add_commutative a c, add_commutative b c] at h
+  exact less_than_of_add_less_than_left h
+
+theorem add_less_than_add {a b c d : ℤ} (hac : a < c) (hbd : b < d) : a + b < c + d :=
+  less_than_transitive (add_right_less_than hac b) (add_left_less_than hbd c)
+
+theorem less_than_add_of_nonnegative_left {a b : ℤ} (h : 0 < b) : a < b + a := by
+  have := add_right_less_than h a
+  rw [zero_add] at this
+  exact this
+
+theorem less_than_add_of_nonnegative_right {a b : ℤ} (h : 0 < b) : a < a + b := by
+  rw [add_commutative a b]
+  exact less_than_add_of_nonnegative_left h
+
+theorem negate_less_than_negate {a b : ℤ} (h : a < b) : -b < -a := by
   have ha := add_left_less_than h (-b)
   rw [add_inverse_left] at ha
   have hb := add_right_less_than ha (-a)
   rw [zero_add, add_associative, add_inverse, add_zero] at hb
   exact hb
 
-/-
-theorem equal_add_positive_of_less_than {a b : ℤ} (h : a < b) :
-    ∃ (n : ℕ), n ≠ 0 ∧ a + ↑n = b := by
-  sorry
+theorem less_than_of_negate_less_than_negate {a b : ℤ} (h : -b < -a) : a < b :=
+  suffices - -a < - - b by simp at this; exact this
+  negate_less_than_negate h
 
-theorem less_than_of_equal_add_positive {a b n : ℤ} : n ≠ 0 → a + ↑n = b → a < b := by
-  sorry
+theorem negate_negative_of_positive {a : ℤ} (h : 0 < a) : -a < 0 :=
+  negate_less_than_negate h
+  
+theorem multiply_positive {a b : ℤ} (ha : 0 < a) (hb : 0 < b) : 0 < a * b := by
+  let ⟨n, hn, ha⟩ := equal_ofNatural_positive_of_positive ha
+  let ⟨m, hm, hb⟩ := equal_ofNatural_positive_of_positive hb
+  -- TODO: Need to make a nonzero theorem, also rename integer one to nonzero
+  apply less_than_of_equal_add_positive 
+  . exact (Natural.multiply_positive_of_positive hn hm)
+  . rw [zero_add, ofNatural_multiply, ha, hb]
 
-theorem positive_of_positive_multiply {a b : ℤ} : 0 < a * b → (0 < a ∧ 0 < b) ∨ (a < 0 ∧ b < 0) := by
-  sorry
--/
+theorem multiply_less_than_of_positive_left {a b c : ℤ} (h : b < c) (a_positive : 0 < a) : a * b < a * c := by
+  let ⟨n, hn, hbc⟩ := equal_add_positive_of_less_than h
+  let ⟨m, hm, ha⟩ := equal_ofNatural_positive_of_positive a_positive
+  apply less_than_of_equal_add_positive
+  . exact Natural.multiply_positive_of_positive hn hm
+  . rw [ofNatural_multiply, ha, multiply_commutative _ a, ← left_distributive]
+    exact congrArg (a * .) hbc
 
--- theorem less_equal_multiply_cancel_of_positive {a b c : ℤ} (h : a * b ≤ a * c) (a_positive : a > 0) : b ≤ c := by
---   let ⟨n, hn⟩ := subtract_nonnegative_of_less_equal h
---   rw [zero_add] at hn
---   match n with
---   | zero =>
---     have a_not_zero := (not_equal_of_less_than a_positive).symm
---     have : ofNatural 0 + a * b = (a * c - a * b) + a * b := congrArg (. + a * b) hn
---     rw [ofNatural_zero, zero_add, ← subtract_definition, add_associative, add_inverse_left, add_zero] at this
---     exact less_equal_of_equal (multiply_left_cancel this a_not_zero)
---   | successor n =>
+theorem multiply_less_than_of_positive_right {a b c : ℤ} (h : a < b) (c_nonnegative : 0 < c) : a * c < b * c := by
+  rw [multiply_commutative a c, multiply_commutative b c]
+  exact multiply_less_than_of_positive_left h c_nonnegative
 
-  -- rw [zero_add, ← subtract_definition, negate_multiply_equal_multiply_negate, ← left_distributive, ] at hn
-  -- apply less_equal_of_subtract_nonnegative
-  -- apply Exists.intro n
-  -- rw [zero_add, hn]
+theorem multiply_less_than_multiply {a b c d : ℤ} (hac : a < c) (hbd : b < d) (b_positive : 0 < b) (c_positive : 0 < c) : a * b < c * d :=
+  less_than_transitive
+  (multiply_less_than_of_positive_right hac b_positive)
+  (multiply_less_than_of_positive_left hbd c_positive)
 
+theorem multiply_negative_of_positive_of_negative {a b : ℤ} (ha : 0 < a) (hb : b < 0) : a * b < 0 := by
+  rw [← multiply_zero a]
+  exact multiply_less_than_of_positive_left hb ha
 
-/-
-theorem multiply_less_than_of_positive_left (a b c : ℤ) : b < c → a > 0 → a * b < a * c := by
-  intro h_less_than h_positive
-  have ⟨h_less_equal, h_not_less_equal⟩ := less_equal_not_less_equal_of_less_than h_less_than
-  have ⟨h_nonnegative, h_not_negative⟩ := less_equal_not_less_equal_of_less_than h_positive
-  apply less_than_of_less_equal_not_less_equal
-  . exact multiply_less_equal_of_nonnegative_left h_less_equal h_nonnegative
-  . sorry
+theorem multiply_negative_of_negative_of_positive {a b : ℤ} (ha : a < 0) (hb : 0 < b) : a * b < 0 := by
+  rw [← zero_multiply b]
+  exact multiply_less_than_of_positive_right ha hb
 
-theorem multiply_less_than_of_positive_right (a b c : ℤ) : a < b → c > 0 → a * c < b * c := sorry
--/
+theorem multiply_less_than_multiply_of_negative_left {a b c : ℤ}
+    (h : c < b) (a_negative : a < 0): a * b < a * c := by
+  have := multiply_less_than_of_positive_left h (negate_less_than_negate a_negative)
+  rw [← negate_multiply_equal_negate_multiply, ← negate_multiply_equal_negate_multiply] at this
+  exact less_than_of_negate_less_than_negate this
+
+theorem multiply_less_than_multiply_of_negative_right {a b c : ℤ}
+    (h : b < a) (c_negative : c < 0) : a * c < b * c := by
+  rw [multiply_commutative a c, multiply_commutative b c]
+  exact multiply_less_than_multiply_of_negative_left h c_negative
+  
+-- TODO: The names are wrong, prove positive_left_* version, so switch
+theorem positive_right_of_multiply_positive_of_positive_left {a b : ℤ} (h : 0 < a * b) (ha : 0 < a) : 0 < b := by
+  match less_than_trichotomous 0 b with
+  | Or.inl h_less => exact h_less
+  | Or.inr (Or.inl h_equal) =>
+    rw [← h_equal, multiply_zero] at h
+    exact absurd h (less_than_irreflexive 0)
+  | Or.inr (Or.inr h_greater) =>
+    have := multiply_negative_of_positive_of_negative ha h_greater
+    exact absurd (less_than_transitive this h) (less_than_irreflexive (a * b))
+    
+theorem positive_left_of_multiply_positive_of_positive_right {a b : ℤ} (h : 0 < a * b) (hb : 0 < b) : 0 < a := by
+  rw [multiply_commutative] at h
+  exact positive_right_of_multiply_positive_of_positive_left h hb
+  
+theorem negative_left_of_multiply_negative_of_positive_right {a b : ℤ} (h : a * b < 0) (hb : 0 < b) : a < 0 := by
+  match less_than_trichotomous 0 a with
+  | Or.inl a_positive =>
+    have := multiply_positive a_positive hb
+    exact absurd (less_than_transitive this h) (less_than_irreflexive 0)
+  | Or.inr (Or.inl a_zero) =>
+    rw [← a_zero, Integer.zero_multiply] at h
+    exact absurd h (less_than_irreflexive 0)
+  | Or.inr (Or.inr a_negative) => exact a_negative
+  
+theorem negative_right_of_multiply_negative_of_positive_left {a b : ℤ} (h : a * b < 0) (ha : 0 < a) : b < 0 := by
+  rw [multiply_commutative] at h
+  exact negative_left_of_multiply_negative_of_positive_right h ha
+
+theorem less_than_multiply_cancel_left_of_positive {a b c : ℤ} (h : a * b < a * c) (a_positive : 0 < a) : b < c := by
+  -- If we subtract a*b from both sides and distribute (undistribute?), we have a * (c - b). We proved earlier (specifically because I realized that I needed it to prove this one), that if we have a * b > 0 and a > 0, then b > 0. Applying this gives c - b > 0, and then we apply the theorem which gives b < c.
+  -- This was a good example of having no clue what to do, I tried to appeal to the existence of the natural number and even do induction on it, but I needed to develop the simpler theorem about sharing signs first and then apply it here.
+  have := add_right_less_than h (-(a*b))
+  rw [add_inverse, negate_multiply_equal_multiply_negate, ← left_distributive] at this
+  exact less_than_of_subtract_positive (positive_right_of_multiply_positive_of_positive_left this a_positive)
+  
+theorem less_than_multiply_cancel_right_of_positive {a b c : ℤ} (h : a * c < b * c) (c_positive : 0 < c) : a < b := by
+  rw [multiply_commutative a c, multiply_commutative b c] at h
+  exact less_than_multiply_cancel_left_of_positive h c_positive
+  
+theorem less_equal_multiply_cancel_left_of_positive {a b c : ℤ} (h : a * b ≤ a * c) (a_positive : 0 < a) : b ≤ c :=
+  match Decidable.less_than_or_equal_of_less_equal h with
+  | Or.inl h_less => less_equal_of_less_than <|
+    less_than_multiply_cancel_left_of_positive h_less a_positive
+  | Or.inr h_equal => less_equal_of_equal <|
+    multiply_left_cancel h_equal (not_equal_of_less_than a_positive).symm
+
+theorem less_equal_multiply_cancel_right_of_positive {a b c : ℤ} (h : a * c ≤ b * c) (c_positive : 0 < c) : a ≤ b := by
+  rw [multiply_commutative a c, multiply_commutative b c] at h
+  exact less_equal_multiply_cancel_left_of_positive h c_positive

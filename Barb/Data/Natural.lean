@@ -343,7 +343,7 @@ theorem not_less_than_zero (n : ℕ) : ¬(n < 0) :=
 theorem zero_less_than_positive {n : ℕ} : n ≠ 0 → 0 < n :=
   Or.resolve_left (equal_zero_or_positive n)
   
-theorem not_equal_zero_of_less_than {n m : ℕ} (h : n < m) : m ≠ 0 :=
+theorem nonzero_of_less_than {n m : ℕ} (h : n < m) : m ≠ 0 :=
   match m with
   | zero => absurd h (not_less_than_zero _)
   | successor _ => successor_not_equal_zero _
@@ -496,12 +496,12 @@ theorem multiply_equal_zero_of_equal_zero {n m : ℕ} : n = 0 ∨ m = 0 → n * 
     n * m = n * 0 := congrArg (n * .) m_equal_zero
     _     = 0     := multiply_zero n
 
-theorem and_positive_of_multiply_positive {n m : ℕ} (h : n * m ≠ 0) : n ≠ 0 ∧ m ≠ 0 :=
+theorem positive_of_multiply_positive {n m : ℕ} (h : n * m ≠ 0) : n ≠ 0 ∧ m ≠ 0 :=
   have : ¬(n = 0 ∨ m = 0) := mt multiply_equal_zero_of_equal_zero h
   not_or.mp this
 
-theorem multiply_positive_of_and_positive {n m : ℕ} (h : n ≠ 0 ∧ m ≠ 0) : n * m ≠ 0 :=
-  have : ¬(n = 0 ∨ m = 0) := not_or.mpr h
+theorem multiply_positive_of_positive {n m : ℕ} (hn : n ≠ 0) (hm : m ≠ 0) : n * m ≠ 0 :=
+  have : ¬(n = 0 ∨ m = 0) := not_or.mpr (And.intro hn hm)
   mt equal_zero_of_multiply_equal_zero this
 
 theorem left_distributive (n m k : ℕ) : n * (m + k) = n * m + n * k := by
@@ -548,7 +548,7 @@ theorem multiply_left_less_than {m k : ℕ} (h_less_than : m < k) (n : ℕ) (hn_
   let ⟨a, ⟨(ha_positive : a ≠ 0), (h_exists : m + a = k)⟩⟩ := equal_add_positive_of_less_than h_less_than
   apply less_than_of_equal_add_positive
   . show n * a ≠ 0
-    exact multiply_positive_of_and_positive (And.intro hn_positive ha_positive)
+    exact multiply_positive_of_positive hn_positive ha_positive
   . calc
     n * m + n * a = n * (m + a) := (left_distributive n m a).symm
     _             = n * k       := congrArg (n * .) h_exists

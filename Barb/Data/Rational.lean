@@ -34,7 +34,7 @@ theorem RationalEquivalent.transitive : Relation.Transitive RationalEquivalent :
       _ = (e * d) * (a * d) := congrArg (. * _) h_cd_ef
       _ = (e * d) * (c * b) := congrArg (_ * .) h_ab_cd
       _ = (c * d) * (e * b) := by simp [Integer.multiply_associative, Integer.multiply_commutative, Integer.multiply_left_commutative]
-    have cd_nonzero := Integer.multiply_not_equal_zero_of_not_equal_zero c_nonzero d_nonzero
+    have cd_nonzero := Integer.multiply_nonzero_of_nonzero c_nonzero d_nonzero
     exact Integer.multiply_left_cancel h_equal cd_nonzero
 
 theorem RationalEquivalent.is_equivalence : Equivalence RationalEquivalent :=
@@ -80,7 +80,7 @@ def add : ℚ → ℚ → ℚ :=
   let add' := λ
   ((a, ⟨b, b_nonzero⟩) : ℤ × NonZeroInteger)
   ((c, ⟨d, d_nonzero⟩) : ℤ × NonZeroInteger) =>
-  let bd_nonzero := Integer.multiply_not_equal_zero_of_not_equal_zero b_nonzero d_nonzero
+  let bd_nonzero := Integer.multiply_nonzero_of_nonzero b_nonzero d_nonzero
   (a*d + c*b, ⟨b*d, bd_nonzero⟩)
   Quotient.map₂ add' <| by
   intro (a, ⟨b, b_nonzero⟩) (a', ⟨b', b'_nonzero⟩) (h₁ : a * b' = a' * b)
@@ -96,7 +96,7 @@ def multiply : ℚ → ℚ → ℚ :=
   let multiply' := λ
   ((a, ⟨b, b_nonzero⟩) : ℤ × NonZeroInteger)
   ((c, ⟨d, d_nonzero⟩) : ℤ × NonZeroInteger) =>
-  let bd_nonzero := Integer.multiply_not_equal_zero_of_not_equal_zero b_nonzero d_nonzero
+  let bd_nonzero := Integer.multiply_nonzero_of_nonzero b_nonzero d_nonzero
   (a*c, ⟨b*d, bd_nonzero⟩)
   Quotient.map₂ multiply' <| by
   intro (a, ⟨b, b_nonzero⟩) (a', ⟨b', b'_nonzero⟩) (hab : a * b' = a' * b)
@@ -165,9 +165,9 @@ def reciprocal' : ℚ → Option ℚ :=
       show b * c = d * a
       simp [h, Integer.multiply_commutative] }
     apply And.left
-    apply Integer.not_equal_zero_of_multiply_not_equal_zero
+    apply Integer.nonzero_of_multiply_nonzero
     intro hcb
-    have := Integer.multiply_not_equal_zero_of_not_equal_zero ha hd
+    have := Integer.multiply_nonzero_of_nonzero ha hd
     exact absurd (hcb.symm.trans h.symm) this.symm
 
 def reciprocal (x : ℚ) (h : x ≠ 0) : ℚ :=
@@ -285,12 +285,15 @@ theorem subtract_definition (x y : ℚ) : x + (-y) = x - y := rfl
 
 def divide (x y : ℚ) (y_nonzero : y ≠ 0) : ℚ := x * (reciprocal y y_nonzero)
 
-theorem negate_negate : Function.Involutive negate := by
+theorem negate_involutive : Function.Involutive negate := by
   apply Quotient.ind
   intro (a, ⟨b, b_nonzero⟩)
   apply Quotient.sound
   show (- - a)*b = a * b
-  rw [← Integer.negate_definition, ← Integer.negate_definition, Integer.negate_negate]
+  rw [Integer.negate_negate]
+  
+@[simp]
+theorem negate_negate : ∀ x : ℚ, - -x = x := λ x => negate_involutive x
 
 -- TODO: Copy pasted from Integers, this is all general to rings I think
 -- Lesson (worth writing about): If you start building up a collection theorems which only appeal to a few lemmas you proved earlier, it's time to abstract because you are dealing with a more general structure of which your original type is an example
@@ -460,37 +463,32 @@ theorem LessThan.irreflexive : Relation.Irreflexive LessThan := by
   rw [Integer.zero_multiply, Integer.multiply_one] at hv
   exact absurd hv (not_equal_of_less_than a_positive)
 
-/-
+-- Here we appeal to asymmetry of less than on the integers. We suppose both x < y and y < x, lower these statements to statements about integer representatives for x and y, and then show that supposing both contradicts the asymmetry property of the less than relation for the integers.
 theorem LessThan.Asymmetric : Relation.Asymmetric LessThan := by
-  -- Think about why this is true in the first place
-  -- It's because y - x > 0 and x - y > 0 can't both be true
   apply Quotient.ind₂
   intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩
-  unfold LessThan
-  simp
   intro ⟨(⟨u, u_positive⟩, ⟨v, v_positive⟩), (huv : (c*b + -a*d)*v = u*(d*b))⟩
   intro ⟨(⟨s, s_positive⟩, ⟨t, t_positive⟩), (hst : (a*d + -c*b)*t = s*(b*d))⟩
-  rw [Integer.multiply_commutative d b] at huv
-  match Decidable.em (0 < (b * d)) with
-  | Or.inl hbd => skip
-  | Or.inr hbd => skip
-  -/
-  /-
-  have db_nonzero : d * b ≠ 0 := Integer.multiply_not_equal_zero_of_not_equal_zero d_nonzero b_nonzero
-  have udb_nonzero : u * (d * b) ≠ 0 := Integer.multiply_not_equal_zero_of_not_equal_zero (not_equal_of_less_than u_positive).symm db_nonzero
-  have foo := huv.symm ▸ udb_nonzero
-  have ⟨bar, _⟩ := Integer.not_equal_zero_of_multiply_not_equal_zero foo
-  -/
-  -- (b*d) and (c*b + -a*d) and (a*d + -c * b) share signs, but x - y and y - x sharing signs means x = y, but c * b ≠ a * d
-  -- have foo : (c * b + -a * d) ≠ 0 ∧ v ≠ 0 :=
-  /-
-  -- have foo : ((c * b + -a * d) * v) - ((a * d + -c * b) * t) = u * (d * b) - s * (b * d) := by simp [huv, hst]
-  have huv' := huv
-  rw [Integer.right_distributive] at huv'
-  have huv'' : (c*b*v + -a*d*v) + a*d*v = u*(d*b) + a*d*v := congrArg (. + a*d*v) huv'
-  rw [Integer.add_associative, ← Integer.negate_multiply_equal_negate_multiply, ← Integer.negate_multiply_equal_negate_multiply, Integer.add_inverse_left, Integer.add_zero] at huv''
-  -/
-
-  -- rw [Integer.multiply_commutative d b, ← Integer.subtract_multiply, Integer.right_distributive _ _ v, Integer.right_distributive _ _ t, ← Integer.subtract_subtract, ← Integer.subtract_definition, ← Integer.subtract_definition, Integer.add_associative (c*b*v) _ _, Integer.add_right_commutative, ← Integer.negate_multiply_equal_negate_multiply, ← Integer.negate_multiply_equal_negate_multiply, ← Integer.negate_definition, ← Integer.negate_definition, Integer.negate_negate, ← Integer.left_distributive, ← Integer.negate_multiply_equal_negate_multiply, ← Integer.negate_multiply_equal_negate_multiply, ← Integer.negate_add, ← Integer.left_distributive, Integer.negate_multiply_equal_negate_multiply, ← Integer.right_distributive] at foo
+  rw [Integer.multiply_commutative d b, ← Integer.negate_multiply_equal_negate_multiply] at huv
+  rw [← Integer.negate_multiply_equal_negate_multiply] at hst
+  match less_than_trichotomous (b*d) 0 with
+  | Or.inl bd_negative =>
+    have hcbad := Integer.less_than_of_subtract_negative <|
+      Integer.negative_left_of_multiply_negative_of_positive_right
+      (huv.symm ▸ Integer.multiply_negative_of_positive_of_negative u_positive bd_negative) v_positive
+    have hadcb := Integer.less_than_of_subtract_negative <|
+      Integer.negative_left_of_multiply_negative_of_positive_right
+      (hst.symm ▸ Integer.multiply_negative_of_positive_of_negative s_positive bd_negative) t_positive
+    exact absurd hcbad (less_than_asymmetric hadcb)
+  | Or.inr (Or.inl bd_zero) =>
+    exact absurd bd_zero (Integer.multiply_nonzero_of_nonzero b_nonzero d_nonzero)
+  | Or.inr (Or.inr bd_positive) =>
+    have hadcb := Integer.less_than_of_subtract_positive <|
+      Integer.positive_left_of_multiply_positive_of_positive_right 
+      (huv.symm ▸ Integer.multiply_positive u_positive bd_positive) v_positive
+    have hcbad := Integer.less_than_of_subtract_positive <| 
+      Integer.positive_left_of_multiply_positive_of_positive_right
+      (hst.symm ▸ Integer.multiply_positive s_positive bd_positive) t_positive
+    exact absurd hadcb (less_than_asymmetric hcbad)
 
 end Rational

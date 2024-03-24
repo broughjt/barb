@@ -151,11 +151,26 @@ theorem less_equal_strongly_connected : Relation.StronglyConnected (. ≤ . : α
 
 theorem less_equal_of_not_greater_equal {x y : α} : ¬x ≥ y → x ≤ y := Or.resolve_right (less_equal_strongly_connected x y)
 
-theorem less_equal_of_not_less_equal  {x y : α} : ¬x ≤ y → y ≤ x := Or.resolve_left (less_equal_strongly_connected x y)
+theorem less_equal_of_not_less_equal {x y : α} : ¬x ≤ y → y ≤ x := Or.resolve_left (less_equal_strongly_connected x y)
 
 theorem less_than_trichotomous (x y : α) : x < y ∨ x = y ∨ x > y :=
   Or.elim (less_equal_strongly_connected x y)
     (λ h : x ≤ y => Or.elim (Decidable.less_than_or_equal_of_less_equal h) Or.inl (Or.inr ∘ Or.inl))
     (λ h : x ≥ y => Or.elim (Decidable.less_than_or_equal_of_less_equal h) (Or.inr ∘ Or.inr) (Or.inr ∘ Or.inl ∘ Eq.symm))
+
+theorem less_equal_of_not_less_than {x y : α} (h : ¬y < x) : x ≤ y :=
+  match less_than_trichotomous x y with
+  | Or.inl h_less => less_equal_of_less_than h_less
+  | Or.inr (Or.inl h_equal) => less_equal_of_equal h_equal
+  | Or.inr (Or.inr h_greater) => absurd h_greater h
+
+theorem less_than_or_less_equal (x y : α) : x < y ∨ y ≤ x := by
+  match less_than_trichotomous x y with
+  | Or.inl h_less => exact Or.inl h_less
+  | Or.inr (Or.inl h_equal) => exact Or.inr (less_equal_of_equal h_equal.symm)
+  | Or.inr (Or.inr h_greater) => exact Or.inr (less_equal_of_less_than h_greater)
+
+theorem less_equal_or_less_than (x y : α) : x ≤ y ∨ y < x :=
+  Or.symmetric (less_than_or_less_equal y x)
   
 end TotalOrder
