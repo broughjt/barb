@@ -462,9 +462,11 @@ theorem LessThan.irreflexive : Relation.Irreflexive LessThan := by
   intro ⟨(⟨a, a_positive⟩, ⟨b, _⟩), (hv : 0 * b = a * 1)⟩
   rw [Integer.zero_multiply, Integer.multiply_one] at hv
   exact absurd hv (not_equal_of_less_than a_positive)
+  
+-- TODO: Rename all these to just use lowercase like everything else, there's no good reason to use the projection naming like this, it just looks weird at every callsite
 
 -- Here we appeal to asymmetry of less than on the integers. We suppose both x < y and y < x, lower these statements to statements about integer representatives for x and y, and then show that supposing both contradicts the asymmetry property of the less than relation for the integers.
-theorem LessThan.Asymmetric : Relation.Asymmetric LessThan := by
+theorem LessThan.asymmetric : Relation.Asymmetric LessThan := by
   apply Quotient.ind₂
   intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩
   intro ⟨(⟨u, u_positive⟩, ⟨v, v_positive⟩), (huv : (c*b + -a*d)*v = u*(d*b))⟩
@@ -490,5 +492,53 @@ theorem LessThan.Asymmetric : Relation.Asymmetric LessThan := by
       Integer.positive_left_of_multiply_positive_of_positive_right
       (hst.symm ▸ Integer.multiply_positive s_positive bd_positive) t_positive
     exact absurd hadcb (less_than_asymmetric hcbad)
-
+    
+-- Readable proof of this and asymmetric property are in the last few pages of black notebook, we should turn them into latex. Gist for this one is just to plug in one equation into the other
+-- This proof is easy once you write out the equations in terms of fractions like c//d - a//b = p//q and solve.
+-- TODO: Is it possible to avoid the case split on c = 0? I think it's gotta be, the equations are the same at the end
+theorem LessThan.transitive : Relation.Transitive LessThan := by
+  apply Quotient.ind₃
+  intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩ ⟨e, f, f_nonzero⟩
+  intro ⟨(⟨p, p_positive⟩, ⟨q, q_positive⟩), (hpq : (c*b + -a*d)*q = p*(d*b))⟩
+  intro ⟨(⟨s, s_positive⟩, ⟨t, t_positive⟩), (hst : (e*d + -c*f)*t = s*(f*d))⟩
+  match (Decidable.em (c = 0)) with
+  | Or.inl c_zero =>
+    rw [c_zero, Integer.zero_multiply, Integer.zero_add, Integer.multiply_associative, Integer.multiply_left_commutative, ← Integer.negate_multiply_equal_negate_multiply, Integer.multiply_left_commutative p _ _] at hpq
+    have hpq' := Integer.multiply_left_cancel hpq d_nonzero
+    rw [c_zero, ← Integer.negate_zero, Integer.zero_multiply, Integer.add_zero, Integer.multiply_associative, Integer.multiply_left_commutative, ← Integer.multiply_associative s _ _, Integer.multiply_commutative _ d] at hst
+    have hst' := Integer.multiply_left_cancel hst d_nonzero
+    have : (e*t)*(b*q) + (-(a*q))*(f*t) = (s*f)*(b*q) + (p*b)*(f*t) := by simp [hpq', hst']
+    have hetbq : e*t*(b*q) = (e*b) * (q*t) := by simp [Integer.multiply_commutative, Integer.multiply_left_commutative]
+    have haqft : (a*q)*(f*t) = (a*f)*(q*t) := by simp [Integer.multiply_commutative, Integer.multiply_left_commutative]
+    have hsfbq : (s*f)*(b*q) = (s*q)*(f*b) := by simp [Integer.multiply_commutative, Integer.multiply_left_commutative]
+    have hpbft : (p*b)*(f*t) = (p*t)*(f*b) := by simp [Integer.multiply_commutative, Integer.multiply_left_commutative]
+    rw [hetbq, ← Integer.negate_multiply_equal_negate_multiply, haqft, Integer.negate_multiply_equal_negate_multiply, Integer.negate_multiply_equal_negate_multiply, hsfbq, hpbft, ← Integer.right_distributive, ← Integer.right_distributive] at this
+    let qt : Integer.PositiveInteger := ⟨q*t, Integer.multiply_positive q_positive t_positive⟩
+    let sqpt : Integer.PositiveInteger := ⟨(s * q + p * t), Integer.add_less_than_add (Integer.multiply_positive s_positive q_positive) (Integer.multiply_positive p_positive t_positive)⟩
+    exact Exists.intro (sqpt, qt) this
+  | Or.inr c_nonzero =>
+    have hpq' := congrArg (. + (a*d*q)) hpq
+    simp at hpq'
+    rw [Integer.right_distributive, ← Integer.negate_multiply_equal_negate_multiply, ← Integer.negate_multiply_equal_negate_multiply, Integer.add_associative, Integer.add_inverse_left, Integer.add_zero] at hpq'
+    rw [Integer.right_distributive] at hst
+    have hst' := congrArg (. * (c*b*q)) hst
+    simp at hst'
+    have foo : e*d*t*(c*b*q) = ((c*d)*(t*q))*(e*b) := by simp [Integer.multiply_commutative, Integer.multiply_left_commutative]
+    have bar : c * f * t * (a * d * q) = ((c*d)*(t*q))*(a*f) := by simp [Integer.multiply_commutative, Integer.multiply_left_commutative]
+    rw [Integer.right_distributive, congrArg ((-c * f * t) * .) hpq', Integer.left_distributive, foo, Integer.add_left_commutative, ← Integer.negate_multiply_equal_negate_multiply, ← Integer.negate_multiply_equal_negate_multiply, ← Integer.negate_multiply_equal_negate_multiply] at hst'
+    have dark := congrArg ((c * f * t * (p * (d * b))) + .) hst'
+    simp at dark
+    have poo : c * f * t * (p * (d * b)) = (f*b)*((c*d)*(t*p)) := by simp [Integer.multiply_commutative, Integer.multiply_left_commutative]
+    have bear : s * (f * d) * (c * b * q) = (f*b)*((c*d)*(s*q)) := by simp [Integer.multiply_commutative, Integer.multiply_left_commutative]
+    rw [Integer.add_negate_cancel_left, ← Integer.negate_multiply_equal_negate_multiply, bar, Integer.negate_multiply_equal_multiply_negate, ← Integer.left_distributive, Integer.multiply_associative, poo, bear, ← Integer.left_distributive, ← Integer.left_distributive, Integer.multiply_left_commutative (f*b) _ _] at dark
+    have cd_nonzero : c*d ≠ 0 := Integer.multiply_nonzero_of_nonzero c_nonzero d_nonzero
+    have kick := Integer.multiply_left_cancel dark cd_nonzero
+    rw [Integer.multiply_commutative (t*q) _, Integer.multiply_commutative (f*b) _, Integer.negate_multiply_equal_negate_multiply] at kick
+    have htq := Integer.multiply_positive t_positive q_positive
+    have htpsq := Integer.add_less_than_add (Integer.multiply_positive t_positive p_positive) (Integer.multiply_positive s_positive q_positive)
+    rw [Integer.add_zero] at htpsq
+    let u : Integer.PositiveInteger := ⟨t * p + s * q, htpsq⟩
+    let v : Integer.PositiveInteger := ⟨t * q, htq⟩
+    exact Exists.intro (u, v) kick
+    
 end Rational

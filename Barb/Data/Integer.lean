@@ -612,7 +612,7 @@ theorem less_equal_add_of_nonnegative_left {a b : ℤ} (h : 0 ≤ b) : a ≤ b +
 theorem less_equal_add_of_nonnegative_right {a b : ℤ} (h : 0 ≤ b) : a ≤ a + b := by
   rw [add_commutative a b]
   exact less_equal_add_of_nonnegative_left h
-
+  
 theorem negate_less_equal_negate {a b : ℤ} (h : a ≤ b) : -b ≤ -a := by
   have ha := add_right_less_equal h (-a)
   rw [add_inverse, add_commutative] at ha
@@ -724,7 +724,7 @@ theorem add_left_less_than {b c : ℤ} (h : b < c) (a : ℤ) : a + b < a + c := 
 theorem add_right_less_than {a b : ℤ} (h : a < b) (c : ℤ) : a + c < b + c := by
   rw [add_commutative a c, add_commutative b c]
   exact add_left_less_than h c
-
+  
 theorem less_than_of_subtract_negative {a b : ℤ} (h : a - b < 0) : a < b := by
   have := add_right_less_than h b
   rw [zero_add, ← subtract_definition, negate_add_cancel_right] at this
