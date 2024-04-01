@@ -478,19 +478,19 @@ theorem LessEqual.strongly_connected : Relation.StronglyConnected LessEqual :=
   Quotient.ind₂ λ (p, q) (s, t) =>
   Or.implies lift_less_equal lift_less_equal (Natural.LessEqual.strongly_connected (p + t) (s + q))
 
-instance totalOrder : TotalOrder Integer where
+instance totalOrder : DecidableTotalOrder Integer where
   less_equal_reflexive := LessEqual.reflexive
   less_equal_antisymmetric := LessEqual.antisymmetric
   less_equal_transitive := LessEqual.transitive
   less_equal_strongly_connected := LessEqual.strongly_connected
-  decidableEqual := decideEqual
-  decidableLessEqual := decideLessEqual
+  decideEqual := decideEqual
+  decideLessEqual := decideLessEqual
 
 theorem ofNatural_nonnegative (n : ℕ) : ↑n ≥ (0 : ℤ) :=
   Exists.intro n (zero_add n)
   
 theorem ofNatural_successor_positive (n : ℕ) : ↑(successor n) > (0 : ℤ) := by
-  match Decidable.equal_or_less_than_of_less_equal (ofNatural_nonnegative (successor n)) with
+  match equal_or_less_than_of_less_equal (ofNatural_nonnegative (successor n)) with
   | Or.inl h =>
     have : 0 + 0 = successor n + 0 := Quotient.exact h
     simp [add_zero] at this
@@ -644,7 +644,7 @@ theorem multiply_less_equal_of_nonnegative_right {a b c : ℤ} (h : a ≤ b) (c_
   rw [multiply_commutative a c, multiply_commutative b c]
   exact multiply_less_equal_of_nonnegative_left h c_nonnegative
 
--- Tricky: We only require that c is nonnegatie, a is totally cool to be negative because that will make a*b negative which preserves order
+-- Tricky: We only require that c is nonnegative, a is totally cool to be negative because that will make a*b negative which preserves order
 theorem multiply_less_equal_multiply {a b c d : ℤ} (hac : a ≤ c) (hbd : b ≤ d) (b_nonnegative : 0 ≤ b) (c_nonnegative : 0 ≤ c) : a * b ≤ c * d :=
   less_equal_transitive
   (multiply_less_equal_of_nonnegative_right hac b_nonnegative)
@@ -669,7 +669,7 @@ theorem multiply_less_equal_multiply_of_nonpositive_right {a b c : ℤ}
   rw [multiply_commutative a c, multiply_commutative b c]
   exact multiply_less_equal_multiply_of_nonpositive_left h c_nonpositive
   
-def LessThan := totalOrder.less_than
+def LessThan : ℤ → ℤ → Prop := strictPartialOrderOfPreorder.lt
 
 theorem less_than_of_subtract_positive {a b : ℤ} : 0 < b - a → a < b := by
   intro h
@@ -770,6 +770,9 @@ theorem less_than_of_negate_less_than_negate {a b : ℤ} (h : -b < -a) : a < b :
 theorem negate_negative_of_positive {a : ℤ} (h : 0 < a) : -a < 0 :=
   negate_less_than_negate h
   
+theorem negate_positive_of_negative {a : ℤ} (h : a < 0) : 0 < -a :=
+  negate_less_than_negate h
+
 theorem multiply_positive {a b : ℤ} (ha : 0 < a) (hb : 0 < b) : 0 < a * b := by
   let ⟨n, hn, ha⟩ := equal_ofNatural_positive_of_positive ha
   let ⟨m, hm, hb⟩ := equal_ofNatural_positive_of_positive hb
@@ -855,7 +858,7 @@ theorem less_than_multiply_cancel_right_of_positive {a b c : ℤ} (h : a * c < b
   exact less_than_multiply_cancel_left_of_positive h c_positive
   
 theorem less_equal_multiply_cancel_left_of_positive {a b c : ℤ} (h : a * b ≤ a * c) (a_positive : 0 < a) : b ≤ c :=
-  match Decidable.less_than_or_equal_of_less_equal h with
+  match less_than_or_equal_of_less_equal h with
   | Or.inl h_less => less_equal_of_less_than <|
     less_than_multiply_cancel_left_of_positive h_less a_positive
   | Or.inr h_equal => less_equal_of_equal <|

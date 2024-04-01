@@ -200,8 +200,6 @@ theorem one_add (n : ℕ) : 1 + n = successor n := rfl
 theorem add_one (n : ℕ) : n + 1 = successor n := by
   rw [add_commutative n 1, one_add]
   
--- It really helps to visualize a line when thinking about these propositions and their proofs.
-
 def LessEqual (n m : ℕ) : Prop := ∃ (a : ℕ), n + a = m
 
 instance : LE Natural where
@@ -286,18 +284,18 @@ theorem LessEqual.strongly_connected : Relation.StronglyConnected LessEqual
       successor_less_equal_successor_of_less_equal 
       (LessEqual.strongly_connected n m)
     
-instance totalOrder : TotalOrder Natural where
+instance totalOrder : DecidableTotalOrder Natural where
   less_equal_reflexive := LessEqual.reflexive
   less_equal_antisymmetric := LessEqual.antisymmetric
   less_equal_transitive := LessEqual.transitive
   less_equal_strongly_connected := LessEqual.strongly_connected
-  decidableEqual := decideEqual
-  decidableLessEqual := decideLessEqual
+  decideEqual := decideEqual
+  decideLessEqual := decideLessEqual
 
-def LessThan := totalOrder.less_than
+def LessThan : ℕ → ℕ → Prop := strictPartialOrderOfPreorder.lt
 
 theorem less_than_successor (n : ℕ) : n < successor n :=
-  have := Decidable.less_than_or_equal_of_less_equal (less_equal_successor_of_less_equal (less_equal_reflexive n))
+  have := less_than_or_equal_of_less_equal (less_equal_successor_of_less_equal (less_equal_reflexive n))
   Or.resolve_right this (successor_not_equal_self n).symm
 
 theorem less_than_of_successor_less_equal {n m : ℕ} (h : successor n ≤ m) : n < m :=
@@ -327,7 +325,7 @@ theorem less_than_of_successor_less_than_successor {n m : ℕ} : successor n < s
 theorem equal_zero_or_positive (n : ℕ) : n = 0 ∨ n > 0 :=
   Or.implies_left 
   Eq.symm
-  (Or.commutative.mp (Decidable.less_than_or_equal_of_less_equal (zero_less_equal n)))
+  (Or.commutative.mp (less_than_or_equal_of_less_equal (zero_less_equal n)))
 
 theorem not_successor_less_equal_zero (n : ℕ) : ¬(successor n ≤ 0) := by
   intro ⟨a, (ha : successor n + a = 0)⟩
@@ -587,7 +585,7 @@ theorem quotient_remainder {n q : ℕ} (q_positive : q ≠ 0) :
     let ⟨⟨m, r⟩, ⟨(h_exists : n = m * q + r), (h_less_than : r < q)⟩⟩ := ih
     show ∃ p, let ⟨m, r⟩ := p; successor n = m * q + r ∧ r < q
     have : successor r = q ∨ successor r < q := 
-      (Or.commutative.mp ∘ Decidable.less_than_or_equal_of_less_equal ∘ successor_less_equal_of_less_than) h_less_than
+      (Or.commutative.mp ∘ less_than_or_equal_of_less_equal ∘ successor_less_equal_of_less_than) h_less_than
     cases this with
     | inl h_equal => 
       apply Exists.intro ⟨successor m, 0⟩

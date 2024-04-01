@@ -291,7 +291,7 @@ theorem negate_involutive : Function.Involutive negate := by
   apply Quotient.sound
   show (- - a)*b = a * b
   rw [Integer.negate_negate]
-  
+
 @[simp]
 theorem negate_negate : ∀ x : ℚ, - -x = x := λ x => negate_involutive x
 
@@ -466,6 +466,8 @@ theorem LessThan.irreflexive : Relation.Irreflexive LessThan := by
 -- TODO: Rename all these to just use lowercase like everything else, there's no good reason to use the projection naming like this, it just looks weird at every callsite
 
 -- Here we appeal to asymmetry of less than on the integers. We suppose both x < y and y < x, lower these statements to statements about integer representatives for x and y, and then show that supposing both contradicts the asymmetry property of the less than relation for the integers.
+-- TODO: Don't need this
+/-
 theorem LessThan.asymmetric : Relation.Asymmetric LessThan := by
   apply Quotient.ind₂
   intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩
@@ -492,6 +494,7 @@ theorem LessThan.asymmetric : Relation.Asymmetric LessThan := by
       Integer.positive_left_of_multiply_positive_of_positive_right
       (hst.symm ▸ Integer.multiply_positive s_positive bd_positive) t_positive
     exact absurd hadcb (less_than_asymmetric hcbad)
+-/
     
 -- Readable proof of this and asymmetric property are in the last few pages of black notebook, we should turn them into latex. Gist for this one is just to plug in one equation into the other
 -- This proof is easy once you write out the equations in terms of fractions like c//d - a//b = p//q and solve.
@@ -540,5 +543,153 @@ theorem LessThan.transitive : Relation.Transitive LessThan := by
     let u : Integer.PositiveInteger := ⟨t * p + s * q, htpsq⟩
     let v : Integer.PositiveInteger := ⟨t * q, htq⟩
     exact Exists.intro (u, v) kick
-    
+
+theorem positive_or_negative_of_equal_positive : ∀ {a : ℤ} {b : NonZeroInteger} {c d : Integer.PositiveInteger}, 
+    (a, b) ≈ (c.val, ⟨d, (not_equal_of_less_than d.property).symm⟩) →
+    (0 < a ∧ 0 < b.val) ∨ (a < 0 ∧ b.val < 0) := by
+  intro a ⟨b, b_nonzero⟩ ⟨c, c_positive⟩ ⟨d, d_positive⟩
+  intro (h : a * d = c * b)
+  simp
+  match less_than_trichotomous 0 b with
+  | Or.inl hb =>
+    have ha := Integer.positive_left_of_multiply_positive_of_positive_right
+      (h.symm ▸ Integer.multiply_positive c_positive hb) d_positive
+    exact Or.inl (And.intro ha hb)
+  | Or.inr (Or.inl hb) => exact absurd hb.symm b_nonzero
+  | Or.inr (Or.inr hb) =>
+    have ha := Integer.negative_left_of_multiply_negative_of_positive_right
+      (h.symm ▸ Integer.multiply_negative_of_positive_of_negative c_positive hb) d_positive
+    exact Or.inr (And.intro ha hb)
+  skip
+
+theorem equal_positive_of_positive_or_negative : ∀ {a : ℤ} {b : NonZeroInteger},
+    (0 < a ∧ 0 < b.val) ∨ (a < 0 ∧ b.val < 0) →
+    ∃ u : Integer.PositiveInteger × Integer.PositiveInteger,
+      let (⟨c, _⟩, ⟨d, d_positive⟩) := u
+      (a, b) ≈ (c, ⟨d, (not_equal_of_less_than d_positive).symm⟩)
+  | a, ⟨b, _⟩, Or.inl ⟨a_positive, b_positive⟩ =>
+    Exists.intro (⟨a, a_positive⟩, ⟨b, b_positive⟩) (RationalEquivalent.reflexive _)
+  | a, ⟨b, _⟩, Or.inr ⟨a_negative, b_negative⟩ => by
+    apply Exists.intro (⟨-a, Integer.negate_positive_of_negative a_negative⟩, ⟨-b, Integer.negate_positive_of_negative b_negative⟩)
+    simp [RationalEquivalent]
+    rw [← Integer.negate_multiply_equal_multiply_negate, ← Integer.negate_multiply_equal_negate_multiply]
+
+theorem less_than_of_subtract_positive {x y : ℚ} : 0 < y - x → x < y :=
+  Quotient.inductionOn₂ x y <| by
+  intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩
+  intro ⟨(⟨u, u_positive⟩, ⟨v, v_positive⟩), (h : ((c * b + -a * d) * 1 + -0 * (d * b)) * v = u * (d * b * 1))⟩
+  rw [Integer.multiply_one, ← Integer.negate_zero, Integer.zero_multiply, Integer.add_zero, Integer.multiply_one] at h
+  apply Exists.intro (⟨u, u_positive⟩, ⟨v, v_positive⟩) h
+
+theorem subtract_nonnegative_of_less_than {x y : ℚ} : x < y → 0 < y - x :=
+  Quotient.inductionOn₂ x y <| by
+  intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩
+  intro ⟨(⟨u, u_positive⟩, ⟨v, v_positive⟩), (h : (c * b + -a * d) * v = u * (d * b))⟩
+  apply Exists.intro (⟨u, u_positive⟩, ⟨v, v_positive⟩)
+  have : Natural.natToNatural 0 = (0 : ℤ) := rfl
+  simp [Integer.multiply_one]
+  rw [this, ← Integer.negate_zero, Integer.zero_multiply, Integer.add_zero]
+  exact h
+
+instance decidePositive (x : ℚ) : Decidable (0 < x) :=
+  Quotient.recOnSubsingleton x
+  λ ((a, ⟨b, b_nonzero⟩) : ℤ × Integer.NonZeroInteger) =>
+  if h : (0 < a ∧ 0 < b) ∨ (a < 0 ∧ b < 0) then
+    -- TODO: Figure out how to not have this
+    let h' := by
+      have : Natural.natToNatural 0 = (0 : ℤ) := rfl
+      rw [this, ← Integer.negate_zero, Integer.zero_multiply, Integer.multiply_one, Integer.add_zero]
+      simp [Integer.multiply_one]
+      exact h
+    isTrue (equal_positive_of_positive_or_negative h')
+  else
+    let positive_or_negative_of_equal_positive' :
+        (0 : ℚ) < Quotient.mk instanceSetoidRationalEquivalent (a, ⟨b, b_nonzero⟩) → (0 < a ∧ 0 < b) ∨ (a < 0 ∧ b < 0) := by
+      simp [LessThan, subtract_zero, Quotient.lift_construct_on]
+      intro ⟨(c, d), h⟩
+      exact positive_or_negative_of_equal_positive h
+    isFalse (mt positive_or_negative_of_equal_positive' h)
+
+instance decideLessThan (x y : ℚ) : Decidable (x < y) :=
+  if h : 0 < y - x then
+    isTrue (less_than_of_subtract_positive h)
+  else
+    isFalse (mt subtract_nonnegative_of_less_than h)
+
+theorem LessThan.connected : Relation.Connected LessThan := by
+  unfold Relation.Connected
+  apply Quotient.ind₂
+  intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩
+  intro h'
+  -- TODO: Clean up
+  have h : a * d ≠ c * b := by
+    intro (h'' : ((a, ⟨b, b_nonzero⟩) : ℤ × NonZeroInteger) ≈ (c, ⟨d, d_nonzero⟩))
+    exact absurd (Quotient.sound h'') h'
+  have bd_nonzero := Integer.multiply_nonzero_of_nonzero b_nonzero d_nonzero
+  match less_than_connected h, less_than_connected bd_nonzero with
+  | Or.inl hadcb, Or.inl hbd =>
+    have := Integer.subtract_negative_of_less_than hadcb
+    rw [← Integer.subtract_definition, Integer.negate_multiply_equal_negate_multiply] at this
+    exact Or.inr (equal_positive_of_positive_or_negative (Or.inr (And.intro this hbd)))
+  | Or.inl hadcb, Or.inr hbd =>
+    have := Integer.subtract_positive_of_less_than hadcb
+    rw [← Integer.subtract_definition, Integer.negate_multiply_equal_negate_multiply] at this
+    rw [Integer.multiply_commutative] at hbd
+    exact Or.inl (equal_positive_of_positive_or_negative (Or.inl (And.intro this hbd)))
+  | Or.inr hcbad, Or.inl hbd =>
+    have := Integer.subtract_negative_of_less_than hcbad
+    rw [← Integer.subtract_definition, Integer.negate_multiply_equal_negate_multiply] at this
+    rw [Integer.multiply_commutative] at hbd
+    exact Or.inl (equal_positive_of_positive_or_negative (Or.inr (And.intro this hbd)))
+  | Or.inr hcbad, Or.inr hbd =>
+    have this := Integer.subtract_positive_of_less_than hcbad
+    rw [← Integer.subtract_definition, Integer.negate_multiply_equal_negate_multiply] at this
+    exact Or.inr (equal_positive_of_positive_or_negative (Or.inl (And.intro this hbd)))
+
+instance strictTotalOrder : DecidableStrictTotalOrder Rational where
+  less_than_irreflexive := LessThan.irreflexive
+  less_than_transitive := LessThan.transitive
+  less_than_connected := LessThan.connected
+  decideLessThan := decideLessThan
+  decideEqual := decideEqual
+
+instance : LE Rational where
+  le := totalOrderOfStrictTotalOrder.le
+
+theorem add_left_less_than : ∀ {y z : ℚ} (x : ℚ), y < z → x + y < x + z := by
+  apply Quotient.ind₃
+  intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩ ⟨e, f, f_nonzero⟩
+  intro ⟨(⟨u, u_positive⟩, ⟨v, v_positive⟩), (h : (c * b + -a * d) * v = u * (d * b))⟩
+  apply Exists.intro (⟨u, u_positive⟩, ⟨v, v_positive⟩)
+  show ((e*d + c*f)*(f*b) + -(e*b + a*f)*(f*d))*v = u*((f*d)*(f*b))
+  -- TODO: Fix
+  rw [Integer.right_distributive _ _ (f*b), Integer.negate_add, Integer.right_distributive _ _ (f*d), ← Integer.negate_multiply_equal_negate_multiply, Integer.multiply_associative e d _, Integer.multiply_commutative f b, Integer.multiply_left_commutative d _ _, Integer.multiply_commutative d f, ← Integer.multiply_associative e _ _, Integer.add_right_commutative, ← Integer.add_associative, Integer.add_inverse, Integer.zero_add, ← Integer.negate_multiply_equal_negate_multiply, Integer.multiply_associative, Integer.multiply_commutative f d, Integer.multiply_left_commutative f _ _, ← Integer.multiply_associative, Integer.negate_multiply_equal_negate_multiply, Integer.negate_multiply_equal_negate_multiply, Integer.multiply_associative c f _, Integer.multiply_left_commutative f b f, ← Integer.multiply_associative c _ _, ← Integer.right_distributive, Integer.multiply_right_commutative, Integer.add_commutative, Integer.multiply_associative d, Integer.multiply_left_commutative f b f, ← Integer.multiply_associative u, ← Integer.multiply_associative (u * d), Integer.multiply_associative u]
+  exact congrArg (. * (f * f)) h
+
+theorem add_right_less_than : ∀ {x y : ℚ} (z : ℚ), x < y → x + z < y + z := by
+  intro x y z h
+  rw [add_commutative x z, add_commutative y z]
+  exact add_left_less_than z h
+
+-- TODO
+theorem multiply_less_than_of_positive_left : ∀ {x y z : ℚ}, y < z → 0 < x → x * y < x * z := by
+  apply Quotient.ind₃
+  intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩ ⟨e, f, f_nonzero⟩
+  intro ⟨(⟨u, u_positive⟩, ⟨v, v_positive⟩), (hefcd : (e * d + -c * f) * v = u * (f * d))⟩
+  intro ⟨(⟨s, s_positive⟩, ⟨t, t_positive⟩), (hab : (a*1 + -0*b)*t = s*(b*1))⟩
+  rw [Integer.multiply_one, ← Integer.negate_zero, Integer.zero_multiply, Integer.add_zero, Integer.multiply_one] at hab
+  apply Exists.intro (⟨u*s, Integer.multiply_positive u_positive s_positive⟩, ⟨v*t, Integer.multiply_positive v_positive t_positive⟩)
+  show (a*e*(b*d) + -(a*c)*(b*f))*(v*t) = (u*s)*((b*f)*(b*d))
+  rw [Integer.multiply_associative, Integer.multiply_left_commutative e, ← Integer.multiply_associative a, ← Integer.negate_multiply_equal_negate_multiply, Integer.multiply_associative a c, Integer.multiply_left_commutative c, ← Integer.multiply_associative a b, Integer.negate_multiply_equal_multiply_negate, ← Integer.left_distributive, Integer.multiply_commutative, Integer.multiply_commutative v t, Integer.multiply_left_commutative, Integer.multiply_associative t, ← Integer.multiply_associative, Integer.multiply_associative u s, ← Integer.multiply_associative s, ← Integer.multiply_associative s, ← hab, Integer.multiply_associative _ f, Integer.multiply_left_commutative f, ← Integer.multiply_associative _ b, Integer.multiply_left_commutative u, Integer.multiply_commutative v, Integer.negate_multiply_equal_negate_multiply, Integer.multiply_right_commutative a t]
+  exact congrArg ((a * b * t) * .) hefcd
+
+theorem multiply_less_than_of_positive_right : ∀ {x y z : ℚ}, x < y → 0 < z → x * z < y * z := by
+  intro x y z hxy hz
+  rw [multiply_commutative x z, multiply_commutative y z]
+  exact multiply_less_than_of_positive_left hxy hz
+
+-- TODO: Postpone defining ordered field until we have more algebra
+-- TODO: Monotone definition
+-- TODO: Associative, Commutative, Distributive definitions
+
 end Rational
