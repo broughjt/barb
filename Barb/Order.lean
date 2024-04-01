@@ -152,7 +152,7 @@ instance strictTotalOrderOfTotalOrder [TotalOrder α] : StrictTotalOrder α wher
     λ h => match less_equal_strongly_connected _ _ with
       | Or.inl hab => Or.inl (less_than_of_less_equal_of_not_equal hab h)
       | Or.inr hba => Or.inr (less_than_of_less_equal_of_not_equal hba h.symm)
-
+      
 -- TODO: Decidable equality based off just less than? Don't think so but maybe
 instance totalOrderOfStrictTotalOrder [DecidableEq α] [StrictTotalOrder α] : TotalOrder α where
   less_equal_strongly_connected :=

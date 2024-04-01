@@ -652,6 +652,9 @@ instance strictTotalOrder : DecidableStrictTotalOrder Rational where
   less_than_connected := LessThan.connected
   decideLessThan := decideLessThan
   decideEqual := decideEqual
+  
+instance totalOrder : DecidableTotalOrder Rational where
+  decideLessEqual := λ _ _ => instDecidableOr
 
 instance : LE Rational where
   le := totalOrderOfStrictTotalOrder.le
@@ -691,5 +694,46 @@ theorem multiply_less_than_of_positive_right : ∀ {x y z : ℚ}, x < y → 0 < 
 -- TODO: Postpone defining ordered field until we have more algebra
 -- TODO: Monotone definition
 -- TODO: Associative, Commutative, Distributive definitions
+
+def absolute (x : ℚ) : ℚ := maximum x (-x)
+
+macro:max atomic("|" noWs) a:term noWs "|" : term => `(absolute $a)
+
+-- TODO: Gotta do some abstract algebra first, I'm not tryna do all those ordering proofs again
+-- I'm officially stuck until I can clean some of this up.
+--
+theorem absolute_nonnegative (x : ℚ) : 0 ≤ |x| := by
+  unfold absolute
+  unfold maximum
+  match less_than_trichotomous 0 x with
+  | Or.inl h => sorry
+  | Or.inr (Or.inl _) => sorry
+  | Or.inr (Or.inr _) => sorry
+  
+theorem absolute_zero : |0| = 0 := rfl
+
+theorem zero_of_absolute_value_zero (x : ℚ) : |x| = 0 → x = 0 := by
+  skip
+  
+-- The triangle inequality
+-- If only one of the terms is nonpositive, this decreases the absolute value, otherwise the two sides are equal
+theorem absolute_add_less_equal (x y : ℚ) : |x + y| ≤ |x| + |y| := by
+  skip
+  
+theorem absolute_less_equal_of_something (x y : ℚ) : -y ≤ x → x ≤ y → |x| ≤ y := by
+  skip
+
+theorem something_of_absolute_less_equal (x y : ℚ) : |x| ≤ y → -y ≤ x ∧ x ≤ y := by
+  skip
+  
+theorem absolute_less_equal_equivalent_something (x y : ℚ) : -y ≤ x ∧ x ≤ y ↔ |x| ≤ y := by
+  skip
+  
+theorem absolute_multiply_equal_multiply_absolute (x y : ℚ) : |x * y| = |x| * |y| := by
+  skip
+  
+theorem absolute_negate (x : ℚ) : |-x| = |x| := by
+  skip
+--
 
 end Rational
