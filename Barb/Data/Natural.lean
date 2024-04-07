@@ -10,16 +10,19 @@ namespace Natural
 
 open Natural (zero successor)
 
-def natToNatural : Nat → Natural
+def fromNat : Nat → Natural
   | Nat.zero => Natural.zero
-  | Nat.succ n' => Natural.successor (natToNatural n')
+  | Nat.succ n => Natural.successor (fromNat n)
+
+def toNat : Natural → Nat
+  | Natural.zero => Nat.zero
+  | Natural.successor n => Nat.succ (toNat n)
 
 instance : OfNat Natural n where
-  ofNat := natToNatural n
+  ofNat := fromNat n
 
-theorem zero_definition : 0 = zero := rfl
-
-theorem one_definition : 1 = successor zero := rfl
+instance : ToString Natural where
+  toString := toString ∘ toNat
 
 notation "ℕ" => Natural
 
@@ -29,11 +32,10 @@ theorem successor_not_equal_zero (n : ℕ) : successor n ≠ 0 :=
 theorem successor_injective : Function.Injective successor :=
   λ h => (Natural.noConfusion h) id
 
-theorem successor_not_equal_self (n : ℕ) : successor n ≠ n :=
-  Natural.rec 
-    (successor_not_equal_zero 0) 
-    (λ _ ih => λ h => ih (successor_injective h))
-    n
+theorem successor_not_equal_self (n : ℕ) : successor n ≠ n := by
+  induction n with
+  | zero => exact successor_not_equal_zero 0
+  | successor n ih => intro h; exact ih (successor_injective h)
 
 def add : ℕ → ℕ → ℕ
   | zero, m => m
@@ -51,40 +53,39 @@ theorem successor_add (n m : ℕ) : (successor n) + m = successor (n + m) := rfl
 @[simp] theorem add_zero (n : ℕ) : n + 0 = n := by
   induction n with
   | zero => exact zero_add 0
-  | successor x ih => calc
-    (successor x) + 0 = successor (x + 0) := successor_add x 0
-    _                 = successor x       := congrArg successor ih
+  | successor n ih => calc
+    (successor n) + 0 = successor (n + 0) := successor_add n 0
+    _                 = successor n       := congrArg successor ih
 
--- TODO: Why does this one not have simp in init?
 theorem add_successor (n m : ℕ) : n + (successor m) = successor (n + m) := by
   induction n with
   | zero => calc
     0 + (successor m) = successor m       := zero_add (successor m)
     _                 = successor (0 + m) := congrArg successor (zero_add m)
-  | successor x ih => calc
-    (successor x) + (successor m) = successor (x + (successor m)) := successor_add x (successor m)
-    _                             = successor (successor (x + m)) := congrArg successor ih
+  | successor n ih => calc
+    (successor n) + (successor m) = successor (n + (successor m)) := successor_add n (successor m)
+    _                             = successor (successor (n + m)) := congrArg successor ih
 
 theorem add_commutative (n m : ℕ) : n + m = m + n := by
   induction n with
   | zero => calc
     0 + m = m     := zero_add m
     _     = m + 0 := (add_zero m).symm
-  | successor x ih => calc
-    (successor x) + m = successor (x + m) := successor_add x m
-    _                 = successor (m + x) := congrArg successor ih
-    _                 = m + (successor x) := (add_successor m x).symm
+  | successor n ih => calc
+    (successor n) + m = successor (n + m) := successor_add n m
+    _                 = successor (m + n) := congrArg successor ih
+    _                 = m + (successor n) := (add_successor m n).symm
 
 theorem add_associative (n m k : ℕ) : (n + m) + k = n + (m + k) := by
   induction n with
   | zero => calc
     (0 + m) + k = m + k       := congrArg (. + k) (zero_add m)
     _           = 0 + (m + k) := zero_add (m + k)
-  | successor x ih => calc
-    ((successor x) + m) + k = (successor (x + m)) + k := congrArg (. + k) (successor_add x m)
-    _                       = successor ((x + m) + k) := successor_add (x + m) k
-    _                       = successor (x + (m + k)) := congrArg successor ih
-    
+  | successor n ih => calc
+    ((successor n) + m) + k = (successor (n + m)) + k := congrArg (. + k) (successor_add n m)
+    _                       = successor ((n + m) + k) := successor_add (n + m) k
+    _                       = successor (n + (m + k)) := congrArg successor ih
+
 theorem add_left_commutative (n m k : ℕ) : n + (m + k) = m + (n + k) := by
   rw [← add_associative, add_commutative n m, add_associative]
   
@@ -99,18 +100,18 @@ theorem add_left_cancel {n m k : ℕ} : n + m = n + k → m = k := by
       m = 0 + m := zero_add m
       _ = 0 + k := h
       _ = k     := zero_add k
-  | successor x ih =>
+  | successor n ih =>
     intro h
     have := calc
-      successor (x + m) = (successor x) + m := (successor_add x m).symm
-      _                 = (successor x) + k := h
-      _                 = successor (x + k) := successor_add x k
+      successor (n + m) = (successor n) + m := (successor_add n m).symm
+      _                 = (successor n) + k := h
+      _                 = successor (n + k) := successor_add n k
     exact ih (successor_injective this)
-    
+
 theorem add_right_cancel {n m k : ℕ} (h : n + k = m + k) : n = m := by
   rw [add_commutative n k, add_commutative m k] at h
   exact add_left_cancel h
-  
+
 @[simp]
 def distance : ℕ → ℕ → ℕ
   | zero, zero => 0
@@ -123,14 +124,14 @@ theorem equal_of_distance_equal_zero : ∀ {n m : ℕ}, distance n m = 0 → n =
   | successor n, successor m, h => by
     unfold distance at h
     exact congrArg successor (equal_of_distance_equal_zero h)
-    
+
 theorem distance_equal_zero_of_equal : ∀ {n m : ℕ}, n = m → distance n m = 0
   | zero, zero, _ => rfl
   | successor n, successor m, h => by
     unfold distance
     exact distance_equal_zero_of_equal (successor_injective h)
 
-theorem distance_self : ∀ (n : ℕ), distance n n = 0 := 
+theorem distance_self : ∀ (n : ℕ), distance n n = 0 :=
   λ _ => distance_equal_zero_of_equal rfl
 
 theorem distance_zero_left : ∀ (n : ℕ), distance n 0 = n
@@ -150,24 +151,16 @@ theorem distance_zero_right (n : ℕ) : distance 0 n = n := by
 
 theorem distance_add_add_right (n m k : ℕ) : distance (n + k) (m + k) = distance n m := by
   induction k with
-  | zero => rw [← zero_definition, add_zero, add_zero]
+  | zero =>
+    have this : zero = 0 := rfl
+    simp [this, add_zero]
   | successor k ih =>
     simp [add_successor]
     exact ih
-    
+
 theorem distance_add_add_left (n m k : ℕ) : distance (n + m) (n + k) = distance m k := by
   rw [add_commutative n m, add_commutative n k, distance_add_add_right]
 
-/-
-TODO: What is a good name for this theorem?
-
-Intuition:
-Arrange two equal lines cut into two segments, name the segments n m k l respectively, and then arrange those segments individually along the vertical axis so that their starting points line up.
-
-Since the sums are equal, the difference, or distance between, the first terms of each sum must be made up for exactly in the distance between the second terms the sums.
-
-Actual proof laid out visually is also complelling, adding m to both sides, substuting the line n + m for k + l, which are equal, and removing k from the start of both lines leaves the same distance between the two lines as before.
--/
 theorem distance_equal_of_add_equal {n m k l : ℕ} (h : n + m = k + l) : distance n k = distance l m := by
   calc
     distance n k = distance (n + m) (k + m) := (distance_add_add_right n k m).symm
@@ -182,7 +175,7 @@ instance decideEqual : DecidableEq Natural
 theorem add_positive {n m : ℕ} : n ≠ 0 → (n + m) ≠ 0 :=
   match n with
   | zero => absurd rfl
-  | successor x => λ _ => successor_not_equal_zero (x + m)
+  | successor n => λ _ => successor_not_equal_zero (n + m)
 
 theorem equal_zero_of_add_equal_zero {n m : ℕ} (h : n + m = 0) : n = 0 ∧ m = 0 := by
   apply And.intro
@@ -193,18 +186,13 @@ theorem equal_zero_of_add_equal_zero {n m : ℕ} (h : n + m = 0) : n = 0 ∧ m =
 theorem unique_predecessor_of_positive {n : ℕ} : n ≠ 0 → ∃! (m : ℕ), successor m = n :=
   match n with
   | zero => absurd rfl
-  | successor x => λ _ => ExistsUnique.introduction x rfl (λ _ => successor_injective)
-  
-theorem one_add (n : ℕ) : 1 + n = successor n := rfl
+  | successor n => λ _ => ExistsUnique.introduction n rfl (λ _ => successor_injective)
 
-theorem add_one (n : ℕ) : n + 1 = successor n := by
-  rw [add_commutative n 1, one_add]
-  
 def LessEqual (n m : ℕ) : Prop := ∃ (a : ℕ), n + a = m
 
 instance : LE Natural where
   le := LessEqual
-  
+
 @[simp] theorem less_equal_definition : (LessEqual n m) = (n ≤ m) := rfl
 
 @[simp] theorem LessEqual.reflexive : Relation.Reflexive LessEqual :=
@@ -215,14 +203,14 @@ theorem LessEqual.antisymmetric : Relation.AntiSymmetric LessEqual := by
   suffices a + b = 0 by 
   { have ⟨a_zero, _⟩ := equal_zero_of_add_equal_zero this
     rw [← add_zero n, ← a_zero, ha] }
-  apply add_left_cancel
+  apply add_left_cancel (n := n)
   rw [← add_associative, ha, hb, add_zero]
 
 theorem LessEqual.transitive : Relation.Transitive LessEqual := by
   intro n m k ⟨a, (ha : n + a = m)⟩ ⟨b, (hb : m + b = k)⟩
   apply Exists.intro (a + b)
   rw [← add_associative, ha, hb]
-    
+
 @[simp] theorem zero_less_equal (n : ℕ) : 0 ≤ n := 
   Exists.intro n (zero_add n)
   
@@ -268,7 +256,7 @@ theorem boolean_less_equal_true_of_less_equal : ∀ {n m : ℕ}, n ≤ m → (bo
     rw [booleanLessEqual]
     have := less_equal_of_successor_less_equal_successor h
     exact boolean_less_equal_true_of_less_equal this
-    
+
 instance decideLessEqual (n m : ℕ) : Decidable (n ≤ m) :=
   if h : (booleanLessEqual n m) = true then
     isTrue (less_equal_of_boolean_less_equal_true h)
@@ -283,7 +271,7 @@ theorem LessEqual.strongly_connected : Relation.StronglyConnected LessEqual
       successor_less_equal_successor_of_less_equal 
       successor_less_equal_successor_of_less_equal 
       (LessEqual.strongly_connected n m)
-    
+
 instance totalOrder : DecidableTotalOrder Natural where
   less_equal_reflexive := LessEqual.reflexive
   less_equal_antisymmetric := LessEqual.antisymmetric
@@ -427,7 +415,7 @@ def multiply : ℕ → ℕ → ℕ
 
 instance : Mul Natural where
   mul := multiply
-  
+
 @[simp] theorem multiply_definition : multiply n m = n * m := rfl
 
 @[simp] theorem zero_multiply (n : ℕ) : 0 * n = 0 := rfl
@@ -437,27 +425,27 @@ theorem successor_multiply (n m : ℕ) : (successor n) * m = (n * m) + m := rfl
 @[simp] theorem multiply_zero (n : ℕ) : n * 0 = 0 := by
   induction n with
   | zero => rfl
-  | successor x ih =>
+  | successor n ih =>
     calc
-      (successor x) * 0 = (x * 0) + 0 := successor_multiply x 0
-      _                 = x * 0       := add_zero (x * 0)
+      (successor n) * 0 = (n * 0) + 0 := successor_multiply n 0
+      _                 = n * 0       := add_zero (n * 0)
       _                 = 0           := ih
 
 theorem multiply_successor (n m : ℕ) : n * (successor m) = (n * m) + n := by
   induction n with
   | zero => rfl
-  | successor x ih => 
-    show (successor x) * (successor m) = ((successor x) * m) + (successor x)
+  | successor n ih =>
+    show (successor n) * (successor m) = ((successor n) * m) + (successor n)
     calc
-      (successor x) * (successor m)
-        = x * (successor m) + (successor m)   := successor_multiply x (successor m)
-      _ = ((x * m) + x) + (successor m)       := congrArg (. + successor m) ih
-      _ = (x * m) + (x + (successor m))       := add_associative (x * m) x (successor m)
-      _ = (x * m) + successor (x + m)         := congrArg (x * m + .) (add_successor x m)
-      _ = (x * m) + ((successor x) + m)       := congrArg (x * m + .) (successor_add x m).symm
-      _ = (x * m) + (m + (successor x))       := congrArg (x * m + .) (add_commutative (successor x) m)
-      _ = ((x * m) + m) + (successor x)       := (add_associative (x * m) m (successor x)).symm
-      _ = ((successor x) * m) + (successor x) := congrArg (. + (successor x)) (successor_multiply x m).symm
+      (successor n) * (successor m)
+        = n * (successor m) + (successor m)   := successor_multiply n (successor m)
+      _ = ((n * m) + n) + (successor m)       := congrArg (. + successor m) ih
+      _ = (n * m) + (n + (successor m))       := add_associative (n * m) n (successor m)
+      _ = (n * m) + successor (n + m)         := congrArg (n * m + .) (add_successor n m)
+      _ = (n * m) + ((successor n) + m)       := congrArg (n * m + .) (successor_add n m).symm
+      _ = (n * m) + (m + (successor n))       := congrArg (n * m + .) (add_commutative (successor n) m)
+      _ = ((n * m) + m) + (successor n)       := (add_associative (n * m) m (successor n)).symm
+      _ = ((successor n) * m) + (successor n) := congrArg (. + (successor n)) (successor_multiply n m).symm
 
 theorem multiply_commutative (n m : ℕ) : n * m = m * n := by
   induction n with
@@ -470,37 +458,6 @@ theorem multiply_commutative (n m : ℕ) : n * m = m * n := by
       (successor n) * m = (n * m) + m       := successor_multiply n m
       _                 = (m * n) + m       := congrArg (. + m) ih
       _                 = m * (successor n) := (multiply_successor m n).symm
-
-@[simp] theorem one_multiply (n : ℕ) : 1 * n = n := rfl
-
-@[simp] theorem multiply_one (n : ℕ) : n * 1 = n := (multiply_commutative n 1).trans (one_multiply n)
-
-theorem equal_zero_of_multiply_equal_zero {n m : ℕ} : n * m = 0 → n = 0 ∨ m = 0 :=
-  match n with
-  | zero => λ _ => Or.inl rfl
-  | successor n =>
-    λ h =>
-    have h₁ : (n * m) + m = 0 := (successor_multiply n m).symm.trans h
-    have h₂ : (n * m) = 0 ∧ m = 0 := equal_zero_of_add_equal_zero h₁
-    Or.inr h₂.right
-
-theorem multiply_equal_zero_of_equal_zero {n m : ℕ} : n = 0 ∨ m = 0 → n * m = 0 := by
-  intro h
-  cases h with
-  | inl n_equal_zero => calc
-    n * m = 0 * m := congrArg (. * m) n_equal_zero
-    _     = 0     := zero_multiply m
-  | inr m_equal_zero => calc
-    n * m = n * 0 := congrArg (n * .) m_equal_zero
-    _     = 0     := multiply_zero n
-
-theorem positive_of_multiply_positive {n m : ℕ} (h : n * m ≠ 0) : n ≠ 0 ∧ m ≠ 0 :=
-  have : ¬(n = 0 ∨ m = 0) := mt multiply_equal_zero_of_equal_zero h
-  not_or.mp this
-
-theorem multiply_positive_of_positive {n m : ℕ} (hn : n ≠ 0) (hm : m ≠ 0) : n * m ≠ 0 :=
-  have : ¬(n = 0 ∨ m = 0) := not_or.mpr (And.intro hn hm)
-  mt equal_zero_of_multiply_equal_zero this
 
 theorem left_distributive (n m k : ℕ) : n * (m + k) = n * m + n * k := by
   induction k with
@@ -535,7 +492,38 @@ theorem multiply_associative (n m k : ℕ) : (n * m) * k = n * (m * k) := by
     _ = ((n * m) * k) + m * k := right_distributive (n * m) m k
     _ = (n * (m * k)) + m * k := congrArg (. + m * k) ih
     _ = successor n * (m * k) := successor_multiply n (m * k)
-    
+
+@[simp] theorem one_multiply (n : ℕ) : 1 * n = n := rfl
+
+@[simp] theorem multiply_one (n : ℕ) : n * 1 = n := (multiply_commutative n 1).trans (one_multiply n)
+
+theorem equal_zero_of_multiply_equal_zero {n m : ℕ} : n * m = 0 → n = 0 ∨ m = 0 :=
+  match n with
+  | zero => λ _ => Or.inl rfl
+  | successor n =>
+    λ h =>
+    have h₁ : (n * m) + m = 0 := (successor_multiply n m).symm.trans h
+    have h₂ : (n * m) = 0 ∧ m = 0 := equal_zero_of_add_equal_zero h₁
+    Or.inr h₂.right
+
+theorem multiply_equal_zero_of_equal_zero {n m : ℕ} : n = 0 ∨ m = 0 → n * m = 0 := by
+  intro h
+  cases h with
+  | inl n_equal_zero => calc
+    n * m = 0 * m := congrArg (. * m) n_equal_zero
+    _     = 0     := zero_multiply m
+  | inr m_equal_zero => calc
+    n * m = n * 0 := congrArg (n * .) m_equal_zero
+    _     = 0     := multiply_zero n
+
+theorem positive_of_multiply_positive {n m : ℕ} (h : n * m ≠ 0) : n ≠ 0 ∧ m ≠ 0 :=
+  have : ¬(n = 0 ∨ m = 0) := mt multiply_equal_zero_of_equal_zero h
+  not_or.mp this
+
+theorem multiply_positive_of_positive {n m : ℕ} (hn : n ≠ 0) (hm : m ≠ 0) : n * m ≠ 0 :=
+  have : ¬(n = 0 ∨ m = 0) := not_or.mpr (And.intro hn hm)
+  mt equal_zero_of_multiply_equal_zero this
+
 theorem multiply_left_commutative (n m k : ℕ) : n * (m * k) = m * (n * k) := by
   rw [← multiply_associative, multiply_commutative n m, multiply_associative]
 
@@ -568,7 +556,6 @@ theorem multiply_right_cancel {n m k : ℕ} (h_equal : n * k = m * k) (h_positiv
     _     = k * m := multiply_commutative m k
   multiply_left_cancel this h_positive
 
--- TODO: Rename to divideWithRemainder and turn into type-level algorithm with subtypes
 theorem quotient_remainder {n q : ℕ} (q_positive : q ≠ 0) :
   ∃ (p : ℕ × ℕ),
   let ⟨m, r⟩ := p; n = m * q + r ∧ r < q := by

@@ -66,7 +66,7 @@ notation "ℚ" => Rational
 instance decideEqual : DecidableEq Rational := decideRationalEquivalentQuotientEqual
 
 instance : OfNat Rational n where
-  ofNat := ⟦(Integer.ofNatural (Natural.natToNatural n), ⟨1, by decide⟩)⟧
+  ofNat := ⟦(Integer.ofNatural (Natural.fromNat n), ⟨1, by decide⟩)⟧
 
 instance zero : Rational := ⟦(0, ⟨1, by decide⟩)⟧
 
@@ -586,7 +586,7 @@ theorem subtract_nonnegative_of_less_than {x y : ℚ} : x < y → 0 < y - x :=
   intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩
   intro ⟨(⟨u, u_positive⟩, ⟨v, v_positive⟩), (h : (c * b + -a * d) * v = u * (d * b))⟩
   apply Exists.intro (⟨u, u_positive⟩, ⟨v, v_positive⟩)
-  have : Natural.natToNatural 0 = (0 : ℤ) := rfl
+  have : Natural.fromNat 0 = (0 : ℤ) := rfl
   simp [Integer.multiply_one]
   rw [this, ← Integer.negate_zero, Integer.zero_multiply, Integer.add_zero]
   exact h
@@ -597,7 +597,7 @@ instance decidePositive (x : ℚ) : Decidable (0 < x) :=
   if h : (0 < a ∧ 0 < b) ∨ (a < 0 ∧ b < 0) then
     -- TODO: Figure out how to not have this
     let h' := by
-      have : Natural.natToNatural 0 = (0 : ℤ) := rfl
+      have : Natural.fromNat 0 = (0 : ℤ) := rfl
       rw [this, ← Integer.negate_zero, Integer.zero_multiply, Integer.multiply_one, Integer.add_zero]
       simp [Integer.multiply_one]
       exact h
@@ -699,6 +699,7 @@ def absolute (x : ℚ) : ℚ := maximum x (-x)
 
 macro:max atomic("|" noWs) a:term noWs "|" : term => `(absolute $a)
 
+/-
 -- TODO: Gotta do some abstract algebra first, I'm not tryna do all those ordering proofs again
 -- I'm officially stuck until I can clean some of this up.
 --
@@ -734,6 +735,6 @@ theorem absolute_multiply_equal_multiply_absolute (x y : ℚ) : |x * y| = |x| * 
   
 theorem absolute_negate (x : ℚ) : |-x| = |x| := by
   skip
---
+-/
 
 end Rational

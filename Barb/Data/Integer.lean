@@ -53,7 +53,7 @@ notation "ℤ" => Integer
 instance decideEqual : DecidableEq Integer := decideIntegerEquivalentQuotientEqual
 
 instance : OfNat Integer n where
-  ofNat := ⟦(Natural.natToNatural n, 0)⟧
+  ofNat := ⟦(Natural.fromNat n, 0)⟧
 
 instance Zero : Integer := ⟦(0, 0)⟧
 
