@@ -48,6 +48,7 @@ import «Barb».Data.Natural
 :header-args: :tangle Barb/Data/Natural_org.lean
 :END:
 
+*** Introduction
 "The positive integers and their arithmetic are presupposed by the
 very nature of our intelligence and, we are tempted to believe, by the
 very nature of intelligence in general. The development of the
@@ -197,19 +198,19 @@ consequences due to definitional equality. The our case, the equations
 $0 + n = n$ and $S(n) + m = S(n + m)$ hold definitionally, but 
 $n + 0 = n$ and $n + S(m) = S(n + m)$ requires proofs. Luckily we
 can prove these statements with induction, and then show that addition
-is commutative, which will make our choice of definition less of a big deal.
+is commutative, which will make our choice of definition less of a big
+deal.
+
+#+begin_src lean4
+theorem zero_add (n : ℕ) : 0 + n = n := rfl
+
+theorem successor_add (n m : ℕ) : (successor n) + m = successor (n + m) := rfl
+#+end_src
 
 The proof that $n + 0 = n$ works by rewriting $S(n) + 0$ to $S(n + 0)$
 using the definition and then applying the inductive hypothesis which
 claims that $n + 0 = n$ for an arbitary $n : \mathbb{N}$. This is
 easier to see in the tactic-style proof.
-
-In the term style proof, I didn't yet know about ~congrArg~ -- which
-is wonderful -- and so I had to hack together equality substitutions,
-which is what ~congrArg~ generalizes. I also used the ~have~ and
-~show~ keywords, since they are just nice ways of writing ~let~ and
-explicitly declaring the type of an expression, respectively, and this
-really didn't feel like any big jump from pure lambda terms.
 
 #+begin_src lean4 :tangle no
 theorem add_zero' (n : ℕ) : n + 0 = n := 
@@ -235,6 +236,13 @@ theorem add_zero' (n : ℕ) : n + 0 = n :=
     _                 = successor n       := congrArg successor ih
 #+end_src
 
+In the term style proof, I didn't yet know about ~congrArg~ -- which
+is wonderful -- and so I had to hack together equality substitutions,
+which is what ~congrArg~ generalizes. I also used the ~have~ and
+~show~ keywords, since they are just nice ways of writing ~let~ and
+explicitly declaring the type of an expression, respectively, and this
+really didn't feel like any big jump from pure lambda terms.
+
 The tactic style proof is much cleaner. I really got into the
 calc-style proof of lining up transitive relations step-wise.
 
@@ -244,7 +252,7 @@ and we're done. I discovered ~congrArg~ while writing the term-style
 proof for this theorem. It's awesome; it saves you from having to
 prove the same throw-away mini lemmas over and over.
 
-#+begin_src lean4
+#+begin_src lean4 :tangle no
 theorem add_successor' (n m : ℕ) : n + (successor m) = successor (n + m) :=
   Natural.rec
     (
@@ -351,6 +359,8 @@ theorem add_right_cancel {n m k : ℕ} (h : n + k = m + k) : n = m := by
   exact add_left_cancel h
 #+end_src
 
+
+
 *** Decidable equality
 
 A decision procedure for equality of natural numbers.
@@ -383,7 +393,7 @@ using subtraction, because we tried that earlier and natural number
 subtraction is super broken total hack.
 
 You'll notice that I'm totally willing to use the ~rw~ and ~simp~
-tactics here. This might feel anachronistic since I avoid them
+tactics here. This might feel anachronistic, since I avoid them
 everywhere else in the natural number proofs and that's because it is:
 I came from the future because I need these theorems for the integers.
 
@@ -471,6 +481,33 @@ instance decideEqual : DecidableEq Natural
   | n, m => match h : distance n m with
     | zero => isTrue (equal_of_distance_equal_zero h)
     | successor a => isFalse (mt distance_equal_zero_of_equal (h ▸ successor_not_equal_zero a))
+#+end_src
+
+Corollary 2.2.9 [cite:@tao2022analysis] utilizes proof by
+contradiction. Corolarries are supposed to follow easily from a
+previously stated theorem, but the proof of
+~equal_zero_of_add_equal_zero~ was way, way more involved then
+~add_positive~, which it was supposed to follow from. Now that we have
+decidability, we can employ our classical proof methods
+locally. Specifically, we use double negation here, which in this case
+says that that $\neg \neg n = m \to n = m$.
+
+#+begin_src lean4
+theorem add_positive {n m : ℕ} : n ≠ 0 → (n + m) ≠ 0 :=
+  match n with
+  | zero => absurd rfl
+  | successor x => λ _ => successor_not_equal_zero (x + m)
+
+theorem equal_zero_of_add_equal_zero {n m : ℕ} (h : n + m = 0) : n = 0 ∧ m = 0 := by
+  apply And.intro
+  . exact Decidable.of_not_not (mt add_positive (not_not_intro h))
+  . have : m + n = 0 := (add_commutative n m).symm.trans h
+    exact Decidable.of_not_not (mt add_positive (not_not_intro this))
+
+theorem unique_predecessor_of_positive {n : ℕ} : n ≠ 0 → ∃! (m : ℕ), successor m = n :=
+  match n with
+  | zero => absurd rfl
+  | successor x => λ _ => ExistsUnique.introduction x rfl (λ _ => successor_injective)
 #+end_src
 
 *** Order, addition part
