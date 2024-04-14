@@ -7,6 +7,6 @@ import «Barb».Syntax
 
 import «Barb».Data.Natural
 import «Barb».Data.Integer
-import «Barb».Data.Rational
+-- import «Barb».Data.Rational
 
 import «Barb».Data.Option

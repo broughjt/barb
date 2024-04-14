@@ -2,18 +2,6 @@
 #+date: <2023-12-25 Mon>
 #+author: Jackson Brough
 
-* Introduction
-
-With minimal exceptions so far, I have written the proofs without
-looking at anybody else's code first. I will try to explicitly state
-where this isn't the case. For example, in Tao's Analyis 1 book, I
-will look at the theorem statement and then try to prove it myself
-before looking at the proof below. Obviously once I get past basic
-arithmetic this ideal won't last very long -- I'll have to look at
-other proofs to even get an idea of how to approach the
-problem. However, my goal is to get as much insight from this project
-as possible, so I'll have to find a working balance.
-
 * Library
 Right now, this project is a formalization of Terence Tao's Analyis I
 [cite:@tao2022analysis]. My hope is to continue to other books, but
@@ -38,7 +26,7 @@ import «Barb».Syntax
 
 import «Barb».Data.Natural
 import «Barb».Data.Integer
-import «Barb».Data.Rational
+-- import «Barb».Data.Rational
 
 import «Barb».Data.Option
 #+end_src
@@ -105,7 +93,7 @@ possible. (Psych, there are quite a few theorems in here now which use
 TODO: Why? Is here a good place to explain the developmental nature of
 the writing?
 
-*** Definition and Peano axioms
+*** Definition, Peano axioms
 
 The inductive definition of the natural numbers starts with an
 assumption that we have a zero element in $\mathbb{N}$ -- and yes, the natural
@@ -1028,7 +1016,7 @@ theorem multiply_right_cancel {n m k : ℕ} (h_equal : n * k = m * k) (h_positiv
 
 #+end_src
 
-*** Division algorithm and exponentiation
+*** Division algorithm, exponentiation
 
 This just a stub for now, I would like to rewrite ~quotient_remainder~
 into a type-level algorithm using subtypes and rename it to ~divideWithRemainder~.
@@ -1082,6 +1070,1152 @@ instance : Pow Natural Natural where
 #+end_src
 
 ** Integer
+:PROPERTIES:
+:header-args: :tangle Barb/Data/Integer.lean
+:END:
+
+#+begin_src lean4
+import Barb.Algebra
+import Barb.Data.Natural
+import Barb.Data.Option
+import Barb.Function
+import Barb.Logic
+import Barb.Quotient
+import Barb.Syntax
+
+open Natural (zero successor)
+#+end_src
+
+*** Definition
+
+It's worth saying a little bit about sensible constructions of the
+integers. When I started thinking about this, my first guess was
+something like this.
+
+#+begin_src lean4 :tangle no
+inductive Integer where
+  | zero : Integer
+  | successor : Integer → Integer
+  | predecessor : Integer → Integer
+#+end_src
+
+This is wrong: we would have the problem that $P(zero)$
+and $P(P(S(zero)))$ would be unequal canonical elements of ~Integer~,
+which would be super bad; we only want one canonical element
+representing $-1$ or any other integer. Thinking a bit longer,
+something like this construction presents itself to you.
+
+#+begin_src lean4 :tangle no
+inductive Integer where
+  | nonnegative : Natural → Integer
+  | negative : Natural → Integer
+#+end_src
+
+The first constructor represents the positive integers and zero,
+and the second constructor we can think of as $-1$ minus some natural
+number. This is fine, and it's actually what mathlib does, but there are
+some drawbacks. First, every operation and theorem is now a proof by
+cases, which just kind of sucks. Second, are these really the integers
+that God intended? The answer is no, they feel like the integers
+merged in prematurely by the software development team to get the MVP
+working before the spring is over.
+
+We want a number system which is closed under a notion of
+subtraction. In a very real sense, the integers /are/ this subtraction
+operation on the natural numbers. Whatever notion of subtraction we
+come up with, when $a - b = c - d$, it had better be the case that
+$a + d = c + b$. Actually, we can take this to be the defining
+property for subtraction. What we can do is start with the
+space $\mathbb{N} \times \mathbb{N}$, create an equivalence relation
+$(a, b) \sim (c, d) := a + d = c + b$ on this space, and then /define/ the
+integers to be the quotient space of $\mathbb{N} \times \mathbb{N}$
+with respect to the $\sim$ relation. Let's do it.
+
+#+begin_src lean4
+def IntegerEquivalent : (ℕ × ℕ) → (ℕ × ℕ) → Prop
+  | (n, m), (k, l) => n + l = k + m
+#+end_src
+
+To be able to take the quotient space, we need to show that ~IntegerEquivalent~
+is an equivalence relation.
+
+#+begin_src lean4
+theorem IntegerEquivalent.reflexive : Relation.Reflexive IntegerEquivalent :=
+  λ _ => rfl
+
+theorem IntegerEquivalent.symmetric : Relation.Symmetric IntegerEquivalent := Eq.symm
+
+theorem IntegerEquivalent.transitive : Relation.Transitive IntegerEquivalent
+  | (n, m), (k, l), (p, q), (h₁ : n + l = k + m), (h₂ : k + q = p + l) => by
+    apply Natural.add_left_cancel (n := k + l)
+    calc
+      (k + l) + (n + q) = (n + l) + (k + q) := by simp [Natural.add_associative, Natural.add_commutative, Natural.add_left_commutative]
+      _ = (k + m) + (p + l) := by simp [h₁, h₂]
+      _ = (k + l) + (p + m) := by simp [Natural.add_associative, Natural.add_commutative, Natural.add_left_commutative]
+#+end_src
+
+Now we perform some nonsense to get Lean type classes to cooperate
+with us, including showing that $(\mathbb{N}, \sim)$ forms a setoid,
+and getting decidable equality for integers to work. I mean, this last
+part is cool: if the defining relation for the quotient space is
+decidable, then equality on the quotient space is also decidable
+automatically, since that's what it means for two elements to be equal
+in the space.
+
+However, if you can't tell, I'm not a big fan of type
+classes in general. I've been burned by the orphan rules for Rust
+trait coherence, and I'm convinced that there's gotta be a better way
+to do polymorphism in typed programming languages. (Functors to the
+rescue? I don't know, I have to learn some category theory first).
+
+#+begin_src lean4
+theorem IntegerEquivalent.is_equivalence : Equivalence IntegerEquivalent :=
+  { refl := IntegerEquivalent.reflexive, symm := IntegerEquivalent.symmetric, trans := IntegerEquivalent.transitive }
+
+instance instanceHasEquivIntegerEquivalent : HasEquiv (ℕ × ℕ) where
+  Equiv := IntegerEquivalent
+
+instance instanceSetoidIntegerEquivalent : Setoid (ℕ × ℕ) where
+  r := IntegerEquivalent
+  iseqv := IntegerEquivalent.is_equivalence
+
+theorem IntegerEquivalent.definition : (a ≈ b) = IntegerEquivalent a b := rfl
+
+instance decideIntegerEquivalent (a b : ℕ × ℕ) : Decidable (a ≈ b) :=
+  let (n, m) := a
+  let (k, l) := b
+  Natural.decideEqual (n + l) (k + m)
+
+instance decideIntegerEquivalentQuotientEqual : DecidableEq (Quotient instanceSetoidIntegerEquivalent) := inferInstance
+
+-- This is basically the one line of consequence in this block
+def Integer := Quotient instanceSetoidIntegerEquivalent
+
+namespace Integer
+
+notation "ℤ" => Integer
+
+instance decideEqual : DecidableEq Integer := decideIntegerEquivalentQuotientEqual
+
+instance : OfNat Integer n where
+  ofNat := ⟦(Natural.fromNat n, 0)⟧
+
+instance Zero : Integer := ⟦(0, 0)⟧
+
+instance One : Integer := ⟦(1, 0)⟧
+#+end_src
+
+In retrospect, I'm glad I took this route. I got stuck several times
+using this definition and I learned a lot working through the details
+of ~Quotient~ in Lean.
+
+*** Operations
+
+Here we define negation, addition, and multiplication, and we use the
+first two to define subtraction. We will show that these satisfy a
+collection of properties which, taken together, show that the integers
+form a ~CommutativeRing~.
+
+Just like the natural numbers, we define each primitive operation
+recursively. However, since we defined the integers with a quotient
+type, things will work a little differently this time. To define an operation
+inductively, we define an operation on the underlying space and then
+"lift" this operation to the quotient space. Remember though, each
+element of the quotient space is actually an equivalence class, and
+importantly, this class could consist of /multiple/ elements of the
+original space. Thus, to make sure that lifting this operation makes
+sense, we need to show that the result of the operation is independent
+of our choice of representative. Logically, for an operation
+$f : \alpha \to \beta$ and a relation
+$\sim : \alpha \to \alpha \to \text{Prop}$, this amounts to showing:
+
+$$
+\forall a', a'' : \alpha, [a']_{\sim} = [a'']_{\sim} \to f(a') = f(a'')
+$$
+
+This simplifies to:
+
+$$
+a' \sim a'' \to f(a') = f(a'')
+$$
+
+Notice, the outputs $f(a')$ and $f(a'')$ are /equal/, not just related
+by $\sim$. I was confused by this in my first encounter. Proving this
+property is usually referred to as showing that $f$ "respects" the
+relation $\sim$, or that $f$ is "well-defined". This second one is kind
+of weird, because we can't really even define $f$ without showing that
+this property holds, but regardless, this is very common language from
+what I can tell.
+
+To negate an integer $a = [(n, m)] : \mathbb{Z}$, we flip it's
+positive and negative components.
+
+#+begin_src lean4
+def negate : ℤ → ℤ :=
+  let negate' := λ ((n, m) : ℕ × ℕ) => (m, n)
+  Quotient.map negate' <| by
+  intro (n, m) (n', m') (h : n + m' = n' + m)
+  show m + n' = m' + n
+  simp [Natural.add_commutative, h]
+
+instance : Neg Integer where
+  neg := negate
+
+@[simp] theorem negate_definition : negate a = -a := rfl
+#+end_src
+
+Addition of two integers $a = [(n, m)], b = [(k, l)] : \mathbb{Z}$ is
+defined by $a + b := [(n + k, m + l)]$.
+
+#+begin_src lean4
+def add : ℤ → ℤ → ℤ :=
+  let add' := λ ((n, m) : ℕ × ℕ) ((k, l) : ℕ × ℕ) => (n + k, m + l)
+  Quotient.map₂ add' <| by
+  intro (n, m) (n', m') (h₁ : n + m' = n' + m)
+  intro (k, l) (k', l') (h₂ : k + l' = k' + l)
+  show (n + k) + (m' + l') = (n' + k') + (m + l)
+  calc
+    (n + k) + (m' + l')
+      = (n + m') + (k + l') := by simp [Natural.add_associative, Natural.add_commutative, Natural.add_left_commutative]
+    _ = (n' + m) + (k + l') := congrArg (. + _) h₁
+    _ = (n' + m) + (k' + l) := congrArg (_ + .) h₂
+    _ = (n' + k') + (m + l) := by simp [Natural.add_associative, Natural.add_commutative, Natural.add_left_commutative]
+
+instance : Add Integer where add := add
+
+@[simp] theorem add_definition : add a b = a + b := rfl
+#+end_src
+
+Multiplication is given by
+$(a, b) \times (c, d) := [(ac + bd, ad + bc)]$, which is just FOIL
+from grade school. The proof that ~multiply'~ is well-defined is
+pretty painful, but I couldn't get the simplifier to do any better.
+
+#+begin_src lean4
+def multiply : ℤ → ℤ → ℤ :=
+  let multiply' := λ ((n, m) : ℕ × ℕ) ((k, l) : ℕ × ℕ) => (n * k + m * l, n * l + m * k)
+  Quotient.map₂ multiply' <| by
+  intro (n, m) (n', m') (h₁ : n + m' = n' + m)
+  intro (k, l) (k', l') (h₂ : k + l' = k' + l)
+  apply Natural.add_left_cancel (n := (n * l + m * k) + (n' * k + m' * l))
+  have h₃ : (n * k + m * l) + (n' * l + m' * k) = (n * l + m * k) + (n' * k + m' * l) := calc
+    (n * k + m * l) + (n' * l + m' * k)
+      = (n + m') * k + (n' + m) * l := by simp [Natural.add_associative, Natural.add_commutative, Natural.add_left_commutative, Natural.right_distributive]
+    _ = (n' + m) * k + (n + m') * l := by simp [h₁]
+    _ = (n * l + m * k) + (n' * k + m' * l) := by simp [Natural.add_associative, Natural.add_commutative, Natural.add_left_commutative, Natural.right_distributive]
+  calc
+    ((n * l + m * k) + (n' * k + m' * l)) + ((n * k + m * l) + (n' * l' + m' * k'))
+      = (n * l + m * k) + ((n * k + m * l) + (n' * (k + l') + m' * (k' + l))) :=
+        by simp [Natural.add_associative, Natural.add_commutative, Natural.left_distributive, Natural.add_left_commutative]
+    _ = (n * l + m * k) + ((n * k + m * l) + (n' * (k' + l) + m' * (k + l'))) := by simp [h₂]
+    _ = ((n * k + m * l) + (n' * l + m' * k)) + ((n' * k' + m' * l') + (n * l + m * k)) :=
+        by simp [Natural.add_associative, Natural.add_commutative, Natural.left_distributive, Natural.add_left_commutative]
+    _ = ((n * l + m * k) + (n' * k + m' * l)) + ((n' * k' + m' * l') + (n * l + m * k)) := congrArg (. + _) h₃
+
+instance : Mul Integer where mul := multiply
+
+@[simp] theorem multiply_definition : multiply a b = a * b := rfl
+#+end_src
+
+Now let's demonstrate those properties we talked about. Most of these
+are relatively painless -- except for ~multiply_associative~, which is
+verbose for the same reasons as the definition of multiplication. For
+every statement, we do an induction on each of the integers
+involved. This lowers to proving statements about the natural numbers,
+so we can just appeal to the algebra we developed for them.
+
+#+begin_src lean4
+theorem add_commutative : ∀ (a b : ℤ), a + b = b + a := by
+  apply Quotient.ind₂
+  intro (n, m) (k, l)
+  apply Quotient.sound
+  show (n + k) + (l + m) = (k + n) + (m + l)
+  simp [Natural.add_commutative]
+
+theorem add_associative : ∀ (a b c : ℤ), (a + b) + c = a + (b + c) := by
+  apply Quotient.ind₃
+  intro (n, m) (k, l) (o, p)
+  apply Quotient.sound
+  show ((n + k) + o) + (m + (l + p)) = (n + (k + o)) + ((m + l) + p)
+  simp [Natural.add_associative]
+
+theorem add_zero : ∀ (a : ℤ), a + 0 = a := by
+  apply Quotient.ind
+  intro (n, m)
+  apply Quotient.sound
+  show (n + 0) + m = n + (m + 0)
+  simp [Natural.add_zero]
+
+theorem add_inverse : ∀ (a : ℤ), a + (-a) = 0 := by
+  apply Quotient.ind
+  intro (n, m)
+  apply Quotient.sound
+  show (n + m) + 0 = 0 + (m + n)
+  simp [Natural.add_zero, Natural.zero_add, Natural.add_commutative]
+
+theorem multiply_commutative : ∀ (a b : ℤ), a * b = b * a := by
+  apply Quotient.ind₂
+  intro (n, m) (k, l)
+  apply Quotient.sound
+  show (n * k + m * l) + (k * m + l * n) = (k * n + l * m) + (n * l + m * k)
+  simp [Natural.add_commutative, Natural.multiply_commutative]
+
+theorem multiply_associative : ∀ (a b c : ℤ), (a * b) * c = a * (b * c) := by
+  intro a b c
+  let i := Quotient.mk instanceSetoidIntegerEquivalent
+  suffices ∀ (a b c : ℕ × ℕ), multiply (multiply (i a) (i b)) (i c) = multiply (i a) (multiply (i b) (i c))
+  from Quotient.inductionOn₃ a b c this
+  intro (n, m) (k, l) (p, q)
+  apply Quotient.sound
+  show ((n*k + m*l)*p + (n*l + m*k)*q) + (n*(k*q + l*p) + m*(k*p + l*q))
+    = (n*(k*p + l*q) + m*(k*q + l*p)) + ((n*k + m*l)*q + (n*l + m*k)*p)
+  let d := (n*k + m*l)*p + (n*l + m*k)*q
+  let f := n*(k*p + l*q) + m*(k*q + l*p)
+  let e := n*(k*q + l*p) + m*(k*p + l*q)
+  let g := (n*k + m*l)*q + (n*l + m*k)*p
+  have r {u v w x y z : ℕ} : (u*w + v*x)*y + (u*x + v*w)*z = u*(w*y + x*z) + v*(w*z + x*y) := calc
+    (u*w + v*x)*y + (u*x + v*w)*z = u*w*y + v*x*y + u*x*z + v*w*z := by simp [Natural.add_associative, Natural.right_distributive]
+    _ = u*(w*y) + u*(x*z) + v*(w*z) + v*(x*y) := by simp [Natural.add_associative, Natural.add_commutative, Natural.add_left_commutative, Natural.multiply_associative]
+    _ = u*(w*y + x*z) + v*(w*z + x*y) := by simp [Natural.left_distributive, Natural.add_associative]
+  have hdf : d = f := calc
+    d = (n*k + m*l)*p + (n*l + m*k)*q := rfl
+    _ = n*(k*p + l*q) + m*(k*q + l*p) := r
+    _ = f := rfl
+  have heg : e = g := calc
+    e = n*(k*q + l*p) + m*(k*p + l*q) := rfl
+    _ = (n*k + m*l)*q + (n*l + m*k)*p := r.symm
+    _ = g := rfl
+  simp [hdf, heg]
+
+theorem multiply_one : ∀ (a : ℤ), a * 1 = a := by
+  apply Quotient.ind
+  intro (n, m)
+  apply Quotient.sound
+  show (n * 1 + m * 0) + m = n + (n * 0 + m * 1)
+  simp [Natural.add_associative, Natural.zero_add, Natural.multiply_one, Natural.multiply_zero]
+
+theorem left_distributive : ∀ (a b c : ℤ), a * (b + c) = a * b + a * c := by
+  apply Quotient.ind₃
+  intro (n, m) (k, l) (p, q)
+  apply Quotient.sound
+  show (n*(k + p) + m*(l + q)) + ((n*l + m*k) + (n*q + m*p)) = ((n*k + m*l) + (n*p + m*q)) + (n*(l + q) + m*(k + p))
+  simp [Natural.left_distributive, Natural.add_associative, Natural.add_commutative, Natural.add_left_commutative]
+
+theorem right_distributive : ∀ (a b c : ℤ), (a + b) * c = a * c + b * c := by
+  intro a b c
+  rw [multiply_commutative, left_distributive, multiply_commutative c a, multiply_commutative c b]
+#+end_src
+
+Collectively, these properties define an algebraic structure called a
+_commutative ring_. The integers are like the poster child for commutative rings.
+
+#+begin_src lean4
+instance commutativeRing : CommutativeRing Integer where
+  add_commutative := add_commutative
+  add_associative := add_associative
+  add_zero := add_zero
+  add_inverse := add_inverse
+
+  multiply_commutative := multiply_commutative
+  multiply_associative := multiply_associative
+  multiply_one := multiply_one
+
+  left_distributive := left_distributive
+  right_distributive := right_distributive
+#+end_src
+
+*** Operation lemmas
+
+Now we get to a more unpleasant section. We've got to prove a whole
+bunch of lemmas that we'll need later, but which -- with only a few
+exceptions -- refer exclusively to the ring properties we just
+proved. I mean these are all pratically begging to be generalized to
+their common algebraic structure. I'll complain about this more in the
+rational module later.
+
+#+begin_src lean4
+theorem zero_add (a : ℤ) : 0 + a = a := by
+  rw [add_commutative, add_zero]
+
+theorem add_left_commutative (n m k : ℤ) : n + (m + k) = m + (n + k) := by
+  rw [← add_associative, add_commutative n m, add_associative]
+
+theorem add_right_commutative (n m k : ℤ) : (n + m) + k = (n + k) + m := by
+  rw [add_associative, add_commutative m k, ← add_associative]
+
+theorem add_inverse_left (a : ℤ) : -a + a = 0 := by
+  rw [add_commutative, add_inverse]
+
+theorem add_left_cancel {a b c : ℤ} (h : a + b = a + c) : b = c := by
+  have : -a + (a + b) = -a + (a + c) := by rw [h]
+  simp [← add_associative, add_inverse_left, zero_add] at this
+  exact this
+
+theorem add_right_cancel {a b c : ℤ} (h : a + c = b + c) : a = b := by
+  rewrite [add_commutative a c, add_commutative b c] at h
+  exact add_left_cancel h
+
+theorem negate_add_cancel_left (a b : ℤ) : -a + (a + b) = b := by
+  rw [← add_associative (-a) a b, add_inverse_left, zero_add]
+
+theorem negate_add_cancel_right (a b : ℤ) : (a + -b) + b = a := by
+  rw [add_associative, add_inverse_left, add_zero]
+
+theorem add_negate_cancel_left (a b : ℤ) : a + (-a + b) = b := by
+  rw [← add_associative, add_inverse, zero_add]
+
+theorem add_negate_cancel_right (a b : ℤ) : (a + b) + -b = a := by
+  rw [add_associative, add_inverse, add_zero]
+#+end_src
+
+Okay first question: notice that ~multiply_zero~ has to refer to the
+structural properties of integers again. Does this only hold for some
+rings? If so, is that like an important classification or distinction
+in ring theory? Can't wait to find out.
+
+#+begin_src lean4
+theorem multiply_zero : ∀ (a : ℤ), a * 0 = 0 := by
+  apply Quotient.ind
+  intro (n, m)
+  apply Quotient.sound
+  show (n*0 + m*0) + 0 = 0 + (n*0 + m*0)
+  simp [Natural.add_zero, Natural.multiply_zero]
+
+theorem zero_multiply (a : ℤ) : 0 * a = 0 := by
+  rw [multiply_commutative, multiply_zero]
+
+theorem one_multiply (a : ℤ) : 1 * a = a := by
+  rw [multiply_commutative, multiply_one]
+#+end_src
+
+See, I think even the subtraction operation could be generalized to
+the ring structure, so you could just get the operation and all the
+lemmas for free once you show that the integers form a ring.
+
+#+begin_src lean4
+def subtract (a b : ℤ) : ℤ := a + (-b)
+
+instance : Sub Integer where sub := subtract
+
+theorem subtract_definition (a b : ℤ) : a + (-b) = a - b := rfl
+
+theorem negate_zero : (0 : ℤ) = (-0 : ℤ) := rfl
+
+theorem negate_involutive : Function.Involutive negate := by
+  apply Quotient.ind
+  intro (n, m)
+  rfl
+
+@[simp]
+theorem negate_negate : ∀ a : ℤ, - -a = a := λ a => negate_involutive a
+
+theorem subtract_self (a : ℤ) : a - a = 0 := add_inverse a
+
+theorem subtract_zero (a : ℤ) : a - 0 = a := by
+  rw [← subtract_definition, ← negate_zero, add_zero]
+
+theorem zero_subtract (a : ℤ) : 0 - a = -a := by
+  rw [← subtract_definition, zero_add]
+
+theorem negate_equal_of_add_equal_zero {a b : ℤ} (h : a + b = 0) : a = -b := by
+  rw [← add_zero a, ← add_inverse (b), ← add_associative, h, zero_add]
+
+theorem subtract_equal_zero_of_equal {a b : ℤ} (h : a = b) : a - b = 0 := by
+  rw [← h, subtract_self]
+
+theorem equal_of_subtract_equal_zero {a b : ℤ} (h : a - b = 0) : a = b := by
+  rw [← add_zero a, ← add_inverse b, add_commutative b, ← add_associative, subtract_definition, h, zero_add]
+
+theorem negate_add (a b : ℤ) : -(a + b) = -a + -b := by
+  apply add_left_cancel (a := a + b)
+  rw [add_inverse, add_associative, ← add_associative b (-a) (-b), add_commutative b (-a),
+     ← add_associative a, ← add_associative, add_inverse, zero_add, add_inverse]
+
+theorem subtract_subtract (a b c : ℤ) : (a - b) - c = a - (b + c) := by
+  apply Eq.symm
+  rw [← subtract_definition, negate_add, ← add_associative, subtract_definition, subtract_definition]
+
+theorem negate_subtract {a b : ℤ} : -(a - b) = b - a := by
+  rw [← subtract_definition, negate_add, negate_negate, add_commutative, subtract_definition]
+
+theorem subtract_subtract_self (a b : ℤ) : a - (a - b) = b := by
+  rw [← subtract_definition, negate_subtract, ← subtract_definition,
+    add_commutative (b) (-a), add_negate_cancel_left]
+#+end_src
+
+For ~negate_multiply_equal_negate_multiply~, I actually did look at
+the proof of the corresponding theorem in mathlib the first one I came
+up with was way more complicated then I felt like it needed to be. The
+shorter version is kind of sneaky. You rewrite $(-a)b = -(ab)$ to
+$(-a)b + ab = 0$ by adding $-(ab)$ to both sides, then
+distribute to $(-a + a)b = 0$ which gives $0 = 0$.
+
+#+begin_src lean4
+theorem negate_multiply_equal_negate_multiply (a b : ℤ) : -(a * b) = -a * b := by
+  apply Eq.symm
+  apply negate_equal_of_add_equal_zero
+  rw [← right_distributive, add_commutative, add_inverse, zero_multiply]
+
+theorem negate_multiply_equal_multiply_negate (a b : ℤ) : -(a * b) = a * -b := by
+  rw [multiply_commutative, negate_multiply_equal_negate_multiply, multiply_commutative]
+#+end_src
+
+#+begin_src lean4
+theorem subtract_multiply (a b c : ℤ) : (a - b) * c = a * c - b * c := by
+  rw [← subtract_definition, right_distributive, ← negate_multiply_equal_negate_multiply, subtract_definition]
+
+theorem multiply_subtract (a b c : ℤ) : a * (b - c) = a * b - a * c := by
+  rw [multiply_commutative a _, subtract_multiply, multiply_commutative b a, multiply_commutative a c]
+#+end_src
+
+Now, I'm inclined to think that $ab = 0 \to a = 0 \lor b = 0$ holds
+for all rings, and if so, I can't wait to try proving this, because my
+current proof for this statement over the integers makes a super ugly
+appeal to order trichotomy, and I can't figure out a better way.
+
+#+begin_src lean4
+theorem equal_of_unlift_equal_zero {n m : ℕ} : ⟦(n, m)⟧ = (0 : ℤ) → n = m := by
+  intro h
+  rw [← Natural.add_zero n, ← Natural.zero_add m]
+  exact Quotient.exact h
+
+theorem equal_zero_of_lift_equal {n m : ℕ} : n = m → ⟦(n, m)⟧ = (0 : ℤ) := by
+  intro h
+  rw [← Natural.add_zero n, ← Natural.zero_add m] at h
+  exact Quotient.sound h
+
+theorem equal_zero_of_multiply_equal_zero : ∀ {a b : ℤ}, a * b = 0 → a = 0 ∨ b = 0 := by
+  apply Quotient.ind₂
+  intro (n, m) (k, l) h'
+  have h := equal_of_unlift_equal_zero h'
+  apply Or.implies equal_zero_of_lift_equal equal_zero_of_lift_equal
+  have f {w x y z : ℕ} (h_less : w < x) (h_equivalent : w*y + x*z = w*z + x*y) : y = z := by
+  { let ⟨a, h_positive, (h_exists : w + a = x)⟩ := Natural.equal_add_positive_of_less_than h_less
+    apply (Natural.multiply_left_cancel . h_positive)
+    apply Natural.add_left_cancel (n := w*y + w*z)
+    rw [← h_exists, Natural.right_distributive, ← Natural.add_associative, Natural.right_distributive,
+      Natural.add_left_commutative, ← Natural.add_associative] at h_equivalent
+    exact h_equivalent.symm }
+  match less_than_trichotomous n m with
+  | Or.inl h_less => exact Or.inr (f h_less h)
+  | Or.inr (Or.inl h_equal) =>
+    apply Or.inl
+    simp [h_equal, Natural.add_zero, Natural.zero_add]
+  | Or.inr (Or.inr h_greater) =>
+    apply Or.inr
+    rw [Natural.add_commutative (n*l) (m*k), Natural.add_commutative (n*k) (m*l)] at h
+    exact f h_greater h.symm
+
+theorem multiply_equal_zero_of_equal_zero : ∀ {a b : ℤ}, a = 0 ∨ b = 0 → a * b = 0 := by
+  apply Quotient.ind₂
+  intro (n, m) (k, l) h'
+  have h := Or.implies equal_of_unlift_equal_zero equal_of_unlift_equal_zero h'
+  rw [← multiply_definition]
+  simp [multiply, Quotient.map₂]
+  apply equal_zero_of_lift_equal
+  match h with
+  | Or.inl hnm => rw [hnm, Natural.add_commutative]
+  | Or.inr hkl => rw [hkl]
+#+end_src
+
+#+begin_src lean4
+theorem multiply_left_commutative (n m k : ℤ) : n * (m * k) = m * (n * k) := by
+  rw [← multiply_associative, multiply_commutative n m, multiply_associative]
+
+theorem multiply_right_commutative (n m k : ℤ) : (n * m) * k = (n * k) * m := by
+  rw [multiply_associative, multiply_commutative m k, ← multiply_associative]
+
+theorem multiply_left_cancel {a b c : ℤ} (h : a * b = a * c) (a_nonzero : a ≠ 0) : b = c := by
+  suffices c - b = 0 from (equal_of_subtract_equal_zero this).symm
+  apply (Or.resolve_left . a_nonzero)
+  apply equal_zero_of_multiply_equal_zero
+  rw [← subtract_definition, left_distributive, ← h,
+    ← negate_multiply_equal_multiply_negate, add_inverse]
+
+theorem multiply_right_cancel {a b c : ℤ} (h : a * c = b * c) (c_nonzero : c ≠ 0) : a = b := by
+  apply multiply_left_cancel (a := c)
+  rw [multiply_commutative c a, multiply_commutative c b]
+  exact h
+  exact c_nonzero
+
+theorem multiply_nonzero_of_nonzero {a b : ℤ} (ha : a ≠ 0) (hb : b ≠ 0) : a * b ≠ 0 := by
+  intro h
+  apply hb
+  apply (Integer.multiply_left_cancel (a := a) . ha)
+  rw [h, multiply_zero]
+
+theorem nonzero_of_multiply_nonzero {a b : ℤ} (h : a * b ≠ 0) : a ≠ 0 ∧ b ≠ 0 :=
+  not_or.mp (mt multiply_equal_zero_of_equal_zero h)
+#+end_src
+
+*** Order
+
+To define the $\le$ relation on the integers, we kind of just cop out
+and repeat our definition from the natural numbers. Actually, I don't
+know how else you'd define it, but anyway, we don't have a notion of
+heterogeneous addition between integers and natural numbers, and I
+don't really want to develop one, since that would involve making an
+API (collection of lemmas) for it. Further, this isn't set theory, so
+we don't just get to pretend that $\mathbb{N} \subset \mathbb{Z}$ and
+avoid this issue. (By the way, I'm still skeptical about how exactly
+this is true in set theory, but I haven't read any Cantor so I'll
+susped judgement.)
+
+Instead, we need to define a conversion operator from natural numbers
+to nonnegative integers. Unfortunately, we need the $\le$ relation to
+be defined before we even have the language to claim that this
+conversion has good properties, so we delay this until after we define
+$\le$ and show that it forms a total order.
+
+#+begin_src lean4
+def ofNatural (n : ℕ) : ℤ :=
+  Quotient.mk instanceSetoidIntegerEquivalent (n, 0)
+
+instance : Coe Natural Integer := ⟨ofNatural⟩
+
+theorem ofNatural_add (n m : ℕ) : ofNatural (n + m) = ofNatural n + ofNatural m := rfl
+
+theorem ofNatural_multiply (n m : ℕ) : ofNatural (n * m) = ofNatural n * ofNatural m := by
+  unfold ofNatural
+  apply Quotient.sound
+  show (n * m) + (n * 0 + 0 * m) = (n * m + 0 * 0) + 0
+  simp [Natural.add_zero, Natural.zero_add, Natural.multiply_zero, Natural.zero_multiply]
+
+theorem ofNatural_injective : Function.Injective ofNatural := by
+  intro a b h
+  rw [← Natural.add_zero a, Quotient.exact h, Natural.add_zero]
+
+theorem ofNatural_zero : ofNatural 0 = (0 : ℤ) := rfl
+#+end_src
+
+#+begin_src lean4
+def LessEqual (a b : ℤ) : Prop := ∃ (n : ℕ), a + ↑n = b
+
+instance : LE Integer where
+  le := LessEqual
+
+theorem less_equal_definition : (a ≤ b) = LessEqual a b := rfl
+#+end_src
+
+The proofs that $\le$ forms a partial order are essentially the exact
+same arguments made for the natural number version.
+
+#+begin_src lean4
+theorem LessEqual.reflexive : Relation.Reflexive LessEqual :=
+  λ _ => Exists.intro 0 (add_zero _)
+
+theorem LessEqual.antisymmetric : Relation.AntiSymmetric LessEqual := by
+  intro a b ⟨n, hn⟩ ⟨m, hm⟩
+  suffices m = 0 ∧ n = 0
+  by rw [← add_zero a, ← ofNatural_zero, ← this.right, hn]
+  apply Natural.equal_zero_of_add_equal_zero
+  apply ofNatural_injective
+  apply add_left_cancel (a := b)
+  rw [ofNatural_add, ← add_associative, hm, hn, ofNatural_zero, add_zero]
+
+theorem LessEqual.transitive : Relation.Transitive LessEqual := by
+  intro a b c ⟨n, (ha : a + ↑n = b)⟩ ⟨m, (hb : b + ↑m = c)⟩
+  apply Exists.intro ↑(n + m)
+  rw [ofNatural_add, ← add_associative, ha, hb]
+#+end_src
+
+It took a little bit to figure out how to show that $\le$ on the
+integers was decidable. The trickiest part was just understanding the
+rules for what can and can't be done with ~Quotient~ types. The key is
+to apply the same technique I mentioned when discussing decidability
+in the natural numbers module: find something you know how to compute
+and prove that it's logically equivalent to the proposition you want
+to decide (now you get the idea that I might have gone back and
+written that portion retrospectively).
+
+For the integer $\le$, this ammounts to two insights. First, that we have the
+logical equivalence $a \le b \iff 0 \le b - a$
+[cite:@tao2022analysis, Lemma 4.1.11 (a), p. 82], and second, that an
+integer $a = [(n, m)]$ is nonnegative if and only if $m \le n$. We
+have a decision procedure for $\le$ on the natural numbers, so given
+$a, b : \mathbb{Z}$, we calculate $b - a$, lower this value to natural
+numbers $n, m : \mathbb{N}$, decide whether $m \le n$, and then use
+the properties we developed to show that this suffices to decide $\le$
+over the integers.
+
+#+begin_src lean4
+theorem less_equal_of_subtract_nonnegative {a b : ℤ} : 0 ≤ b - a → a ≤ b := by
+  intro ⟨n, (h : 0 + ↑n = b - a)⟩
+  apply Exists.intro n
+  rw [add_commutative a ↑n, ← zero_add (↑n + a), ← add_associative, h,
+    ← subtract_definition, add_associative, add_inverse_left, add_zero]
+
+theorem subtract_nonnegative_of_less_equal {a b : ℤ} : a ≤ b → 0 ≤ b - a := by
+  intro ⟨n, (h : a + ↑n = b)⟩
+  apply Exists.intro n
+  rw [← add_inverse a, add_right_commutative, h, subtract_definition]
+
+theorem nonnegative_of_negative_less_equal_positive {n m : ℕ} : m ≤ n → (0 : ℤ) ≤ ⟦(n, m)⟧ := by
+  intro ⟨a, (ha : m + a = n)⟩
+  apply Exists.intro a
+  apply Quotient.sound
+  show (0 + a) + m = n + 0
+  simp [Natural.add_zero, Natural.add_commutative, ha]
+
+theorem negative_less_equal_positive_of_nonnegative {n m : ℕ} : (0 : ℤ) ≤ ⟦(n, m)⟧ → m ≤ n := by
+  intro ⟨a, (ha : (0 : ℤ) + ↑a = ⟦(n, m)⟧)⟩
+  have : (0 + a) + m = n + (0 + 0) := Quotient.exact ha
+  simp [Natural.zero_add, Natural.add_commutative] at this
+  exact (Exists.intro a this)
+
+instance decideNonNegative (a : ℤ) : Decidable (0 ≤ a) :=
+  Quotient.recOnSubsingleton a
+  λ ((n, m) : ℕ × ℕ) =>
+  if h : m ≤ n then
+    isTrue (nonnegative_of_negative_less_equal_positive h)
+  else
+    isFalse (mt negative_less_equal_positive_of_nonnegative h)
+
+instance decideLessEqual (a b : ℤ) : Decidable (a ≤ b) :=
+  if h : 0 ≤ b - a then
+    isTrue (less_equal_of_subtract_nonnegative h)
+  else
+    isFalse (mt subtract_nonnegative_of_less_equal h)
+#+end_src
+
+To show that $\le$ is strongly connected, we make a
+super lame appeal to this property for $\le$ over the natural,
+which itself was a lame appeal to decidability using a double
+induction. It's probably worth looking at other people's proofs of
+these two.
+
+#+begin_src lean4
+theorem LessEqual.strongly_connected : Relation.StronglyConnected LessEqual :=
+  have lift_less_equal {n m k l : ℕ} : n + l ≤ k + m → LessEqual ⟦(n, m)⟧ ⟦(k, l)⟧ := by
+  { intro ⟨a, (ha : (n + l) + a = k + m)⟩
+    apply Exists.intro a
+    apply Quotient.sound
+    simp
+    show (n + a) + l = k + m
+    rw [Natural.add_right_commutative, ha] }
+  Quotient.ind₂ λ (p, q) (s, t) =>
+  Or.implies lift_less_equal lift_less_equal (Natural.LessEqual.strongly_connected (p + t) (s + q))
+#+end_src
+
+All of this shows that $\le$ forms a total order for $\mathbb{Z}$.
+
+#+begin_src lean4
+instance totalOrder : DecidableTotalOrder Integer where
+  less_equal_reflexive := LessEqual.reflexive
+  less_equal_antisymmetric := LessEqual.antisymmetric
+  less_equal_transitive := LessEqual.transitive
+  less_equal_strongly_connected := LessEqual.strongly_connected
+  decideEqual := decideEqual
+  decideLessEqual := decideLessEqual
+#+end_src
+
+TODO: Write a good explanation. Start from the very
+beginning. Explain what it would look like if we had proof
+relevance. Then explain the approach you want to take instead. Explain
+why it was so hard, explain the problem with Quotient.rec
+
+#+begin_src lean4
+theorem ofNatural_nonnegative (n : ℕ) : (0 : ℤ) ≤ ↑n :=
+  Exists.intro n (zero_add n)
+  
+theorem ofNatural_successor_positive (n : ℕ) : (0 : ℤ) < ↑(successor n) := by
+  match equal_or_less_than_of_less_equal (ofNatural_nonnegative (successor n)) with
+  | Or.inl h =>
+    have : 0 + 0 = successor n + 0 := Quotient.exact h
+    simp [add_zero] at this
+    exact absurd this.symm (Natural.successor_not_equal_zero n)
+  | Or.inr h =>
+    exact h
+
+theorem equal_ofNatural_of_nonnegative : ∀ {a : ℤ}, 0 ≤ a → ∃ n : ℕ, ↑n = a := by
+  apply Quotient.ind
+  intro (n, m) ⟨a, ha⟩
+  simp [zero_add] at ha
+  exact Exists.intro a ha
+#+end_src
+
+#+begin_src lean4
+abbrev NonNegativeInteger := {a : ℤ // 0 ≤ a}
+abbrev PositiveInteger := {a : ℤ // 0 < a}
+abbrev NonZeroInteger := {a : ℤ // a ≠ 0}
+abbrev NegativeInteger := {a : ℤ // a < 0}
+abbrev NonPositiveInteger := {a : ℤ // a ≤ 0}
+#+end_src
+
+#+begin_src lean4
+namespace NonNegativeInteger
+
+def preToNatural' : ℕ × ℕ → Option ℕ
+  | (n, m) => if n ≥ m then some (Natural.distance n m) else none
+
+@[simp]
+theorem preToNatural_none (x : ℕ × ℕ) (h : x.1 < x.2) : preToNatural' x = none := by
+  have := not_less_equal_of_greater_than h
+  simp [preToNatural', not_less_equal_of_greater_than h]
+
+@[simp]
+theorem preToNatural_some (x : ℕ × ℕ) (h : x.1 ≥ x.2) : preToNatural' x = some (Natural.distance x.1 x.2) := by
+  simp [preToNatural', h]
+
+def toNatural' : ℤ → Option ℕ :=
+  Quotient.lift preToNatural' <| by
+  intro (n, m) (k, l) (h : n + l = k + m)
+  cases Decidable.em (m ≤ n)
+  <;> cases Decidable.em (l ≤ k)
+  <;> simp_all [preToNatural', preToNatural_none, preToNatural_some]
+  case inl.inl hnm hkl =>
+    rw [Natural.add_commutative k m] at h
+    exact Natural.distance_equal_of_add_equal h
+  case inl.inr hnm hkl =>
+    rw [Natural.add_commutative k m] at h
+    have := Natural.right_greater_equal_of_add_left_less_equal h.symm hnm
+    exact absurd this hkl
+  case inr.inl hnm hkl =>
+    rw [Natural.add_commutative n l] at h
+    have := Natural.right_greater_equal_of_add_left_less_equal h hkl
+    exact absurd this hnm
+
+def toNatural : NonNegativeInteger → ℕ
+  | (⟨a, a_nonnegative⟩) =>
+    Option.get (toNatural' a) <| by
+    have ⟨n, hn⟩ := equal_ofNatural_of_nonnegative a_nonnegative
+    rw [toNatural', ← hn, ofNatural, Quotient.lift_construct, preToNatural']
+    simp [Natural.zero_less_equal, subtract_zero, ite_true, Option.isSome]
+
+def fromNatural (n : ℕ) : NonNegativeInteger :=
+  ⟨n, ofNatural_nonnegative n⟩
+
+theorem fromNatural_toNatural_left_inverse : Function.LeftInverse toNatural fromNatural := by
+  intro n
+  simp [fromNatural, ofNatural, toNatural, toNatural', preToNatural', Natural.distance_zero_left]
+  
+theorem fromNatural_toNatural_right_inverse : Function.RightInverse toNatural fromNatural := by
+  intro ⟨a, b, h⟩
+  rw [zero_add, ofNatural] at h
+  subst h
+  simp [toNatural, toNatural', preToNatural', fromNatural, ofNatural, Natural.distance_zero_left]
+
+end NonNegativeInteger
+#+end_src
+
+Now we come to the huge collection of lemmas about ordering on the
+integers. It's difficult to organize them all, so it's worth it to lay
+out first what we expect to be true.
+
+Or not, the latex crashed emacs and I didn't save. Not doing it again
+right now.
+
+#+begin_src lean4
+theorem add_left_monotone (a : ℤ) : Monotone (a + .) := by
+  intro b c h
+  let ⟨n, hn⟩ := h
+  apply Exists.intro n
+  rw [add_associative, hn]
+
+theorem add_right_monotone (c : ℤ) : Monotone (. + c) := by
+  intro a b h
+  simp
+  rw [add_commutative a c, add_commutative b c]
+  exact add_left_monotone c h
+
+theorem less_equal_of_add_less_equal_left {a b c : ℤ} (h : a + b ≤ a + c) : b ≤ c := by
+  have := add_left_monotone (-a) h
+  simp [negate_add_cancel_left] at this
+  exact this
+
+theorem less_equal_of_add_less_equal_right {a b c : ℤ} (h : a + c ≤ b + c) : a ≤ b := by
+  rw [add_commutative a c, add_commutative b c] at h
+  exact less_equal_of_add_less_equal_left h
+
+theorem add_less_equal_add {a b c d : ℤ} (hac : a ≤ c) (hbd : b ≤ d) : a + b ≤ c + d :=
+  less_equal_transitive (add_right_monotone b hac) (add_left_monotone c hbd)
+
+theorem less_equal_add_of_nonnegative_left {a b : ℤ} (h : 0 ≤ b) : a ≤ b + a := by
+  have := add_less_equal_add h (less_equal_reflexive a)
+  rw [zero_add] at this
+  exact this
+
+theorem less_equal_add_of_nonnegative_right {a b : ℤ} (h : 0 ≤ b) : a ≤ a + b := by
+  rw [add_commutative a b]
+  exact less_equal_add_of_nonnegative_left h
+  
+theorem less_equal_of_subtract_nonpositive {a b : ℤ} (h : a - b ≤ 0) : a ≤ b := by
+  have := add_right_monotone b h
+  simp [zero_add] at this
+  rw [← subtract_definition, negate_add_cancel_right] at this
+  exact this
+
+theorem subtract_nonpositive_of_less_equal {a b : ℤ} (h : a ≤ b) : a - b ≤ 0 := by
+  have := add_right_monotone (-b) h
+  simp [add_inverse] at this
+  exact this
+  
+theorem negate_antitone : Antitone negate := by
+  intro a b h
+  have ha := add_right_monotone (-a) h
+  simp [add_inverse, add_commutative] at ha
+  have hb := add_right_monotone (-b) ha
+  simp [zero_add] at hb
+  rw [add_right_commutative, add_inverse, zero_add] at hb
+  exact hb
+
+theorem less_equal_of_negate_less_equal_negate {a b : ℤ} (h : -b ≤ -a) : a ≤ b :=
+  suffices - -a ≤ - -b by simp at this; exact this
+  negate_antitone h
+  
+theorem multiply_nonnegative_left_monotone {a : ℤ} (ha : 0 ≤ a) : Monotone (a * .) := by
+  intro b c h
+  let ⟨n, hn⟩ := h
+  let ⟨m, hm⟩ := ha
+  rw [zero_add] at hm
+  apply Exists.intro ↑(m * n)
+  rw [ofNatural_multiply, hm, ← left_distributive, hn]
+  
+theorem multiply_nonnegative_right_monotone {c : ℤ} (hc : 0 ≤ c) : Monotone (. * c) := by
+  unfold Monotone
+  intro a b h
+  simp
+  rw [multiply_commutative a c, multiply_commutative b c]
+  exact multiply_nonnegative_left_monotone hc h
+
+theorem multiply_nonnegative {a b : ℤ} (ha : 0 ≤ a) (hb : 0 ≤ b) : 0 ≤ a * b := by
+  let ⟨n, hn⟩ := equal_ofNatural_of_nonnegative ha
+  let ⟨m, hm⟩ := equal_ofNatural_of_nonnegative hb
+  apply Exists.intro ↑(n * m)
+  rw [zero_add, ofNatural_multiply, hn, hm]
+  
+theorem multiply_nonpositive {a b : ℤ} (ha : a ≤ 0) (hb : b ≤ 0) : 0 ≤ a * b := by
+  have := multiply_nonnegative (negate_antitone ha) (negate_antitone hb)
+  rw [negate_definition, negate_definition, ← negate_multiply_equal_multiply_negate, ← negate_multiply_equal_negate_multiply, negate_negate] at this
+  exact this
+
+theorem multiply_nonpositive_of_nonnegative_of_nonpositive {a b : ℤ} (ha : 0 ≤ a) (hb : b ≤ 0) : a * b ≤ 0 := by
+  rw [← multiply_zero a]
+  exact multiply_nonnegative_left_monotone ha hb
+
+theorem multiply_nonpositive_of_nonpositive_of_nonnegative {a b : ℤ} (ha : a ≤ 0) (hb : 0 ≤ b) : a * b ≤ 0 := by
+  rw [← zero_multiply b]
+  exact multiply_nonnegative_right_monotone hb ha
+  
+-- Tricky: We only require that c is nonnegative, a is totally cool to be negative because that will make a*b negative which preserves order
+theorem multiply_less_equal_multiply {a b c d : ℤ} (hac : a ≤ c) (hbd : b ≤ d) (hb : 0 ≤ b) (hc : 0 ≤ c) : a * b ≤ c * d :=
+  less_equal_transitive
+  (multiply_nonnegative_right_monotone hb hac)
+  (multiply_nonnegative_left_monotone hc hbd)
+  
+theorem multiply_nonpositive_left_antitone {a : ℤ} (ha : a ≤ 0) : Antitone (a * .) := by
+  intro b c h
+  have := multiply_nonnegative_left_monotone (negate_antitone ha) h
+  simp at this
+  rw [← negate_multiply_equal_negate_multiply, ← negate_multiply_equal_negate_multiply] at this
+  exact less_equal_of_negate_less_equal_negate this
+
+theorem multiply_nonpositive_right_antitone {c : ℤ} (hc : c ≤ 0) : Antitone (. * c) := by
+  intro a b h
+  simp
+  rw [multiply_commutative a c, multiply_commutative b c]
+  exact multiply_nonpositive_left_antitone hc h
+  
+theorem equal_add_positive_of_less_than {a b : ℤ} (h : a < b) :
+    ∃ (n : ℕ), n ≠ 0 ∧ a + ↑n = b := by
+  let ⟨n, hab⟩ := less_equal_of_less_than h
+  have n_nonzero : n ≠ 0 := by
+  { intro  hn
+    rw [hn, ofNatural_zero, add_zero] at hab
+    exact absurd hab (not_equal_of_less_than h) }
+  apply Exists.intro n (And.intro n_nonzero hab)
+
+theorem less_than_of_equal_add_positive {a b : ℤ} {n : ℕ} : n ≠ 0 → a + ↑n = b → a < b := by
+  intro n_nonzero hab
+  apply less_than_of_less_equal_of_not_equal
+  . exact Exists.intro n hab
+  . intro hab'
+    have := congrArg (-b + .) (hab' ▸ hab)
+    simp [negate_add_cancel_left, add_inverse_left] at this
+    exact absurd (ofNatural_injective this) n_nonzero
+    
+theorem equal_ofNatural_positive_of_positive {a : ℤ} (h : 0 < a) : 
+    ∃ n : ℕ, n ≠ 0 ∧ ↑n = a := 
+  equal_add_positive_of_less_than h
+
+theorem add_left_strict_monotone (a : ℤ) : StrictMonotone (a + .) := by
+  intro b c h
+  let ⟨hbc, hcb⟩ := less_than_equivalent_less_equal_not_less_equal.mp h
+  apply less_than_equivalent_less_equal_not_less_equal.mpr
+  apply And.intro
+  . exact add_left_monotone a hbc
+  . intro h'
+    have : c ≤ b := (less_equal_of_add_less_equal_left h')
+    exact absurd this hcb
+  
+theorem add_right_strict_monotone (c : ℤ) : StrictMonotone (. + c) := by
+  intro a b h
+  simp
+  rw [add_commutative a c, add_commutative b c]
+  exact add_left_strict_monotone c h
+
+theorem less_than_of_add_less_than_left {a b c : ℤ} (h : a + b < a + c) : b < c := by
+  have := add_left_strict_monotone (-a) h
+  simp [negate_add_cancel_left] at this
+  exact this
+
+theorem less_than_of_add_less_than_right {a b c : ℤ} (h : a + c < b + c) : a < b := by
+  rw [add_commutative a c, add_commutative b c] at h
+  exact less_than_of_add_less_than_left h
+  
+theorem add_less_than_add {a b c d : ℤ} (hac : a < c) (hbd : b < d) : a + b < c + d :=
+  less_than_transitive (add_right_strict_monotone b hac) (add_left_strict_monotone c hbd)
+
+theorem less_than_add_of_nonnegative_left {a b : ℤ} (h : 0 < b) : a < b + a := by
+  have := add_right_strict_monotone a h
+  simp [zero_add] at this
+  exact this
+
+theorem less_than_add_of_nonnegative_right {a b : ℤ} (h : 0 < b) : a < a + b := by
+  rw [add_commutative a b]
+  exact less_than_add_of_nonnegative_left h
+
+theorem less_than_of_subtract_positive {a b : ℤ} : 0 < b - a → a < b := by
+  intro h
+  have := add_right_strict_monotone a h
+  simp [zero_add, ← subtract_definition, negate_add_cancel_right] at this
+  exact this
+
+theorem subtract_positive_of_less_than {a b : ℤ} : a < b → 0 < b - a := by
+  intro h
+  have := add_right_strict_monotone (-a) h
+  simp [add_inverse] at this
+  exact this
+    
+theorem less_than_of_subtract_negative {a b : ℤ} (h : a - b < 0) : a < b := by
+  have := add_right_strict_monotone b h
+  simp at this
+  rw [zero_add, ← subtract_definition, negate_add_cancel_right] at this
+  exact this
+
+theorem subtract_negative_of_less_than {a b : ℤ} (h : a < b) : a - b < 0 := by
+  have := add_right_strict_monotone (-b) h
+  simp [add_inverse] at this
+  exact this
+
+theorem negate_strict_antitone : StrictAntitone negate := by
+  intro a b h
+  have ha := add_left_strict_monotone (-b) h
+  simp [add_inverse_left] at ha
+  have hb := add_right_strict_monotone (-a) ha
+  simp [zero_add, add_associative, add_inverse, add_zero] at hb
+  exact hb
+
+theorem less_than_of_negate_less_than_negate {a b : ℤ} (h : -b < -a) : a < b :=
+  suffices - -a < - - b by simp at this; exact this
+  negate_strict_antitone h
+
+theorem multiply_positive_left_strict_monotone {a : ℤ} (ha : 0 < a) : StrictMonotone (a * .) := by
+  intro b c h
+  let ⟨n, hn, hbc⟩ := equal_add_positive_of_less_than h
+  let ⟨m, hm, ha⟩ := equal_ofNatural_positive_of_positive ha
+  apply less_than_of_equal_add_positive
+  . exact Natural.multiply_positive_of_positive hn hm
+  . rw [ofNatural_multiply, ha, multiply_commutative _ a, ← left_distributive]
+    exact congrArg (a * .) hbc
+  
+theorem multiply_positive_right_strict_monotone {c : ℤ} (hc : 0 < c) : StrictMonotone (. * c) := by
+  intro a b h
+  simp [multiply_commutative a c, multiply_commutative b c]
+  exact multiply_positive_left_strict_monotone hc h
+
+theorem multiply_positive {a b : ℤ} (ha : 0 < a) (hb : 0 < b) : 0 < a * b := by
+  let ⟨n, hn, ha⟩ := equal_ofNatural_positive_of_positive ha
+  let ⟨m, hm, hb⟩ := equal_ofNatural_positive_of_positive hb
+  -- TODO: Need to make a nonzero theorem, also rename integer one to nonzero
+  apply less_than_of_equal_add_positive 
+  . exact (Natural.multiply_positive_of_positive hn hm)
+  . rw [zero_add, ofNatural_multiply, ha, hb]
+
+theorem multiply_negative {a b : ℤ} (ha : a < 0) (hb : b < 0) : 0 < a * b := by
+  let ⟨n, hn, ha⟩ := equal_ofNatural_positive_of_positive (negate_strict_antitone ha)
+  let ⟨m, hm, hb⟩ := equal_ofNatural_positive_of_positive (negate_strict_antitone hb)
+  apply less_than_of_equal_add_positive
+  . exact (Natural.multiply_positive_of_positive hn hm)
+  . rw [zero_add, ofNatural_multiply, ha, hb, negate_definition, negate_definition, 
+       ← negate_multiply_equal_negate_multiply, ← negate_multiply_equal_multiply_negate, negate_negate]
+
+theorem multiply_negative_of_positive_of_negative {a b : ℤ} (ha : 0 < a) (hb : b < 0) : a * b < 0 := by
+  rw [← multiply_zero a]
+  exact multiply_positive_left_strict_monotone ha hb
+
+theorem multiply_negative_of_negative_of_positive {a b : ℤ} (ha : a < 0) (hb : 0 < b) : a * b < 0 := by
+  rw [← zero_multiply b]
+  exact multiply_positive_right_strict_monotone hb ha
+
+theorem multiply_less_than_multiply {a b c d : ℤ} (hac : a < c) (hbd : b < d) (hb : 0 < b) (hc : 0 < c) : a * b < c * d :=
+  less_than_transitive
+  (multiply_positive_right_strict_monotone hb hac)
+  (multiply_positive_left_strict_monotone hc hbd)
+  
+theorem multiply_negative_left_strict_antitone {a : ℤ} (ha : a < 0) : StrictAntitone (a * .) := by
+  intro b c h
+  have := multiply_positive_left_strict_monotone (negate_strict_antitone ha) h
+  simp [← negate_multiply_equal_negate_multiply, ← negate_multiply_equal_negate_multiply] at this
+  exact less_than_of_negate_less_than_negate this
+  
+theorem multiply_negative_right_strict_antitone {c : ℤ} (hc : c < 0) : StrictAntitone (. * c) := by
+  intro a b h
+  simp [multiply_commutative a c, multiply_commutative b c]
+  exact multiply_negative_left_strict_antitone hc h
+  
+-- TODO: The names are wrong, prove positive_left_* version, so switch
+theorem positive_right_of_multiply_positive_of_positive_left {a b : ℤ} (h : 0 < a * b) (ha : 0 < a) : 0 < b := by
+  match less_than_trichotomous 0 b with
+  | Or.inl h_less => exact h_less
+  | Or.inr (Or.inl h_equal) =>
+    rw [← h_equal, multiply_zero] at h
+    exact absurd h (less_than_irreflexive 0)
+  | Or.inr (Or.inr h_greater) =>
+    have := multiply_negative_of_positive_of_negative ha h_greater
+    exact absurd (less_than_transitive this h) (less_than_irreflexive (a * b))
+    
+theorem positive_left_of_multiply_positive_of_positive_right {a b : ℤ} (h : 0 < a * b) (hb : 0 < b) : 0 < a := by
+  rw [multiply_commutative] at h
+  exact positive_right_of_multiply_positive_of_positive_left h hb
+  
+theorem negative_left_of_multiply_negative_of_positive_right {a b : ℤ} (h : a * b < 0) (hb : 0 < b) : a < 0 := by
+  match less_than_trichotomous 0 a with
+  | Or.inl a_positive =>
+    have := multiply_positive a_positive hb
+    exact absurd (less_than_transitive this h) (less_than_irreflexive 0)
+  | Or.inr (Or.inl a_zero) =>
+    rw [← a_zero, Integer.zero_multiply] at h
+    exact absurd h (less_than_irreflexive 0)
+  | Or.inr (Or.inr a_negative) => exact a_negative
+  
+theorem negative_right_of_multiply_negative_of_positive_left {a b : ℤ} (h : a * b < 0) (ha : 0 < a) : b < 0 := by
+  rw [multiply_commutative] at h
+  exact negative_left_of_multiply_negative_of_positive_right h ha
+
+theorem less_than_multiply_cancel_left_of_positive {a b c : ℤ} (h : a * b < a * c) (ha : 0 < a) : b < c := by
+  -- If we subtract a*b from both sides and distribute (undistribute?), we have a * (c - b). We proved earlier (specifically because I realized that I needed it to prove this one), that if we have a * b > 0 and a > 0, then b > 0. Applying this gives c - b > 0, and then we apply the theorem which gives b < c.
+  -- This was a good example of having no clue what to do, I tried to appeal to the existence of the natural number and even do induction on it, but I needed to develop the simpler theorem about sharing signs first and then apply it here.
+  have := add_right_strict_monotone (-(a*b)) h
+  simp [multiply_zero, add_inverse, negate_multiply_equal_multiply_negate, ← left_distributive] at this
+  exact less_than_of_subtract_positive (positive_right_of_multiply_positive_of_positive_left this ha)
+  
+theorem less_than_multiply_cancel_right_of_positive {a b c : ℤ} (h : a * c < b * c) (hc : 0 < c) : a < b := by
+  rw [multiply_commutative a c, multiply_commutative b c] at h
+  exact less_than_multiply_cancel_left_of_positive h hc
+  
+theorem less_equal_multiply_cancel_left_of_positive {a b c : ℤ} (h : a * b ≤ a * c) (ha : 0 < a) : b ≤ c :=
+  match less_than_or_equal_of_less_equal h with
+  | Or.inl h_less => less_equal_of_less_than <|
+    less_than_multiply_cancel_left_of_positive h_less ha
+  | Or.inr h_equal => less_equal_of_equal <|
+    multiply_left_cancel h_equal (not_equal_of_less_than ha).symm
+
+theorem less_equal_multiply_cancel_right_of_positive {a b c : ℤ} (h : a * c ≤ b * c) (hc : 0 < c) : a ≤ b := by
+  rw [multiply_commutative a c, multiply_commutative b c] at h
+  exact less_equal_multiply_cancel_left_of_positive h hc
+#+end_src
+
 ** Rational
 ** Utilities
 *** Algebra
@@ -1134,11 +2268,14 @@ def Surjective (f : α → β) := ∀ y, ∃ x, f x = y
 
 def Bijective (f : α → β) := Injective f ∧ Surjective f
 
--- "_left_ after right is identity", that is, (f ∘ g) = id
-def LeftInverse (g : β → α) (f : α → β) := ∀ x : α, g (f x) = x
+-- "g is a left inverse to f," that is, (g ∘ f) = id
+def LeftInverse (g : β → α) (f : α → β) := ∀ x : α, (g ∘ f) x = x
 
--- "_right_ after left is identity", that is, (g ∘ f) = id
+-- "g is a right inverse to f," that is, (f ∘ g) = id
 def RightInverse (g : β → α) (f : α → β) := LeftInverse f g
+
+-- TODO: Prove that ∃ LeftInverse → Injective
+-- TODO: Prove that ∃ RightInverse → Surjective
 
 def Involutive (f : α → α) := LeftInverse f f
 
@@ -1305,6 +2442,260 @@ end Relator
 #+end_src
 
 *** Order
+:PROPERTIES:
+:header-args: :tangle Barb/Order.lean
+:END:
+
+This file gives definitions for preorders, partial orders, and total
+orders, and provides basic lemmas for working with them. For now it
+also includes a definition of monotone and antitone functions, but
+this should probably have its own module soon.
+
+#+begin_src lean4
+import Barb.Logic
+#+end_src
+
+A _preorder_ is a binary relation which is reflexive and transitive. A
+_partial order_ is a preorder which is also antisymmetric. A
+_strict partial order_ is a binary relation which is irreflexive,
+asymmetric, and transitive. Each partial order induces a strict
+partial order and vice versa. Because type classes suck, it is
+difficult to create a sensible organization which accommodates both
+directions, so we prioritize the partial order to strict partial order
+direction.
+
+We define preorders, partial orders, and strict partial orders
+first. We include a default less than definition which we will use to
+induce a strict partial order below, and require that any provided
+less than definition be logically equivalent to our definition.
+
+#+begin_src lean4
+class Preorder (α : Type u) extends LE α, LT α where
+  less_equal_reflexive : Relation.Reflexive (. ≤ . : α → α → Prop)
+  less_equal_transitive : Relation.Transitive (. ≤ . : α → α → Prop)
+  lt := λ a b => a ≤ b ∧ ¬b ≤ a
+  less_than_equivalent_less_equal_not_less_equal : ∀ {a b : α},
+    lt a b ↔ a ≤ b ∧ ¬b ≤ a := by intros; simp
+
+class PartialOrder (α : Type u) extends Preorder α where
+  less_equal_antisymmetric : Relation.AntiSymmetric (. ≤ . : α → α → Prop)
+
+class StrictPartialOrder (α : Type u) extends LT α where
+  less_than_irreflexive : Relation.Irreflexive (. < . : α → α → Prop)
+  less_than_transitive : Relation.Transitive (. < . : α → α → Prop)
+  -- Default proof: apply transitivity to a < b and b < a to get a < a, but this is a contradiction since ¬(a < a) for all a : α.
+  less_than_asymmetric : Relation.Asymmetric (. < . : α → α → Prop)
+    := λ hab hba => less_than_irreflexive _ (less_than_transitive hab hba)
+#+end_src
+
+Then we give a bunch of getters and setters.
+
+#+begin_src lean4
+def LessEqual [s : Preorder α] := s.le
+
+def LessThan [s : Preorder α] := s.lt
+
+theorem less_equal_reflexive [Preorder α] : Relation.Reflexive (. ≤ . : α → α → Prop) := Preorder.less_equal_reflexive
+
+theorem less_equal_transitive [Preorder α] : Relation.Transitive (. ≤ . : α → α → Prop) := Preorder.less_equal_transitive
+
+theorem less_than_equivalent_less_equal_not_less_equal [Preorder α] : ∀ {a b : α}, a < b ↔ a ≤ b ∧ ¬b ≤ a := Preorder.less_than_equivalent_less_equal_not_less_equal
+
+theorem less_equal_antisymmetric [PartialOrder α] : Relation.AntiSymmetric (. ≤ . : α → α → Prop) := PartialOrder.less_equal_antisymmetric
+
+theorem less_than_irreflexive [StrictPartialOrder α] : Relation.Irreflexive (. < . : α → α → Prop) := StrictPartialOrder.less_than_irreflexive
+
+theorem less_than_transitive [StrictPartialOrder α] : Relation.Transitive (. < . : α → α → Prop) := StrictPartialOrder.less_than_transitive
+
+theorem less_than_asymmetric [StrictPartialOrder α] : Relation.Asymmetric (. < . : α → α → Prop) := StrictPartialOrder.less_than_asymmetric
+#+end_src
+
+The induced relation $a \le b \land \neg b \le a$ we gave above
+satisfies the properties of a strict partial order, so every preorder
+induces a partial order.
+
+#+begin_src lean4
+instance strictPartialOrderOfPreorder [Preorder α] : StrictPartialOrder α where
+  lt := LessThan
+  less_than_irreflexive :=
+    λ _ h => 
+    let ⟨hl, hr⟩ := less_than_equivalent_less_equal_not_less_equal.mp h
+    absurd hl hr
+  less_than_transitive :=
+    λ hab hbc =>
+    let ⟨hab, hba⟩ := less_than_equivalent_less_equal_not_less_equal.mp hab
+    let ⟨hbc, _⟩ := less_than_equivalent_less_equal_not_less_equal.mp hbc
+    less_than_equivalent_less_equal_not_less_equal.mpr
+    (And.intro (less_equal_transitive hab hbc) (λ hca => absurd (less_equal_transitive hbc hca) hba))
+#+end_src
+
+More lemmas.
+
+#+begin_src lean4
+theorem less_equal_of_equal [Preorder α] {a b : α} : a = b → a ≤ b := λ h => h ▸ Preorder.less_equal_reflexive a
+
+theorem less_than_of_less_equal_of_not_equal [PartialOrder α] : ∀ {a b : α}, a ≤ b → a ≠ b → a < b
+  | _, _, h_less_equal, h_not_equal =>
+  less_than_equivalent_less_equal_not_less_equal.mpr (And.intro h_less_equal (mt (less_equal_antisymmetric h_less_equal) h_not_equal))
+  
+theorem less_equal_of_less_than [Preorder α] : ∀ {a b : α}, a < b → a ≤ b
+  | _, _, h => (less_than_equivalent_less_equal_not_less_equal.mp h).left
+
+theorem not_equal_of_less_than [PartialOrder α] {a b : α} (h_less_than : a < b) : a ≠ b :=
+  λ h_equal => absurd h_less_than (h_equal ▸ less_than_irreflexive a)
+  
+theorem less_than_of_less_than_of_less_equal [PartialOrder α] : ∀ {a b c : α}, a < b → b ≤ c → a < c
+  | _, _, _, hab, hbc =>
+  let ⟨hab, hba⟩ := less_than_equivalent_less_equal_not_less_equal.mp hab
+  less_than_equivalent_less_equal_not_less_equal.mpr (And.intro (less_equal_transitive hab hbc) (λ hca => hba (less_equal_transitive hbc hca)))
+
+theorem less_than_of_less_equal_of_less_than [PartialOrder α] : ∀ {a b c : α}, a ≤ b → b < c → a < c
+  | _, _, _, hab, hbc =>
+  let ⟨hbc, hcb⟩ := less_than_equivalent_less_equal_not_less_equal.mp hbc
+  less_than_equivalent_less_equal_not_less_equal.mpr (And.intro (less_equal_transitive hab hbc) (λ hca => hcb (less_equal_transitive hca hab)))
+
+theorem less_equal_of_less_than_or_equal [PartialOrder α] : ∀ {a b : α}, a < b ∨ a = b → a ≤ b
+  | _, _, Or.inl h => less_equal_of_less_than h
+  | _, _, Or.inr h => less_equal_of_equal h
+
+theorem not_less_equal_of_greater_than [PartialOrder α] {a b : α} (h : a < b) : ¬b ≤ a :=
+  (less_than_equivalent_less_equal_not_less_equal.mp h).right
+
+theorem not_less_than_of_greater_equal [PartialOrder α] {a b : α} (h : a ≤ b) : ¬b < a := λ hab => not_less_equal_of_greater_than hab h
+
+theorem less_equal_of_equal_or_less_than [PartialOrder α] : ∀ {a b : α}, a = b ∨ a < b → a ≤ b := less_equal_of_less_than_or_equal ∘ Or.commutative.mp
+
+theorem less_equal_antisymmetric_equivalent_equal [PartialOrder α] : ∀ {a b : α}, a = b ↔ a ≤ b ∧ b ≤ a :=
+  ⟨λ h_equal => ⟨less_equal_of_equal h_equal, less_equal_of_equal h_equal.symm⟩, λ ⟨hab, hba⟩ => less_equal_antisymmetric hab hba⟩
+
+instance decideEqualOfDecideLessEqual [PartialOrder α] [DecidableRel (. ≤ . : α → α → Prop)] : DecidableEq α
+  | a, b =>
+    if hab : a ≤ b then
+      if hba : b ≤ a then isTrue (less_equal_antisymmetric hab hba)
+      else isFalse λ h_equal => hba (h_equal ▸ less_equal_reflexive a)
+    else isFalse λ h_equal => hab (h_equal ▸ less_equal_reflexive a)
+
+instance decideLessThanOfDecideLessEqual [Preorder α] [DecidableRel (. ≤ . : α → α → Prop)] : DecidableRel (. < . : α → α → Prop)
+  | a, b =>
+    if hab : a ≤ b then
+      if hba : b ≤ a then isFalse λ hba' => (less_than_equivalent_less_equal_not_less_equal.mp hba').right hba
+      else isTrue (less_than_equivalent_less_equal_not_less_equal.mpr (And.intro hab hba))
+    else isFalse (λ hab' => hab (less_equal_of_less_than hab'))
+
+theorem less_than_or_equal_of_less_equal [PartialOrder α] [DecidableRel (. ≤ . : α → α → Prop)] {a b : α} (hab : a ≤ b) : a < b ∨ a = b :=
+  if hba : b ≤ a then
+    Or.inr (less_equal_antisymmetric hab hba)
+  else
+    Or.inl (less_than_equivalent_less_equal_not_less_equal.mpr (And.intro hab hba))
+
+theorem equal_or_less_than_of_less_equal [PartialOrder α] [DecidableRel (. ≤ . : α → α → Prop)] :
+    ∀ {a b : α}, a ≤ b → a = b ∨ a < b :=
+  Or.commutative.mp ∘ less_than_or_equal_of_less_equal
+
+theorem less_equal_equivalent_less_than_or_equal [PartialOrder α] [DecidableRel (. ≤ . : α → α → Prop)] :
+    ∀ {a b : α}, a ≤ b ↔ a < b ∨ a = b :=
+  ⟨less_than_or_equal_of_less_equal, less_equal_of_less_than_or_equal⟩
+#+end_src
+
+Now we define a total order, which adds the property of being strongly
+connected to a partial order, and a strict total order, which adds the
+property of being connected to a strict partial order. We also include
+a notion of decidable versions of these definitions.
+
+#+begin_src lean4
+class TotalOrder (α : Type u) extends PartialOrder α where
+  less_equal_strongly_connected : Relation.StronglyConnected (. ≤ . : α → α → Prop)
+
+class StrictTotalOrder (α : Type u) extends StrictPartialOrder α where
+  less_than_connected : Relation.Connected (. < . : α → α → Prop)
+
+class DecidableTotalOrder (α : Type u) extends TotalOrder α where
+  decideLessEqual : DecidableRel (. ≤ . : α → α → Prop)
+  decideEqual : DecidableEq α := decideEqualOfDecideLessEqual
+  decideLessThan : DecidableRel (. < . : α → α → Prop) := decideLessThanOfDecideLessEqual
+
+class DecidableStrictTotalOrder (α : Type u) extends StrictTotalOrder α where
+  decideLessThan : DecidableRel (. < . : α → α → Prop)
+  decideEqual : DecidableEq α
+#+end_src
+
+#+begin_src lean4
+theorem less_equal_strongly_connected [TotalOrder α] : Relation.StronglyConnected (. ≤ . : α → α → Prop) := TotalOrder.less_equal_strongly_connected
+
+theorem less_than_connected [StrictTotalOrder α] : Relation.Connected (. < . : α → α → Prop) := StrictTotalOrder.less_than_connected
+
+instance [DecidableTotalOrder α] : DecidableRel (. ≤ . : α → α → Prop) := DecidableTotalOrder.decideLessEqual
+
+instance [DecidableStrictTotalOrder α] : DecidableRel (. < . : α → α → Prop) := DecidableStrictTotalOrder.decideLessThan
+
+instance [DecidableStrictTotalOrder α] : DecidableEq α := DecidableStrictTotalOrder.decideEqual
+#+end_src
+
+A total order induces a strict total order because we proved earlier
+that $a \le b \land a \ne b \to a < b$.
+
+#+begin_src lean4
+instance strictTotalOrderOfTotalOrder [TotalOrder α] : StrictTotalOrder α where
+  less_than_connected :=
+    λ h => match less_equal_strongly_connected _ _ with
+      | Or.inl hab => Or.inl (less_than_of_less_equal_of_not_equal hab h)
+      | Or.inr hba => Or.inr (less_than_of_less_equal_of_not_equal hba h.symm)
+#+end_src
+
+#+begin_src lean4
+theorem less_equal_of_not_greater_equal [TotalOrder α] {a b : α} : 
+    ¬a ≥ b → a ≤ b := 
+  Or.resolve_right (less_equal_strongly_connected a b)
+
+theorem less_equal_of_not_less_equal [TotalOrder α] {a b : α} : 
+    ¬a ≤ b → b ≤ a := 
+  Or.resolve_left (less_equal_strongly_connected a b)
+
+theorem less_than_trichotomous [DecidableTotalOrder α] (a b : α) : a < b ∨ a = b ∨ a > b :=
+  Or.elim (less_equal_strongly_connected a b)
+    (λ h : a ≤ b => Or.elim (less_than_or_equal_of_less_equal h) Or.inl (Or.inr ∘ Or.inl))
+    (λ h : a ≥ b => Or.elim (less_than_or_equal_of_less_equal h) (Or.inr ∘ Or.inr) (Or.inr ∘ Or.inl ∘ Eq.symm))
+
+theorem less_equal_of_not_less_than [DecidableTotalOrder α] {a b : α} (h : ¬a < b) : b ≤ a :=
+  match less_than_trichotomous b a with
+  | Or.inl h_less => less_equal_of_less_than h_less
+  | Or.inr (Or.inl h_equal) => less_equal_of_equal h_equal
+  | Or.inr (Or.inr h_greater) => absurd h_greater h
+
+theorem less_than_or_less_equal [DecidableTotalOrder α] (a b : α) : a < b ∨ b ≤ a := by
+  match less_than_trichotomous a b with
+  | Or.inl h_less => exact Or.inl h_less
+  | Or.inr (Or.inl h_equal) => exact Or.inr (less_equal_of_equal h_equal.symm)
+  | Or.inr (Or.inr h_greater) => exact Or.inr (less_equal_of_less_than h_greater)
+
+theorem less_equal_or_less_than [DecidableTotalOrder α] (a b : α) : a ≤ b ∨ b < a :=
+  Or.symmetric (less_than_or_less_equal b a)
+#+end_src
+
+Using the definition of a decidable total order we can give
+definitions for the minimum and maximum functions.
+
+#+begin_src lean4
+def minimum [DecidableTotalOrder α] (a b : α) := if a ≤ b then a else b
+
+def maximum [DecidableTotalOrder α] (a b : α) := if a ≤ b then b else a
+#+end_src
+
+A function $f$ between two preorders is _monotone_ if it preserves
+order, that is, if $a \le b$ implies $f(a) \le f(b)$. A function is
+_antitone_ if it reverses order. We also define corresponding "strict"
+definitions for strict partial orders.
+
+#+begin_src lean4
+def Monotone [Preorder α] [Preorder β] (f : α → β) := ∀ {a b : α}, a ≤ b → f a ≤ f b
+
+def Antitone [Preorder α] [Preorder β] (f : α → β) := ∀ {a b : α}, a ≤ b → f b ≤ f a
+
+def StrictMonotone [StrictPartialOrder α] [StrictPartialOrder β] (f : α → β) := ∀ {a b : α}, a < b → f a < f b
+
+def StrictAntitone [StrictPartialOrder α] [StrictPartialOrder β] (f : α → β) := ∀ {a b : α}, a < b → f b < f a
+#+end_src
+
 *** Quotient
 :PROPERTIES:
 :header-args: :tangle Barb/Quotient.lean

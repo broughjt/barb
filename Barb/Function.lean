@@ -6,11 +6,14 @@ def Surjective (f : α → β) := ∀ y, ∃ x, f x = y
 
 def Bijective (f : α → β) := Injective f ∧ Surjective f
 
--- "_left_ after right is identity", that is, (f ∘ g) = id
-def LeftInverse (g : β → α) (f : α → β) := ∀ x : α, g (f x) = x
+-- "g is a left inverse to f," that is, (g ∘ f) = id
+def LeftInverse (g : β → α) (f : α → β) := ∀ x : α, (g ∘ f) x = x
 
--- "_right_ after left is identity", that is, (g ∘ f) = id
+-- "g is a right inverse to f," that is, (f ∘ g) = id
 def RightInverse (g : β → α) (f : α → β) := LeftInverse f g
+
+-- TODO: Prove that ∃ LeftInverse → Injective
+-- TODO: Prove that ∃ RightInverse → Surjective
 
 def Involutive (f : α → α) := LeftInverse f f
 
