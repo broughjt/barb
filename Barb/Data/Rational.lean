@@ -6,7 +6,7 @@ import Barb.Logic
 open Integer (NonZeroInteger)
 
 def RationalEquivalent : (ℤ × NonZeroInteger) → (ℤ × NonZeroInteger) → Prop
-  | (a, ⟨b, _⟩), (a', ⟨b', _⟩) => a * b' = a' * b
+  | (a, ⟨b, _⟩), (c, ⟨d, _⟩) => a * d = c * b
 
 theorem RationalEquivalent.reflexive : Relation.Reflexive RationalEquivalent :=
   λ _ => rfl
@@ -123,8 +123,6 @@ def negate : ℚ → ℚ :=
 instance : Neg Rational where neg := negate
 
 @[simp] theorem negate_definition : negate x = -x := rfl
-
-abbrev NonZeroRational := {x : ℚ // x ≠ 0}
 
 def preReciprocal : ℤ × NonZeroInteger → Option ℚ
   | (a, ⟨b, _⟩) => if ha : a ≠ 0 then some ⟦(b, ⟨a, ha⟩)⟧ else none
@@ -394,45 +392,6 @@ theorem negate_multiply_equal_negate_multiply (a b : ℚ) : -(a * b) = -a * b :=
 theorem negate_multiply_equal_multiply_negate (a b : ℚ) : -(a * b) = a * -b := by
   rw [multiply_commutative, negate_multiply_equal_negate_multiply, multiply_commutative]
 
--- End copy pasted nonsense from integers, need to generalize to rings and fields
-
--- Why does Tao elect to define less than before less equal?
-
-/-
-def LessEqual (x y : ℚ) : Prop :=
-  -- TODO: rename nonnegative
-  let positive'
-    | u => ∃ v : Integer.NonNegativeInteger × Integer.PositiveInteger, u ≈ (v.1.val, ⟨v.2.val, (not_equal_of_less_than v.2.property).symm⟩)
-  Quotient.liftOn (y - x) positive' <| by
-  intro a b (h : a ≈ b)
-  apply propext
-  apply Iff.intro
-  . simp
-    intro ⟨v, hv⟩
-    apply Exists.intro v (h.symmetric.transitive hv)
-  . simp
-    intro ⟨v, hv⟩
-    apply Exists.intro v (h.transitive hv)
-
-theorem LessEqual.reflexive : Relation.Reflexive LessEqual := by
-  unfold LessEqual
-  intro x
-  rw [subtract_self, zero_definition, Quotient.lift_construct_on]
-  exact Exists.intro (⟨0, by decide⟩, ⟨1, by decide⟩) rfl
-
--- TODO: Don't try to simplify, work out on paper what the show statement needs to be and prove that
-theorem LessEqual.antisymmetric : Relation.AntiSymmetric LessEqual := by
-  unfold Relation.AntiSymmetric
-  unfold LessEqual
-  apply Quotient.ind₂
-  intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩
-  intro ⟨(⟨s, hs⟩, ⟨t, ht⟩), hst'⟩ ⟨(⟨u, hu⟩, ⟨v, hv⟩), huv'⟩
-  have hst : (c*b + -a*d)*t = s * (d*b) := hst'
-  have huv : (a*d + -c*b)*v = u*(b*d) := huv'
-  apply Quotient.sound
-  show a*d = c*b
--/
-
 def LessThan (x y : ℚ) : Prop :=
   let positive'
     | (a, ⟨b, b_nonzero⟩) => ∃ v : Integer.PositiveInteger × Integer.PositiveInteger,
@@ -454,6 +413,13 @@ instance : LT Rational where
 
 @[simp] theorem less_than_definition : (x < y) = (LessThan x y) := rfl
 
+def LessEqual (x y : ℚ) : Prop := x < y ∨ x = y
+
+instance : LE Rational where
+  le := LessEqual
+
+@[simp] theorem less_equal_definition : (x ≤ y) = (LessEqual x y) := rfl
+
 theorem LessThan.irreflexive : Relation.Irreflexive LessThan := by
   intro x
   unfold LessThan
@@ -463,39 +429,6 @@ theorem LessThan.irreflexive : Relation.Irreflexive LessThan := by
   rw [Integer.zero_multiply, Integer.multiply_one] at hv
   exact absurd hv (not_equal_of_less_than a_positive)
   
--- TODO: Rename all these to just use lowercase like everything else, there's no good reason to use the projection naming like this, it just looks weird at every callsite
-
--- Here we appeal to asymmetry of less than on the integers. We suppose both x < y and y < x, lower these statements to statements about integer representatives for x and y, and then show that supposing both contradicts the asymmetry property of the less than relation for the integers.
--- TODO: Don't need this
-/-
-theorem LessThan.asymmetric : Relation.Asymmetric LessThan := by
-  apply Quotient.ind₂
-  intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩
-  intro ⟨(⟨u, u_positive⟩, ⟨v, v_positive⟩), (huv : (c*b + -a*d)*v = u*(d*b))⟩
-  intro ⟨(⟨s, s_positive⟩, ⟨t, t_positive⟩), (hst : (a*d + -c*b)*t = s*(b*d))⟩
-  rw [Integer.multiply_commutative d b, ← Integer.negate_multiply_equal_negate_multiply] at huv
-  rw [← Integer.negate_multiply_equal_negate_multiply] at hst
-  match less_than_trichotomous (b*d) 0 with
-  | Or.inl bd_negative =>
-    have hcbad := Integer.less_than_of_subtract_negative <|
-      Integer.negative_left_of_multiply_negative_of_positive_right
-      (huv.symm ▸ Integer.multiply_negative_of_positive_of_negative u_positive bd_negative) v_positive
-    have hadcb := Integer.less_than_of_subtract_negative <|
-      Integer.negative_left_of_multiply_negative_of_positive_right
-      (hst.symm ▸ Integer.multiply_negative_of_positive_of_negative s_positive bd_negative) t_positive
-    exact absurd hcbad (less_than_asymmetric hadcb)
-  | Or.inr (Or.inl bd_zero) =>
-    exact absurd bd_zero (Integer.multiply_nonzero_of_nonzero b_nonzero d_nonzero)
-  | Or.inr (Or.inr bd_positive) =>
-    have hadcb := Integer.less_than_of_subtract_positive <|
-      Integer.positive_left_of_multiply_positive_of_positive_right 
-      (huv.symm ▸ Integer.multiply_positive u_positive bd_positive) v_positive
-    have hcbad := Integer.less_than_of_subtract_positive <| 
-      Integer.positive_left_of_multiply_positive_of_positive_right
-      (hst.symm ▸ Integer.multiply_positive s_positive bd_positive) t_positive
-    exact absurd hadcb (less_than_asymmetric hcbad)
--/
-    
 -- Readable proof of this and asymmetric property are in the last few pages of black notebook, we should turn them into latex. Gist for this one is just to plug in one equation into the other
 -- This proof is easy once you write out the equations in terms of fractions like c//d - a//b = p//q and solve.
 -- TODO: Is it possible to avoid the case split on c = 0? I think it's gotta be, the equations are the same at the end
@@ -544,6 +477,11 @@ theorem LessThan.transitive : Relation.Transitive LessThan := by
     let v : Integer.PositiveInteger := ⟨t * q, htq⟩
     exact Exists.intro (u, v) kick
 
+theorem LessThan.asymmetric : Relation.Asymmetric LessThan := by
+  unfold Relation.Asymmetric
+  intro x y hxy hyx
+  exact LessThan.irreflexive x (LessThan.transitive hxy hyx)
+  
 theorem positive_or_negative_of_equal_positive : ∀ {a : ℤ} {b : NonZeroInteger} {c d : Integer.PositiveInteger}, 
     (a, b) ≈ (c.val, ⟨d, (not_equal_of_less_than d.property).symm⟩) →
     (0 < a ∧ 0 < b.val) ∨ (a < 0 ∧ b.val < 0) := by
@@ -567,10 +505,10 @@ theorem equal_positive_of_positive_or_negative : ∀ {a : ℤ} {b : NonZeroInteg
     ∃ u : Integer.PositiveInteger × Integer.PositiveInteger,
       let (⟨c, _⟩, ⟨d, d_positive⟩) := u
       (a, b) ≈ (c, ⟨d, (not_equal_of_less_than d_positive).symm⟩)
-  | a, ⟨b, _⟩, Or.inl ⟨a_positive, b_positive⟩ =>
-    Exists.intro (⟨a, a_positive⟩, ⟨b, b_positive⟩) (RationalEquivalent.reflexive _)
-  | a, ⟨b, _⟩, Or.inr ⟨a_negative, b_negative⟩ => by
-    apply Exists.intro (⟨-a, Integer.negate_positive_of_negative a_negative⟩, ⟨-b, Integer.negate_positive_of_negative b_negative⟩)
+  | a, ⟨b, _⟩, Or.inl ⟨ha, hb⟩ =>
+    Exists.intro (⟨a, ha⟩, ⟨b, hb⟩) (RationalEquivalent.reflexive _)
+  | a, ⟨b, _⟩, Or.inr ⟨ha, hb⟩ => by
+    apply Exists.intro (⟨-a, Integer.negate_strict_antitone ha⟩, ⟨-b, Integer.negate_strict_antitone hb⟩)
     simp [RationalEquivalent]
     rw [← Integer.negate_multiply_equal_multiply_negate, ← Integer.negate_multiply_equal_negate_multiply]
 
@@ -646,22 +584,61 @@ theorem LessThan.connected : Relation.Connected LessThan := by
     rw [← Integer.subtract_definition, Integer.negate_multiply_equal_negate_multiply] at this
     exact Or.inr (equal_positive_of_positive_or_negative (Or.inl (And.intro this hbd)))
 
-instance strictTotalOrder : DecidableStrictTotalOrder Rational where
-  less_than_irreflexive := LessThan.irreflexive
-  less_than_transitive := LessThan.transitive
-  less_than_connected := LessThan.connected
-  decideLessThan := decideLessThan
-  decideEqual := decideEqual
+theorem LessEqual.reflexive : Relation.Reflexive LessEqual :=
+  λ _ => Or.inr rfl
   
+theorem LessEqual.antisymmetric : Relation.AntiSymmetric LessEqual :=
+  λ hxy hyx =>
+    match hxy, hyx with
+    | Or.inl hxy, Or.inl hyx => False.elim (LessThan.asymmetric hxy hyx)
+    | Or.inl _, Or.inr hyx => hyx.symm
+    | Or.inr hxy, _ => hxy
+  
+theorem LessEqual.transitive : Relation.Transitive LessEqual :=
+  λ hxy hyz =>
+    match hxy, hyz with
+    | Or.inl hxy, Or.inl hyz => Or.inl (LessThan.transitive hxy hyz)
+    | Or.inl hxy, Or.inr hyz => Or.inl (hyz ▸ hxy)
+    | Or.inr hxy, Or.inl hyz => Or.inl (hxy ▸ hyz)
+    | Or.inr hxy, Or.inr hyz => Or.inr (hxy.trans hyz)
+
+theorem LessEqual.strongly_connected : Relation.StronglyConnected LessEqual :=
+  λ a b =>
+    if h_equal : a = b then
+      Or.inl (Or.inr h_equal)
+    else
+      match LessThan.connected h_equal with
+      | Or.inl h_less => Or.inl (Or.inl h_less)
+      | Or.inr h_greater => Or.inr (Or.inl h_greater)
+
 instance totalOrder : DecidableTotalOrder Rational where
+  less_equal_reflexive := LessEqual.reflexive
+  less_equal_antisymmetric := LessEqual.antisymmetric
+  less_equal_transitive := LessEqual.transitive
+  less_equal_strongly_connected := LessEqual.strongly_connected
+  decideEqual := decideEqual
   decideLessEqual := λ _ _ => instDecidableOr
+  decideLessThan := decideLessThan
+  lt := LessThan
+  less_than_equivalent_less_equal_not_less_equal := by
+    intro x y
+    apply Iff.intro
+    . intro hxy
+      apply And.intro
+      . exact Or.inl hxy
+      . intro hyx
+        match hyx with
+        | Or.inl h_less => exact LessThan.asymmetric hxy h_less
+        | Or.inr h_equal => exact absurd (h_equal ▸ hxy) (LessThan.irreflexive x)
+    . intro h
+      match h.left with
+      | Or.inl h_less => exact h_less
+      | Or.inr h_equal => exact False.elim (h.right (Or.inr h_equal.symm))
 
-instance : LE Rational where
-  le := totalOrderOfStrictTotalOrder.le
-
-theorem add_left_less_than : ∀ {y z : ℚ} (x : ℚ), y < z → x + y < x + z := by
+theorem add_left_strict_monotone : ∀ x : ℚ, StrictMonotone (x + .) := by
   apply Quotient.ind₃
-  intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩ ⟨e, f, f_nonzero⟩
+  -- TODO: Rename the variables, this was left over from when it was different
+  intro ⟨e, f, f_nonzero⟩ ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩ 
   intro ⟨(⟨u, u_positive⟩, ⟨v, v_positive⟩), (h : (c * b + -a * d) * v = u * (d * b))⟩
   apply Exists.intro (⟨u, u_positive⟩, ⟨v, v_positive⟩)
   show ((e*d + c*f)*(f*b) + -(e*b + a*f)*(f*d))*v = u*((f*d)*(f*b))
@@ -669,31 +646,230 @@ theorem add_left_less_than : ∀ {y z : ℚ} (x : ℚ), y < z → x + y < x + z 
   rw [Integer.right_distributive _ _ (f*b), Integer.negate_add, Integer.right_distributive _ _ (f*d), ← Integer.negate_multiply_equal_negate_multiply, Integer.multiply_associative e d _, Integer.multiply_commutative f b, Integer.multiply_left_commutative d _ _, Integer.multiply_commutative d f, ← Integer.multiply_associative e _ _, Integer.add_right_commutative, ← Integer.add_associative, Integer.add_inverse, Integer.zero_add, ← Integer.negate_multiply_equal_negate_multiply, Integer.multiply_associative, Integer.multiply_commutative f d, Integer.multiply_left_commutative f _ _, ← Integer.multiply_associative, Integer.negate_multiply_equal_negate_multiply, Integer.negate_multiply_equal_negate_multiply, Integer.multiply_associative c f _, Integer.multiply_left_commutative f b f, ← Integer.multiply_associative c _ _, ← Integer.right_distributive, Integer.multiply_right_commutative, Integer.add_commutative, Integer.multiply_associative d, Integer.multiply_left_commutative f b f, ← Integer.multiply_associative u, ← Integer.multiply_associative (u * d), Integer.multiply_associative u]
   exact congrArg (. * (f * f)) h
 
-theorem add_right_less_than : ∀ {x y : ℚ} (z : ℚ), x < y → x + z < y + z := by
-  intro x y z h
+theorem add_right_strict_monotone : ∀ z : ℚ, StrictMonotone (. + z) := by
+  intro z x y h
+  simp
   rw [add_commutative x z, add_commutative y z]
-  exact add_left_less_than z h
+  exact add_left_strict_monotone z h
+  
+theorem less_than_of_add_less_than_left {x y z : ℚ} (h : x + y < x + z) : y < z := by
+  have := add_left_strict_monotone (-x) h
+  simp [negate_add_cancel_left] at this
+  exact this
+
+theorem less_than_of_add_less_than_right {x y z : ℚ} (h : x + z < y + z) : x < y := by
+  rw [add_commutative x z, add_commutative y z] at h
+  exact less_than_of_add_less_than_left h
+  
+theorem add_less_than_add {w x y z : ℚ} (hwy : w < y) (hxz : x < z) : w + x < y + z :=
+  less_than_transitive (add_right_strict_monotone x hwy) (add_left_strict_monotone y hxz)
+
+theorem less_than_add_of_nonnegative_left {x y : ℚ} (h : 0 < y) : x < y + x := by
+  have := add_right_strict_monotone x h
+  simp [zero_add] at this
+  exact this
+
+theorem less_than_add_of_nonnegative_right {x y : ℚ} (h : 0 < y) : x < x + y := by
+  rw [add_commutative x y]
+  exact less_than_add_of_nonnegative_left h
+
+theorem less_than_of_subtract_negative {x y : ℚ} (h : x - y < 0) : x < y := by
+  have := add_right_strict_monotone y h
+  simp at this
+  rw [zero_add, ← subtract_definition, negate_add_cancel_right] at this
+  exact this
+
+theorem subtract_negative_of_less_than {x y : ℚ} (h : x < y) : x - y < 0 := by
+  have := add_right_strict_monotone (-y) h
+  simp [subtract_self] at this
+  exact this
+
+theorem negate_strict_antitone : StrictAntitone negate := by
+  intro x y h
+  have hx := add_left_strict_monotone (-y) h
+  simp [add_inverse_left] at hx
+  have hy := add_right_strict_monotone (-x) hx
+  simp at hy
+  rw [← subtract_definition, add_negate_cancel_right, zero_subtract] at hy
+  exact hy
+
+theorem less_than_of_negate_less_than_negate {x y : ℚ} (h : -y < -x) : x < y :=
+  suffices - -x < - -y by simp at this; exact this
+  negate_strict_antitone h
 
 -- TODO
-theorem multiply_less_than_of_positive_left : ∀ {x y z : ℚ}, y < z → 0 < x → x * y < x * z := by
-  apply Quotient.ind₃
-  intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩ ⟨e, f, f_nonzero⟩
-  intro ⟨(⟨u, u_positive⟩, ⟨v, v_positive⟩), (hefcd : (e * d + -c * f) * v = u * (f * d))⟩
+theorem multiply_positive_left_strict_monotone : ∀ {x: ℚ}, 0 < x → StrictMonotone (x * .) := by
+  apply Quotient.ind
+  intro ⟨a, b, b_nonzero⟩
   intro ⟨(⟨s, s_positive⟩, ⟨t, t_positive⟩), (hab : (a*1 + -0*b)*t = s*(b*1))⟩
+  apply Quotient.ind₂
+  intro ⟨c, d, d_nonzero⟩ ⟨e, f, f_nonzero⟩
+  intro ⟨(⟨u, u_positive⟩, ⟨v, v_positive⟩), (hefcd : (e * d + -c * f) * v = u * (f * d))⟩
   rw [Integer.multiply_one, ← Integer.negate_zero, Integer.zero_multiply, Integer.add_zero, Integer.multiply_one] at hab
   apply Exists.intro (⟨u*s, Integer.multiply_positive u_positive s_positive⟩, ⟨v*t, Integer.multiply_positive v_positive t_positive⟩)
   show (a*e*(b*d) + -(a*c)*(b*f))*(v*t) = (u*s)*((b*f)*(b*d))
   rw [Integer.multiply_associative, Integer.multiply_left_commutative e, ← Integer.multiply_associative a, ← Integer.negate_multiply_equal_negate_multiply, Integer.multiply_associative a c, Integer.multiply_left_commutative c, ← Integer.multiply_associative a b, Integer.negate_multiply_equal_multiply_negate, ← Integer.left_distributive, Integer.multiply_commutative, Integer.multiply_commutative v t, Integer.multiply_left_commutative, Integer.multiply_associative t, ← Integer.multiply_associative, Integer.multiply_associative u s, ← Integer.multiply_associative s, ← Integer.multiply_associative s, ← hab, Integer.multiply_associative _ f, Integer.multiply_left_commutative f, ← Integer.multiply_associative _ b, Integer.multiply_left_commutative u, Integer.multiply_commutative v, Integer.negate_multiply_equal_negate_multiply, Integer.multiply_right_commutative a t]
   exact congrArg ((a * b * t) * .) hefcd
 
-theorem multiply_less_than_of_positive_right : ∀ {x y z : ℚ}, x < y → 0 < z → x * z < y * z := by
-  intro x y z hxy hz
-  rw [multiply_commutative x z, multiply_commutative y z]
-  exact multiply_less_than_of_positive_left hxy hz
+theorem multiply_positive_right_strict_monotone : ∀ {z : ℚ}, 0 < z → StrictMonotone (. * z) := by
+  intro z hz x y hxy
+  simp [multiply_commutative x z, multiply_commutative y z]
+  exact multiply_positive_left_strict_monotone hz hxy
 
--- TODO: Postpone defining ordered field until we have more algebra
--- TODO: Monotone definition
--- TODO: Associative, Commutative, Distributive definitions
+theorem multiply_positive {x y : ℚ} (hx : 0 < x) (hy : 0 < y) : 0 < x * y := by
+  have := multiply_positive_left_strict_monotone hx hy
+  simp [multiply_zero] at this
+  exact this
+
+theorem multiply_negative {x y : ℚ} (hx : x < 0) (hy : y < 0) : 0 < x * y := by
+  have := multiply_positive_left_strict_monotone (negate_strict_antitone hx) (negate_strict_antitone hy)
+  simp at this
+  rw [← negate_zero, multiply_zero, ← negate_multiply_equal_negate_multiply, ← negate_multiply_equal_multiply_negate, negate_negate] at this
+  exact this
+
+theorem multiply_negative_of_positive_of_negative {x y : ℚ} (hx : 0 < x) (hy : y < 0) : x * y < 0 := by
+  rw [← multiply_zero x]
+  exact multiply_positive_left_strict_monotone hx hy
+
+theorem multiply_negative_of_negative_of_positive {x y : ℚ} (hx : x < 0) (hy : 0 < y) : x * y < 0 := by
+  rw [← zero_multiply y]
+  exact multiply_positive_right_strict_monotone hy hx
+
+theorem multiply_less_than_multiply {w x y z : ℚ} (hwy : w < y) (hxz : x < z) (hx : 0 < x) (hy : 0 < y) : w * x < y * z :=
+  less_than_transitive
+  (multiply_positive_right_strict_monotone hx hwy)
+  (multiply_positive_left_strict_monotone hy hxz)
+
+theorem multiply_negative_left_strict_antitone {x : ℚ} (hx : x < 0) : StrictAntitone (x * .) := by
+  intro y z h
+  have := multiply_positive_left_strict_monotone (negate_strict_antitone hx) h
+  simp [← negate_multiply_equal_negate_multiply, ← negate_multiply_equal_negate_multiply] at this
+  exact less_than_of_negate_less_than_negate this
+  
+theorem multiply_negative_right_strict_antitone {z : ℚ} (hz : z < 0) : StrictAntitone (. * z) := by
+  intro x y h
+  simp [multiply_commutative x z, multiply_commutative y z]
+  exact multiply_negative_left_strict_antitone hz h
+
+theorem add_left_monotone (x : ℚ) : Monotone (x + .) := by
+  unfold Monotone
+  intro y z h
+  simp
+  match h with
+  | Or.inl h => exact Or.inl (add_left_strict_monotone x h)
+  | Or.inr h => exact Or.inr (congrArg (x + .) h)
+
+theorem add_right_monotone (z : ℚ) : Monotone (. + z) := by
+  intro x y h
+  simp
+  rw [add_commutative x z, add_commutative y z]
+  exact add_left_monotone z h
+
+theorem less_equal_of_add_less_equal_left {x y z : ℚ} (h : x + y ≤ x + z) : y ≤ z := by
+  have := add_left_monotone (-x) h
+  simp [negate_add_cancel_left] at this
+  exact this
+
+theorem less_equal_of_add_less_equal_right {x y z : ℚ} (h : x + z ≤ y + z) : x ≤ y := by
+  rw [add_commutative x z, add_commutative y z] at h
+  exact less_equal_of_add_less_equal_left h
+
+theorem add_less_equal_add {w x y z : ℚ} (hwy : w ≤ y) (hxz : x ≤ z) : w + x ≤ y + z :=
+  less_equal_transitive (add_right_monotone x hwy) (add_left_monotone y hxz)
+
+theorem less_equal_add_of_nonnegative_left {a b : ℚ} (h : 0 ≤ b) : a ≤ b + a := by
+  have := add_less_equal_add h (less_equal_reflexive a)
+  rw [zero_add] at this
+  exact this
+
+theorem less_equal_add_of_nonnegative_right {a b : ℚ} (h : 0 ≤ b) : a ≤ a + b := by
+  rw [add_commutative a b]
+  exact less_equal_add_of_nonnegative_left h
+  
+theorem less_equal_of_subtract_nonpositive {a b : ℚ} (h : a - b ≤ 0) : a ≤ b := by
+  have := add_right_monotone b h
+  simp [zero_add] at this
+  rw [← subtract_definition, negate_add_cancel_right] at this
+  exact this
+
+theorem subtract_nonpositive_of_less_equal {a b : ℚ} (h : a ≤ b) : a - b ≤ 0 := by
+  have := add_right_monotone (-b) h
+  simp [subtract_self] at this
+  exact this
+  
+theorem negate_antitone : Antitone negate := by
+  intro a b h
+  have ha := add_right_monotone (-a) h
+  simp [add_inverse, add_commutative] at ha
+  have hb := add_right_monotone (-b) ha
+  simp at hb
+  rw [subtract_self, zero_subtract, ← subtract_definition, ← subtract_definition, add_right_commutative, add_inverse, zero_add] at hb
+  exact hb
+
+theorem less_equal_of_negate_less_equal_negate {a b : ℚ} (h : -b ≤ -a) : a ≤ b :=
+  suffices - -a ≤ - -b by simp at this; exact this
+  negate_antitone h
+  
+theorem multiply_nonnegative_left_monotone {x : ℚ} (hx : 0 ≤ x) : Monotone (x * .) := by
+  unfold Monotone
+  intro y z h
+  simp at h
+  match h, hx with
+  | Or.inl h, Or.inl hx => 
+    exact Or.inl (multiply_positive_left_strict_monotone hx h)
+  | Or.inl _, Or.inr hx => 
+    apply less_equal_of_equal
+    simp [← hx, zero_multiply]
+  | Or.inr h, Or.inl _ =>
+    apply less_equal_of_equal
+    simp [h]
+  | Or.inr _, Or.inr hx =>
+    apply less_equal_of_equal
+    simp [← hx, zero_multiply]
+  
+theorem multiply_nonnegative_right_monotone {c : ℚ} (hc : 0 ≤ c) : Monotone (. * c) := by
+  unfold Monotone
+  intro a b h
+  simp
+  rw [multiply_commutative a c, multiply_commutative b c]
+  exact multiply_nonnegative_left_monotone hc h
+
+theorem multiply_nonnegative {a b : ℚ} (ha : 0 ≤ a) (hb : 0 ≤ b) : 0 ≤ a * b := by
+  have := multiply_nonnegative_left_monotone ha hb
+  simp [multiply_zero] at this
+  exact this
+  
+theorem multiply_nonpositive {a b : ℚ} (ha : a ≤ 0) (hb : b ≤ 0) : 0 ≤ a * b := by
+  have := multiply_nonnegative (negate_antitone ha) (negate_antitone hb)
+  rw [negate_definition, negate_definition, ← negate_multiply_equal_multiply_negate, ← negate_multiply_equal_negate_multiply, negate_negate] at this
+  exact this
+
+theorem multiply_nonpositive_of_nonnegative_of_nonpositive {a b : ℚ} (ha : 0 ≤ a) (hb : b ≤ 0) : a * b ≤ 0 := by
+  rw [← multiply_zero a]
+  exact multiply_nonnegative_left_monotone ha hb
+
+theorem multiply_nonpositive_of_nonpositive_of_nonnegative {a b : ℚ} (ha : a ≤ 0) (hb : 0 ≤ b) : a * b ≤ 0 := by
+  rw [← zero_multiply b]
+  exact multiply_nonnegative_right_monotone hb ha
+  
+-- Tricky: We only require that c is nonnegative, a is totally cool to be negative because that will make a*b negative which preserves order
+theorem multiply_less_equal_multiply {a b c d : ℚ} (hac : a ≤ c) (hbd : b ≤ d) (hb : 0 ≤ b) (hc : 0 ≤ c) : a * b ≤ c * d :=
+  less_equal_transitive
+  (multiply_nonnegative_right_monotone hb hac)
+  (multiply_nonnegative_left_monotone hc hbd)
+  
+theorem multiply_nonpositive_left_antitone {a : ℚ} (ha : a ≤ 0) : Antitone (a * .) := by
+  intro b c h
+  have := multiply_nonnegative_left_monotone (negate_antitone ha) h
+  simp at this
+  rw [← negate_multiply_equal_negate_multiply, ← negate_multiply_equal_negate_multiply] at this
+  exact less_equal_of_negate_less_equal_negate this
+
+theorem multiply_nonpositive_right_antitone {c : ℚ} (hc : c ≤ 0) : Antitone (. * c) := by
+  intro a b h
+  simp
+  rw [multiply_commutative a c, multiply_commutative b c]
+  exact multiply_nonpositive_left_antitone hc h
 
 def absolute (x : ℚ) : ℚ := maximum x (-x)
 
