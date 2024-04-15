@@ -143,7 +143,7 @@ instance strictTotalOrderOfTotalOrder [TotalOrder α] : StrictTotalOrder α wher
       | Or.inl hab => Or.inl (less_than_of_less_equal_of_not_equal hab h)
       | Or.inr hba => Or.inr (less_than_of_less_equal_of_not_equal hba h.symm)
 
-theorem less_equal_of_not_greater_equal [TotalOrder α] {a b : α} : ¬a ≤ b → a ≤ b := 
+theorem less_equal_of_not_greater_equal [TotalOrder α] {a b : α} : ¬b ≤ a → a ≤ b := 
   Or.resolve_right (less_equal_strongly_connected a b)
 
 theorem less_equal_of_not_less_equal [TotalOrder α] {a b : α} : ¬a ≤ b → b ≤ a := 
