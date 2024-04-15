@@ -146,7 +146,7 @@ instance strictTotalOrderOfTotalOrder [TotalOrder α] : StrictTotalOrder α wher
 theorem less_equal_of_not_greater_equal [TotalOrder α] {a b : α} : ¬b ≤ a → a ≤ b := 
   Or.resolve_right (less_equal_strongly_connected a b)
 
-theorem less_equal_of_not_less_equal [TotalOrder α] {a b : α} : ¬a ≤ b → b ≤ a := 
+theorem greater_equal_of_not_less_equal [TotalOrder α] {a b : α} : ¬a ≤ b → b ≤ a := 
   Or.resolve_left (less_equal_strongly_connected a b)
 
 theorem less_than_trichotomous [DecidableTotalOrder α] (a b : α) : a < b ∨ a = b ∨ a > b :=
@@ -184,12 +184,24 @@ def maximum_definition [DecidableTotalOrder α] (a b : α) :
 theorem minimum_less_equal_left [DecidableTotalOrder α] (a b : α) : minimum a b ≤ a :=
   if h : a ≤ b
   then by rw [minimum_definition, if_pos h]; exact less_equal_reflexive a
-  else by rw [minimum_definition, if_neg h]; exact less_equal_of_not_less_equal h
+  else by rw [minimum_definition, if_neg h]; exact less_equal_of_not_greater_equal h
 
 theorem minimum_less_equal_right [DecidableTotalOrder α] (a b : α) : minimum a b ≤ b :=
   if h : a ≤ b
   then by rw [minimum_definition, if_pos h]; exact h
   else by rw [minimum_definition, if_neg h]; exact less_equal_reflexive b
+
+theorem less_equal_left_of_less_equal_minimum [DecidableTotalOrder α] {a b c : α} (h : a ≤ minimum b c) : a ≤ b :=
+  less_equal_transitive h (minimum_less_equal_left b c)
+
+theorem less_equal_right_of_less_equal_minimum [DecidableTotalOrder α] {a b c : α} (h : a ≤ minimum b c) : a ≤ c :=
+  less_equal_transitive h (minimum_less_equal_right b c)
+
+theorem minimum_left_less_equal_of_less_equal [DecidableTotalOrder α] {a c : α} (b : α) : a ≤ c → minimum a b ≤ c :=
+  less_equal_transitive (minimum_less_equal_left a b)
+
+theorem minimum_right_less_equal_of_less_equal [DecidableTotalOrder α] {b c : α} (a : α) : b ≤ c → minimum a b ≤ c :=
+  less_equal_transitive (minimum_less_equal_right a b)
 
 theorem less_equal_minimum [DecidableTotalOrder α] {a b c : α} (hab : a ≤ b) (hac : a ≤ c) : a ≤ minimum b c :=
   if h : b ≤ c
@@ -204,7 +216,19 @@ theorem less_equal_maximum_left [DecidableTotalOrder α] (a b : α) : a ≤ maxi
 theorem less_equal_maximum_right [DecidableTotalOrder α] (a b : α) : b ≤ maximum a b :=
   if h : a ≤ b
   then by rw [maximum_definition, if_pos h]; exact less_equal_reflexive b
-  else by rw [maximum_definition, if_neg h]; exact less_equal_of_not_less_equal h
+  else by rw [maximum_definition, if_neg h]; exact less_equal_of_not_greater_equal h
+
+theorem less_equal_left_of_maximum_less_equal [DecidableTotalOrder α] {a b c : α} : maximum a b ≤ c → a ≤ c :=
+  less_equal_transitive (less_equal_maximum_left a b)
+
+theorem less_equal_right_of_maximum_less_equal [DecidableTotalOrder α] {a b c : α} : maximum a b ≤ c → b ≤ c :=
+  less_equal_transitive (less_equal_maximum_right a b)
+
+theorem less_equal_maximum_left_of_less_equal [DecidableTotalOrder α] {a b : α} (c : α) (h : a ≤ b) : a ≤ maximum b c :=
+  less_equal_transitive h (less_equal_maximum_left b c)
+
+theorem less_equal_maximum_right_of_less_equal [DecidableTotalOrder α] {a b : α} (c : α) (h : a ≤ b) : a ≤ maximum c b :=
+  less_equal_transitive h (less_equal_maximum_right c b)
 
 theorem maximum_less_equal [DecidableTotalOrder α] {a b c : α} (hac : a ≤ c) (hbc : b ≤ c) : maximum a b ≤ c :=
   if h : a ≤ b
@@ -293,7 +317,7 @@ theorem minimum_equal_right_of_less_than [DecidableTotalOrder α] {a b : α} : b
 theorem maximum_equal_left_of_less_than [DecidableTotalOrder α] {a b : α} : b < a → maximum a b = a :=
   maximum_equal_left ∘ less_equal_of_less_than
 
-theorem max_eq_right_of_lt [DecidableTotalOrder α] {a b : α} : a < b → maximum a b = b :=
+theorem maximum_equal_right_of_less_than [DecidableTotalOrder α] {a b : α} : a < b → maximum a b = b :=
   maximum_equal_right ∘ less_equal_of_less_than
 
 theorem less_than_minimum [DecidableTotalOrder α] {a b c : α} 

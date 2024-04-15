@@ -877,89 +877,64 @@ macro:max atomic("|" noWs) a:term noWs "|" : term => `(magnitude $a)
 
 theorem magnitude_negate (x : ℚ) : |-x| = |x| := by
   unfold magnitude 
-  rw [negate_negate]
+  rw [negate_negate, maximum_commutative]
 
 theorem magnitude_nonnegative (x : ℚ) : 0 ≤ |x| := by
-  unfold magnitude maximum
-  match less_equal_strongly_connected 0 x with
-  | Or.inl h =>
-    split
-    case inl hx => exact less_equal_transitive h hx
-    case inr hx => exact h
-  | Or.inr h =>
-    split
-    case inl hx => exact (negate_antitone h)
-    case inr hx => 
-      apply False.elim 
-      exact hx (less_equal_transitive h (negate_antitone h))
+  unfold magnitude
+  match less_than_trichotomous 0 x with
+  | Or.inl h => 
+    exact less_equal_maximum_left_of_less_equal (-x) (less_equal_of_less_than h)
+  | Or.inr (Or.inl h) =>
+    rw [← h, ← negate_zero, maximum_self]
+    exact less_equal_reflexive 0
+  | Or.inr (Or.inr h) =>
+    exact less_equal_maximum_right_of_less_equal x (negate_antitone (less_equal_of_less_than h))
   
 theorem magnitude_zero : |0| = 0 := rfl
 
-theorem zero_of_magnitude_value_zero {x : ℚ} : |x| = 0 → x = 0 := by
-  unfold magnitude maximum
-  split
-  case inl h =>
-    intro h
-    have := congrArg negate h
-    simp [← negate_zero] at this
+theorem zero_of_magnitude_value_zero {x : ℚ} (h : |x| = 0) : x = 0 := by
+  rw [magnitude] at h
+  match Decidable.em (x ≤ -x) with
+  | Or.inl hx => 
+    have := congrArg negate ((maximum_equal_right hx).symm.trans h)
+    simp at this
     exact this
-  case inr h => exact id
+  | Or.inr hx => 
+    exact (maximum_equal_left (greater_equal_of_not_less_equal hx)).symm.trans h
 
-theorem magnitude_equal_of_nonnegative {x : ℚ} : 0 ≤ x → |x| = x := by
-  intro h
-  unfold magnitude maximum
-  split
-  case inl hx =>
-    have hx' := negate_antitone (h.transitive hx)
-    simp [← negate_zero] at hx'
-    simp [less_equal_antisymmetric hx' h, ← negate_zero]
-  case inr hx =>
-    rfl
+theorem magnitude_equal_of_nonnegative {x : ℚ} (h : 0 ≤ x) : |x| = x :=
+  maximum_equal_left (less_equal_transitive (negate_antitone h) h)
 
-theorem magnitude_equal_negate_of_nonpositive {x : ℚ} : x ≤ 0 → |x| = -x := by
-  intro h
-  have := negate_antitone h
-  simp [← negate_zero] at this
-  have foo := magnitude_equal_of_nonnegative this
+theorem magnitude_equal_negate_of_nonpositive {x : ℚ} (h : x ≤ 0) : |x| = -x :=
+  maximum_equal_right (less_equal_transitive h (negate_antitone h))
   
 theorem magnitude_equal_of_positive (x : ℚ) : 0 < x → |x| = x :=
-  by skip
+  magnitude_equal_of_nonnegative ∘ less_equal_of_less_than
 
 theorem magnitude_equal_negate_of_negative (x : ℚ) : x < 0 → |x| = -x :=
-  by skip
-  
--- The triangle inequality
--- If only one of the terms is nonpositive, this decreases the magnitude value, otherwise the two sides are equal
-theorem magnitude_add_less_equal (x y : ℚ) : |x + y| ≤ |x| + |y| := by
-  skip
+  magnitude_equal_negate_of_nonpositive ∘ less_equal_of_less_than
 
+theorem less_equal_magnitude (x : ℚ) : x ≤ |x| :=
+  less_equal_maximum_left x (-x)
+
+theorem negate_magnitude_less_equal (x : ℚ) : -|x| ≤ x := by
+  have := negate_antitone (less_equal_magnitude (-x))
+  simp [magnitude_negate] at this
+  exact this
+  
 theorem magnitude_less_equal_equivalent_negate_less_equal_self {x y : ℚ} :
     -y ≤ x ∧ x ≤ y ↔ |x| ≤ y := by
   apply Iff.intro
   . intro h
-    unfold magnitude maximum
-    split
-    case inl hx =>
-      have := negate_antitone h.left
-      simp [negate_negate] at this
-      exact this
-    case inr hx =>
-      exact h.right
+    rw [magnitude]
+    have := negate_antitone h.left
+    simp at this
+    exact maximum_less_equal h.right this
   . intro h
-    unfold magnitude maximum at h
-    split at h
-    case inl hx =>
-      apply And.intro
-      . have := negate_antitone h
-        simp [negate_negate] at this
-        exact this
-      . exact less_equal_transitive hx h
-    case inr hxy =>
-      apply And.intro
-      . have := negate_antitone (less_equal_transitive (less_equal_of_not_greater_equal hxy) h)
-        simp at this
-        exact this
-      . exact h
+    rw [magnitude] at h
+    have := negate_antitone (less_equal_right_of_maximum_less_equal h)
+    simp at this
+    exact And.intro this (less_equal_left_of_maximum_less_equal h)
   
 theorem magnitude_less_equal_of_negate_less_equal {x y : ℚ} : -y ≤ x → x ≤ y → |x| ≤ y :=
   λ hyx hxy =>
@@ -969,22 +944,73 @@ theorem negate_less_equal_of_magnitude_less_equal (x y : ℚ) : |x| ≤ y → -y
   magnitude_less_equal_equivalent_negate_less_equal_self.mpr
   
 theorem magnitude_multiply_equal_multiply_magnitude (x y : ℚ) : |x * y| = |x| * |y| := by
-  unfold magnitude maximum
-  split
-  case inl hxy =>
-    match less_equal_strongly_connected x 0, less_equal_strongly_connected y 0 with
-    | Or.inl hx, Or.inl hy =>
-      -- have := less_equal_transitive hx (negate_antitone hx)
-      split
-    | Or.inl hx, Or.inr hy => sorry
-    | Or.inr hx, Or.inl hy => sorry
-    | Or.inr hx, Or.inr hy => sorry
-  case inr hxy =>
-    match less_equal_strongly_connected x 0, less_equal_strongly_connected y 0 with
-    | Or.inl hx, Or.inl hy => sorry
-    | Or.inl hx, Or.inr hy => sorry
-    | Or.inr hx, Or.inl hy => sorry
-    | Or.inr hx, Or.inr hy => sorry
-  
-theorem magnitude_negate (x : ℚ) : |-x| = |x| := by
-  skip
+  match less_equal_strongly_connected 0 x, less_equal_strongly_connected 0 y with
+  | Or.inl hx, Or.inl hy =>
+    have := multiply_nonnegative hx hy
+    rw [magnitude_equal_of_nonnegative this, magnitude_equal_of_nonnegative hx, 
+      magnitude_equal_of_nonnegative hy]
+  | Or.inl hx, Or.inr hy =>
+    have := multiply_nonpositive_of_nonnegative_of_nonpositive hx hy
+    rw [magnitude_equal_negate_of_nonpositive this, magnitude_equal_of_nonnegative hx, 
+      magnitude_equal_negate_of_nonpositive hy, ← negate_multiply_equal_multiply_negate]
+  | Or.inr hx, Or.inl hy =>
+    have := multiply_nonpositive_of_nonnegative_of_nonpositive hy hx
+    rw [multiply_commutative] at this
+    rw [magnitude_equal_negate_of_nonpositive this, magnitude_equal_negate_of_nonpositive hx, 
+      magnitude_equal_of_nonnegative hy, ← negate_multiply_equal_negate_multiply]
+  | Or.inr hx, Or.inr hy =>
+    have := multiply_nonpositive hx hy
+    rw [magnitude_equal_of_nonnegative this, magnitude_equal_negate_of_nonpositive hx, 
+      ← negate_multiply_equal_negate_multiply, magnitude_equal_negate_of_nonpositive hy, 
+      ← negate_multiply_equal_multiply_negate, negate_negate]
+
+-- The triangle inequality
+-- If only one of the terms is nonpositive, this decreases the magnitude value, otherwise the two sides are equal
+theorem magnitude_add_less_equal (x y : ℚ) : |x + y| ≤ |x| + |y| := by
+  apply magnitude_less_equal_of_negate_less_equal
+  . rw [negate_add]
+    exact add_less_equal_add (negate_magnitude_less_equal x) (negate_magnitude_less_equal y)
+  . exact add_less_equal_add (less_equal_magnitude x) (less_equal_magnitude y)
+
+def distance (x y : ℚ) := |x - y|
+
+theorem distance_nonnegative (x y : ℚ) : 0 ≤ distance x y := by
+  exact magnitude_nonnegative (x - y)
+
+theorem distance_self (x : ℚ) : distance x x = 0 := by
+  unfold distance
+  rw [subtract_self]
+  exact magnitude_zero
+
+theorem distance_zero_equivalent_equal {x y : ℚ} : distance x y = 0 ↔ x = y := by
+  apply Iff.intro
+  . intro h
+    unfold distance magnitude at h
+    match less_equal_strongly_connected (x - y) (-(x - y)) with
+    | Or.inl hxy =>
+      have := (maximum_equal_right hxy).symm.trans h
+      simp [negate_subtract] at this
+      exact (equal_of_subtract_equal_zero this).symm
+    | Or.inr hxy =>
+      have := (maximum_equal_left hxy).symm.trans h
+      exact equal_of_subtract_equal_zero this
+  . intro h
+    subst h
+    exact distance_self x
+
+theorem equal_of_distance_zero {x y : ℚ} : distance x y = 0 → x = y :=
+  distance_zero_equivalent_equal.mp
+
+theorem distance_zero_of_equal {x y : ℚ} : x = y → distance x y = 0 :=
+  distance_zero_equivalent_equal.mpr
+
+theorem distance_commutative (x y : ℚ) : distance x y = distance y x := by
+  unfold distance
+  rw [← magnitude_negate, negate_subtract]
+
+theorem distance_triangle (x y z : ℚ) : distance x z ≤ distance x y + distance y z := by
+  unfold distance
+  have := magnitude_add_less_equal (x - y) (y - z)
+  rw [← subtract_definition, add_associative, ← subtract_definition, 
+    negate_add_cancel_left] at this
+  exact this
