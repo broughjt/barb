@@ -871,46 +871,120 @@ theorem multiply_nonpositive_right_antitone {c : ℚ} (hc : c ≤ 0) : Antitone 
   rw [multiply_commutative a c, multiply_commutative b c]
   exact multiply_nonpositive_left_antitone hc h
 
-def absolute (x : ℚ) : ℚ := maximum x (-x)
+def magnitude (x : ℚ) : ℚ := maximum x (-x)
 
-macro:max atomic("|" noWs) a:term noWs "|" : term => `(absolute $a)
+macro:max atomic("|" noWs) a:term noWs "|" : term => `(magnitude $a)
 
-/-
--- TODO: Gotta do some abstract algebra first, I'm not tryna do all those ordering proofs again
--- I'm officially stuck until I can clean some of this up.
---
-theorem absolute_nonnegative (x : ℚ) : 0 ≤ |x| := by
-  unfold absolute
-  unfold maximum
-  match less_than_trichotomous 0 x with
-  | Or.inl h => sorry
-  | Or.inr (Or.inl _) => sorry
-  | Or.inr (Or.inr _) => sorry
+theorem magnitude_negate (x : ℚ) : |-x| = |x| := by
+  unfold magnitude 
+  rw [negate_negate]
+
+theorem magnitude_nonnegative (x : ℚ) : 0 ≤ |x| := by
+  unfold magnitude maximum
+  match less_equal_strongly_connected 0 x with
+  | Or.inl h =>
+    split
+    case inl hx => exact less_equal_transitive h hx
+    case inr hx => exact h
+  | Or.inr h =>
+    split
+    case inl hx => exact (negate_antitone h)
+    case inr hx => 
+      apply False.elim 
+      exact hx (less_equal_transitive h (negate_antitone h))
   
-theorem absolute_zero : |0| = 0 := rfl
+theorem magnitude_zero : |0| = 0 := rfl
 
-theorem zero_of_absolute_value_zero (x : ℚ) : |x| = 0 → x = 0 := by
-  skip
+theorem zero_of_magnitude_value_zero {x : ℚ} : |x| = 0 → x = 0 := by
+  unfold magnitude maximum
+  split
+  case inl h =>
+    intro h
+    have := congrArg negate h
+    simp [← negate_zero] at this
+    exact this
+  case inr h => exact id
+
+theorem magnitude_equal_of_nonnegative {x : ℚ} : 0 ≤ x → |x| = x := by
+  intro h
+  unfold magnitude maximum
+  split
+  case inl hx =>
+    have hx' := negate_antitone (h.transitive hx)
+    simp [← negate_zero] at hx'
+    simp [less_equal_antisymmetric hx' h, ← negate_zero]
+  case inr hx =>
+    rfl
+
+theorem magnitude_equal_negate_of_nonpositive {x : ℚ} : x ≤ 0 → |x| = -x := by
+  intro h
+  have := negate_antitone h
+  simp [← negate_zero] at this
+  have foo := magnitude_equal_of_nonnegative this
+  
+theorem magnitude_equal_of_positive (x : ℚ) : 0 < x → |x| = x :=
+  by skip
+
+theorem magnitude_equal_negate_of_negative (x : ℚ) : x < 0 → |x| = -x :=
+  by skip
   
 -- The triangle inequality
--- If only one of the terms is nonpositive, this decreases the absolute value, otherwise the two sides are equal
-theorem absolute_add_less_equal (x y : ℚ) : |x + y| ≤ |x| + |y| := by
-  skip
-  
-theorem absolute_less_equal_of_something (x y : ℚ) : -y ≤ x → x ≤ y → |x| ≤ y := by
+-- If only one of the terms is nonpositive, this decreases the magnitude value, otherwise the two sides are equal
+theorem magnitude_add_less_equal (x y : ℚ) : |x + y| ≤ |x| + |y| := by
   skip
 
-theorem something_of_absolute_less_equal (x y : ℚ) : |x| ≤ y → -y ≤ x ∧ x ≤ y := by
-  skip
+theorem magnitude_less_equal_equivalent_negate_less_equal_self {x y : ℚ} :
+    -y ≤ x ∧ x ≤ y ↔ |x| ≤ y := by
+  apply Iff.intro
+  . intro h
+    unfold magnitude maximum
+    split
+    case inl hx =>
+      have := negate_antitone h.left
+      simp [negate_negate] at this
+      exact this
+    case inr hx =>
+      exact h.right
+  . intro h
+    unfold magnitude maximum at h
+    split at h
+    case inl hx =>
+      apply And.intro
+      . have := negate_antitone h
+        simp [negate_negate] at this
+        exact this
+      . exact less_equal_transitive hx h
+    case inr hxy =>
+      apply And.intro
+      . have := negate_antitone (less_equal_transitive (less_equal_of_not_greater_equal hxy) h)
+        simp at this
+        exact this
+      . exact h
   
-theorem absolute_less_equal_equivalent_something (x y : ℚ) : -y ≤ x ∧ x ≤ y ↔ |x| ≤ y := by
-  skip
-  
-theorem absolute_multiply_equal_multiply_absolute (x y : ℚ) : |x * y| = |x| * |y| := by
-  skip
-  
-theorem absolute_negate (x : ℚ) : |-x| = |x| := by
-  skip
--/
+theorem magnitude_less_equal_of_negate_less_equal {x y : ℚ} : -y ≤ x → x ≤ y → |x| ≤ y :=
+  λ hyx hxy =>
+  magnitude_less_equal_equivalent_negate_less_equal_self.mp (And.intro hyx hxy)
 
-end Rational
+theorem negate_less_equal_of_magnitude_less_equal (x y : ℚ) : |x| ≤ y → -y ≤ x ∧ x ≤ y :=
+  magnitude_less_equal_equivalent_negate_less_equal_self.mpr
+  
+theorem magnitude_multiply_equal_multiply_magnitude (x y : ℚ) : |x * y| = |x| * |y| := by
+  unfold magnitude maximum
+  split
+  case inl hxy =>
+    match less_equal_strongly_connected x 0, less_equal_strongly_connected y 0 with
+    | Or.inl hx, Or.inl hy =>
+      -- have := less_equal_transitive hx (negate_antitone hx)
+      split
+    | Or.inl hx, Or.inr hy => sorry
+    | Or.inr hx, Or.inl hy => sorry
+    | Or.inr hx, Or.inr hy => sorry
+  case inr hxy =>
+    match less_equal_strongly_connected x 0, less_equal_strongly_connected y 0 with
+    | Or.inl hx, Or.inl hy => sorry
+    | Or.inl hx, Or.inr hy => sorry
+    | Or.inr hx, Or.inl hy => sorry
+    | Or.inr hx, Or.inr hy => sorry
+  
+theorem magnitude_negate (x : ℚ) : |-x| = |x| := by
+  skip
