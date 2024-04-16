@@ -1021,11 +1021,20 @@ theorem distance_triangle (x y z : ℚ) : distance x z ≤ distance x y + distan
     negate_add_cancel_left] at this
   exact this
 
+/-
 theorem distance_less_equal_reflexive {ε : ℚ} (hε : 0 < ε) : Relation.Reflexive (distance . . ≤ ε) := by
-  skip
+  intro x
+  rw [distance_self x]
+  exact less_equal_of_less_than hε
 
 theorem equal_of_forall_distance_less_equal {x y : ℚ} : (∀ {ε}, 0 < ε → distance x y ≤ ε) → x = y := by
   skip
+  /-
+  intro h
+  match Decidable.em (x = y) with
+  | Or.inl hxy => exact hxy
+  | Or.inr hxy =>
+  -/
 
 theorem distance_less_equal_symmetric {ε : ℚ} (hε : 0 < ε) : Relation.Symmetric (distance . . ≤ ε) := by
   skip
@@ -1067,3 +1076,4 @@ theorem distance_less_equal_multiply {ε δ w x y z : ℚ} (hε : 0 < ε) (hδ :
     distance x y ≤ ε → distance z w ≤ δ →
     distance (x * z) (y * w) ≤ (ε * |z| + δ * |x| + ε * δ) := by
   skip
+-/
