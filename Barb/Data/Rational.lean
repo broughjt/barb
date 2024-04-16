@@ -873,7 +873,7 @@ theorem multiply_nonpositive_right_antitone {c : ℚ} (hc : c ≤ 0) : Antitone 
 
 def NonNegativeRational := {x : ℚ // 0 ≤ x}
 def PositiveRational := {x : ℚ // 0 < x}
-def NonZero := {x : ℚ // x ≠ 0}
+def NonZeroRational := {x : ℚ // x ≠ 0}
 def NegativeRational := {x : ℚ // x < 0}
 def NonPositiveRational := {x : ℚ // x ≤ 0}
 
