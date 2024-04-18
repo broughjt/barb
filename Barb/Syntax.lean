@@ -22,5 +22,5 @@ class Invert (α : Type u) where
 class HeterogeneousInvert (α : Type u) (β : Type v) where
   heterogeneous_invert : α → β
 
--- postfix:max "⁻¹" => Invert.invert
+postfix:max "⁻¹" => Invert.invert
 postfix:max "⁻¹" => HeterogeneousInvert.heterogeneous_invert

@@ -14,7 +14,10 @@ class CommutativeRing (α : Type u) extends Zero α, One α, Add α, Mul α, Neg
   left_distributive : ∀ (x y z : α), x * (y + z) = x * y + x * z
   right_distributive : ∀ (x y z : α), (x + y) * z = x * z + y * z
 
-class Field (α : Type u) extends CommutativeRing α where
-  -- TODO: Pull out into reciprocal operation class which takes a nonzero proof and has nice Inv-like syntax
-  reciprocal : (x : α) → x ≠ 0 → α
-  multiply_inverse : ∀ (x : α) (h : x ≠ 0), x * (reciprocal x h) = 1
+class Nontrivial (α : Type u) : Prop where
+  exists_pair_not_equal : ∃ x y : α, x ≠ y
+
+def NonZero (α : Type u) [Zero α] := { a : α // a ≠ 0 }
+
+class Field (α : Type u) extends CommutativeRing α, Nontrivial α, Invert (NonZero α) where
+  multiply_inverse : ∀ x : NonZero α, x.val * (invert x).val = 1

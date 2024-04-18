@@ -1641,7 +1641,7 @@ theorem multiply_right_cancel {a b c : ℤ} (h : a * c = b * c) (c_nonzero : c �
 theorem multiply_nonzero_of_nonzero {a b : ℤ} (ha : a ≠ 0) (hb : b ≠ 0) : a * b ≠ 0 := by
   intro h
   apply hb
-  apply (Integer.multiply_left_cancel (a := a) . ha)
+  apply (multiply_left_cancel (a := a) . ha)
   rw [h, multiply_zero]
 
 theorem nonzero_of_multiply_nonzero {a b : ℤ} (h : a * b ≠ 0) : a ≠ 0 ∧ b ≠ 0 :=
@@ -1840,6 +1840,12 @@ abbrev PositiveInteger := {a : ℤ // 0 < a}
 abbrev NonZeroInteger := {a : ℤ // a ≠ 0}
 abbrev NegativeInteger := {a : ℤ // a < 0}
 abbrev NonPositiveInteger := {a : ℤ // a ≤ 0}
+
+notation "ℤ≥0" => NonNegativeInteger
+notation "ℤ>0" => PositiveInteger
+notation "ℤ≠0" => NonZeroInteger
+notation "ℤ<0" => NegativeInteger
+notation "ℤ≤0" => NonPositiveInteger
 #+end_src
 
 #+begin_src lean4
@@ -1875,14 +1881,14 @@ def toNatural' : ℤ → Option ℕ :=
     have := Natural.right_greater_equal_of_add_left_less_equal h hkl
     exact absurd this hnm
 
-def toNatural : NonNegativeInteger → ℕ
+def toNatural : ℤ≥0 → ℕ
   | (⟨a, a_nonnegative⟩) =>
     Option.get (toNatural' a) <| by
     have ⟨n, hn⟩ := equal_ofNatural_of_nonnegative a_nonnegative
     rw [toNatural', ← hn, ofNatural, Quotient.lift_construct, preToNatural']
     simp [Natural.zero_less_equal, subtract_zero, ite_true, Option.isSome]
 
-def fromNatural (n : ℕ) : NonNegativeInteger :=
+def fromNatural (n : ℕ) : ℤ≥0 :=
   ⟨n, ofNatural_nonnegative n⟩
 
 theorem fromNatural_toNatural_left_inverse : Function.LeftInverse toNatural fromNatural := by
@@ -2187,7 +2193,7 @@ theorem negative_left_of_multiply_negative_of_positive_right {a b : ℤ} (h : a 
     have := multiply_positive a_positive hb
     exact absurd (less_than_transitive this h) (less_than_irreflexive 0)
   | Or.inr (Or.inl a_zero) =>
-    rw [← a_zero, Integer.zero_multiply] at h
+    rw [← a_zero, zero_multiply] at h
     exact absurd h (less_than_irreflexive 0)
   | Or.inr (Or.inr a_negative) => exact a_negative
   
@@ -3368,10 +3374,13 @@ class CommutativeRing (α : Type u) extends Zero α, One α, Add α, Mul α, Neg
   left_distributive : ∀ (x y z : α), x * (y + z) = x * y + x * z
   right_distributive : ∀ (x y z : α), (x + y) * z = x * z + y * z
 
-class Field (α : Type u) extends CommutativeRing α where
-  -- TODO: Pull out into reciprocal operation class which takes a nonzero proof and has nice Inv-like syntax
-  reciprocal : (x : α) → x ≠ 0 → α
-  multiply_inverse : ∀ (x : α) (h : x ≠ 0), x * (reciprocal x h) = 1
+class Nontrivial (α : Type u) : Prop where
+  exists_pair_not_equal : ∃ x y : α, x ≠ y
+
+def NonZero (α : Type u) [Zero α] := { a : α // a ≠ 0 }
+
+class Field (α : Type u) extends CommutativeRing α, Nontrivial α, Invert (NonZero α) where
+  multiply_inverse : ∀ x : NonZero α, x.val * (invert x).val = 1
 #+end_src
 
 *** Function
@@ -4152,4 +4161,13 @@ instance One.toOfNat1 {α} [One α] : OfNat α (nat_lit 1) where
 
 instance One.ofOfNat1 {α} [OfNat α (nat_lit 1)] : One α where
   one := 1
+  
+class Invert (α : Type u) where
+  invert : α → α
+
+class HeterogeneousInvert (α : Type u) (β : Type v) where
+  heterogeneous_invert : α → β
+
+postfix:max "⁻¹" => Invert.invert
+postfix:max "⁻¹" => HeterogeneousInvert.heterogeneous_invert
 #+end_src

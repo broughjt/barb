@@ -4,9 +4,7 @@ import Barb.Data.Option
 import Barb.Logic
 import Barb.Syntax
 
-open Integer (NonZeroInteger)
-
-def RationalEquivalent : (ℤ × NonZeroInteger) → (ℤ × NonZeroInteger) → Prop
+def RationalEquivalent : (ℤ × ℤ≠0) → (ℤ × ℤ≠0) → Prop
   | (a, ⟨b, _⟩), (c, ⟨d, _⟩) => a * d = c * b
 
 theorem RationalEquivalent.reflexive : Relation.Reflexive RationalEquivalent :=
@@ -41,16 +39,16 @@ theorem RationalEquivalent.transitive : Relation.Transitive RationalEquivalent :
 theorem RationalEquivalent.is_equivalence : Equivalence RationalEquivalent :=
   { refl := RationalEquivalent.reflexive, symm := RationalEquivalent.symmetric, trans := RationalEquivalent.transitive }
 
-instance instanceHasEquivRationalEquivalent : HasEquiv (Integer × NonZeroInteger) where
+instance instanceHasEquivRationalEquivalent : HasEquiv (Integer × ℤ≠0) where
   Equiv := RationalEquivalent
 
-instance instanceSetoidRationalEquivalent : Setoid (Integer × NonZeroInteger) where
+instance instanceSetoidRationalEquivalent : Setoid (Integer × ℤ≠0) where
   r := RationalEquivalent
   iseqv := RationalEquivalent.is_equivalence
 
 @[simp] def RationalEquivalent.definition : (x ≈ y) = RationalEquivalent x y := rfl
 
-instance decideRationalEquivalent (x y : ℤ × NonZeroInteger) : Decidable (x ≈ y) :=
+instance decideRationalEquivalent (x y : ℤ × ℤ≠0) : Decidable (x ≈ y) :=
   let (a, ⟨b, _⟩) := x
   let (c, ⟨d, _⟩) := y
   Integer.decideEqual (a * d) (c * b)
@@ -79,10 +77,16 @@ theorem one_definition : (1 : ℚ) = Quotient.mk instanceSetoidRationalEquivalen
 
 abbrev NonZeroRational := {x : ℚ // x ≠ 0}
 
+notation "ℚ≠0" => NonZeroRational
+
+def divideInteger (a : ℤ) (b : ℤ≠0) : ℚ := ⟦(a, b)⟧
+
+infixl:70 " /. " => divideInteger
+
 def add : ℚ → ℚ → ℚ :=
   let add' := λ
-  ((a, ⟨b, b_nonzero⟩) : ℤ × NonZeroInteger)
-  ((c, ⟨d, d_nonzero⟩) : ℤ × NonZeroInteger) =>
+  ((a, ⟨b, b_nonzero⟩) : ℤ × ℤ≠0)
+  ((c, ⟨d, d_nonzero⟩) : ℤ × ℤ≠0) =>
   let bd_nonzero := Integer.multiply_nonzero_of_nonzero b_nonzero d_nonzero
   (a*d + c*b, ⟨b*d, bd_nonzero⟩)
   Quotient.map₂ add' <| by
@@ -97,8 +101,8 @@ instance : Add Rational where add := add
 
 def multiply : ℚ → ℚ → ℚ :=
   let multiply' := λ
-  ((a, ⟨b, b_nonzero⟩) : ℤ × NonZeroInteger)
-  ((c, ⟨d, d_nonzero⟩) : ℤ × NonZeroInteger) =>
+  ((a, ⟨b, b_nonzero⟩) : ℤ × ℤ≠0)
+  ((c, ⟨d, d_nonzero⟩) : ℤ × ℤ≠0) =>
   let bd_nonzero := Integer.multiply_nonzero_of_nonzero b_nonzero d_nonzero
   (a*c, ⟨b*d, bd_nonzero⟩)
   Quotient.map₂ multiply' <| by
@@ -117,7 +121,7 @@ instance : Mul Rational where mul := multiply
 @[simp] theorem multiply_definition : multiply x y = x * y := rfl
 
 def negate : ℚ → ℚ :=
-  let negate' := λ ((a, ⟨b, b_nonzero⟩) : ℤ × NonZeroInteger) => (-a, ⟨b, b_nonzero⟩)
+  let negate' := λ ((a, ⟨b, b_nonzero⟩) : ℤ × ℤ≠0) => (-a, ⟨b, b_nonzero⟩)
   Quotient.map negate' <| by
   intro (a, ⟨b, b_nonzero⟩) (a', ⟨b', b'_nonzero⟩) (h : a*b' = a'*b)
   show (-a)*b' = (-a')*b
@@ -127,29 +131,37 @@ instance : Neg Rational where neg := negate
 
 @[simp] theorem negate_definition : negate x = -x := rfl
 
-def preReciprocal : ℤ × NonZeroInteger → Option ℚ
-  | (a, ⟨b, _⟩) => if ha : a ≠ 0 then some ⟦(b, ⟨a, ha⟩)⟧ else none
-
-@[simp]
-theorem preReciprocal_none (x : ℤ × NonZeroInteger) (h : x.1 = 0) : preReciprocal x = none := by
-  simp [preReciprocal, h]
-
-@[simp]
-theorem preReciprocal_some (x : ℤ × NonZeroInteger) (h : x.1 ≠ 0) :
-    preReciprocal x = some ⟦(x.2.1, ⟨x.1, h⟩)⟧ := by
-  simp [preReciprocal, h]
-
-theorem numerator_nonzero_of_nonzero : ∀ {x : ℤ × NonZeroInteger}, ⟦x⟧ ≠ (0 : ℚ) → x.1 ≠ 0 := by
-  intro (a, ⟨b, b_nonzero⟩) h
-  have h' : Quotient.mk instanceSetoidRationalEquivalent (a, ⟨b, b_nonzero⟩) ≠ (0 : ℚ) := h
-  intro ha
-  simp at ha
-  apply (absurd . h')
+theorem equal_zero_of_lift_numerator_equal_zero {a : ℤ} (b : ℤ≠0) :
+    a = 0 → ⟦(a, b)⟧ = (0 : ℚ) := by
+  intro h
   apply Quotient.sound
   show a * 1 = 0 * b
-  simp [ha, Integer.zero_multiply, Integer.multiply_zero]
+  simp [Integer.multiply_one, Integer.zero_multiply]
+  exact h
 
-def reciprocal' : ℚ → Option ℚ :=
+theorem unlift_numerator_equal_zero_of_equal_zero {a : ℤ} {b : ℤ≠0} :
+    ⟦(a, b)⟧ = (0 : ℚ) → a = 0 := by
+  intro h
+  have : a * 1 = 0 * b := Quotient.exact h
+  rw [Integer.multiply_one, Integer.zero_multiply] at this
+  exact this
+
+def preReciprocal : ℤ × ℤ≠0 → Option ℚ≠0
+  | (a, ⟨b, hb⟩) => 
+  if ha : a ≠ 0 
+  then some ⟨⟦(b, ⟨a, ha⟩)⟧, mt unlift_numerator_equal_zero_of_equal_zero hb⟩ 
+  else none
+
+@[simp]
+theorem preReciprocal_none (x : ℤ × ℤ≠0) (h : x.1 = 0) : preReciprocal x = none := by
+  simp [preReciprocal, h]
+
+@[simp]
+theorem preReciprocal_some (x : ℤ × ℤ≠0) (h : x.1 ≠ 0) :
+    preReciprocal x = some ⟨⟦(x.2.val, ⟨x.1, h⟩)⟧, mt unlift_numerator_equal_zero_of_equal_zero x.2.property⟩ := by
+  simp [preReciprocal, h]
+
+def reciprocal' : ℚ → Option ℚ≠0 :=
   Quotient.lift preReciprocal <| by
   intro ⟨a, b, hb⟩ ⟨c, d, hd⟩ (h : a * d = c * b)
   cases Decidable.em (a = 0)
@@ -171,19 +183,16 @@ def reciprocal' : ℚ → Option ℚ :=
     have := Integer.multiply_nonzero_of_nonzero ha hd
     exact absurd (hcb.symm.trans h.symm) this.symm
 
-def reciprocal : NonZeroRational → ℚ :=
+def reciprocal : ℚ≠0 → ℚ≠0 :=
   λ ⟨x, hx⟩ => Option.get (reciprocal' x) <| by
-  have ⟨(a, ⟨b, b_nonzero⟩), hab⟩ := Quotient.exists_rep x
-  have a_nonzero := numerator_nonzero_of_nonzero (hab.symm ▸ hx)
+  have ⟨(a, ⟨b, hb⟩), hab⟩ := Quotient.exists_rep x
+  have ha := mt (equal_zero_of_lift_numerator_equal_zero ⟨b, hb⟩) (hab.symm ▸ hx)
   rw [← hab, reciprocal', Quotient.lift_construct, Option.isSome]
-  have := preReciprocal_some ⟨a, b, b_nonzero⟩ a_nonzero
+  have := preReciprocal_some ⟨a, b, hb⟩ ha
   simp [this]
 
-instance : HeterogeneousInvert NonZeroRational Rational where
-  heterogeneous_invert := reciprocal
-
--- TODO: Print instances for natural, integer, and rational so we can evaluate stuff, also a // b syntax for constructing rationals from integers (or naturals), also NonZero for rational, extend HInv, and require it for a field
-example : Rational := (⟨(2 : ℚ), by decide⟩ : NonZeroRational)⁻¹
+instance : Invert NonZeroRational where
+  invert := reciprocal
 
 theorem add_associative : ∀ (x y z : ℚ), (x + y) + z = x + (y + z) := by
   apply Quotient.ind₃
@@ -255,20 +264,21 @@ theorem right_distributive : ∀ (x y z : ℚ), (x + y) * z = x * z + y * z := b
   intro x y z
   rw [multiply_commutative, left_distributive, multiply_commutative z x, multiply_commutative z y]
 
-theorem multiply_inverse : ∀ (x : NonZeroRational), x.val * (reciprocal x) = 1 := by
+theorem multiply_inverse : ∀ (x : ℚ≠0), x.val * (reciprocal x).val = 1 := by
   intro ⟨x, hx⟩
-  apply Quotient.inductionOn x.val
-  intro (a, ⟨b, b_nonzero⟩) h
-  have h' := numerator_nonzero_of_nonzero h
-  simp at h'
-  simp [reciprocal, reciprocal']
-  have h_some := (preReciprocal_some (a, ⟨b, b_nonzero⟩) h')
-  simp [h_some]
-  apply Quotient.sound
-  show (a*b)*1 = 1*(b*a)
-  simp [Integer.multiply_commutative]
+  induction x using Quotient.inductionOn with
+  | h p =>
+    -- TODO: Why can't we just do this like | (a, ⟨b, hb⟩) =>
+    let (a, ⟨b, hb⟩) := p
+    have ha := mt (equal_zero_of_lift_numerator_equal_zero ⟨b, hb⟩) hx
+    simp [reciprocal, reciprocal', preReciprocal_some (a, ⟨b, hb⟩) ha]
+    apply Quotient.sound
+    show (a * b) * 1 = 1 * (b * a)
+    simp [Integer.multiply_commutative]
 
 instance field : Field Rational where
+  exists_pair_not_equal := ⟨0, 1, by decide⟩
+
   add_associative := add_associative
   add_commutative := add_commutative
   add_zero := add_zero
@@ -281,7 +291,6 @@ instance field : Field Rational where
   left_distributive := left_distributive
   right_distributive := right_distributive
 
-  reciprocal := reciprocal
   multiply_inverse := multiply_inverse
 
 def subtract (x y : ℚ) : ℚ := x + (-y)
@@ -291,7 +300,7 @@ instance : Sub Rational where sub := subtract
 @[simp]
 theorem subtract_definition (x y : ℚ) : x + (-y) = x - y := rfl
 
-def divide (x y : ℚ) (y_nonzero : y ≠ 0) : ℚ := x * (reciprocal y y_nonzero)
+def divide (x : ℚ) (y : ℚ≠0) : ℚ := x * (reciprocal y).val
 
 theorem negate_involutive : Function.Involutive negate := by
   apply Quotient.ind
@@ -492,7 +501,7 @@ theorem LessThan.asymmetric : Relation.Asymmetric LessThan := by
   intro x y hxy hyx
   exact LessThan.irreflexive x (LessThan.transitive hxy hyx)
   
-theorem positive_or_negative_of_equal_positive : ∀ {a : ℤ} {b : NonZeroInteger} {c d : Integer.PositiveInteger}, 
+theorem positive_or_negative_of_equal_positive : ∀ {a : ℤ} {b : ℤ≠0} {c d : Integer.PositiveInteger}, 
     (a, b) ≈ (c.val, ⟨d, (not_equal_of_less_than d.property).symm⟩) →
     (0 < a ∧ 0 < b.val) ∨ (a < 0 ∧ b.val < 0) := by
   intro a ⟨b, b_nonzero⟩ ⟨c, c_positive⟩ ⟨d, d_positive⟩
@@ -510,7 +519,7 @@ theorem positive_or_negative_of_equal_positive : ∀ {a : ℤ} {b : NonZeroInteg
     exact Or.inr (And.intro ha hb)
   skip
 
-theorem equal_positive_of_positive_or_negative : ∀ {a : ℤ} {b : NonZeroInteger},
+theorem equal_positive_of_positive_or_negative : ∀ {a : ℤ} {b : ℤ≠0},
     (0 < a ∧ 0 < b.val) ∨ (a < 0 ∧ b.val < 0) →
     ∃ u : Integer.PositiveInteger × Integer.PositiveInteger,
       let (⟨c, _⟩, ⟨d, d_positive⟩) := u
@@ -529,7 +538,7 @@ theorem less_than_of_subtract_positive {x y : ℚ} : 0 < y - x → x < y :=
   rw [Integer.multiply_one, ← Integer.negate_zero, Integer.zero_multiply, Integer.add_zero, Integer.multiply_one] at h
   apply Exists.intro (⟨u, u_positive⟩, ⟨v, v_positive⟩) h
 
-theorem subtract_nonnegative_of_less_than {x y : ℚ} : x < y → 0 < y - x :=
+theorem subtract_positive_of_less_than {x y : ℚ} : x < y → 0 < y - x :=
   Quotient.inductionOn₂ x y <| by
   intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩
   intro ⟨(⟨u, u_positive⟩, ⟨v, v_positive⟩), (h : (c * b + -a * d) * v = u * (d * b))⟩
@@ -541,7 +550,7 @@ theorem subtract_nonnegative_of_less_than {x y : ℚ} : x < y → 0 < y - x :=
 
 instance decidePositive (x : ℚ) : Decidable (0 < x) :=
   Quotient.recOnSubsingleton x
-  λ ((a, ⟨b, b_nonzero⟩) : ℤ × Integer.NonZeroInteger) =>
+  λ ((a, ⟨b, b_nonzero⟩) : ℤ × ℤ≠0) =>
   if h : (0 < a ∧ 0 < b) ∨ (a < 0 ∧ b < 0) then
     -- TODO: Figure out how to not have this
     let h' := by
@@ -562,7 +571,7 @@ instance decideLessThan (x y : ℚ) : Decidable (x < y) :=
   if h : 0 < y - x then
     isTrue (less_than_of_subtract_positive h)
   else
-    isFalse (mt subtract_nonnegative_of_less_than h)
+    isFalse (mt subtract_positive_of_less_than h)
 
 theorem LessThan.connected : Relation.Connected LessThan := by
   unfold Relation.Connected
@@ -571,7 +580,7 @@ theorem LessThan.connected : Relation.Connected LessThan := by
   intro h'
   -- TODO: Clean up
   have h : a * d ≠ c * b := by
-    intro (h'' : ((a, ⟨b, b_nonzero⟩) : ℤ × NonZeroInteger) ≈ (c, ⟨d, d_nonzero⟩))
+    intro (h'' : ((a, ⟨b, b_nonzero⟩) : ℤ × ℤ≠0) ≈ (c, ⟨d, d_nonzero⟩))
     exact absurd (Quotient.sound h'') h'
   have bd_nonzero := Integer.multiply_nonzero_of_nonzero b_nonzero d_nonzero
   match less_than_connected h, less_than_connected bd_nonzero with
@@ -795,7 +804,18 @@ theorem less_equal_add_of_nonnegative_left {a b : ℚ} (h : 0 ≤ b) : a ≤ b +
 theorem less_equal_add_of_nonnegative_right {a b : ℚ} (h : 0 ≤ b) : a ≤ a + b := by
   rw [add_commutative a b]
   exact less_equal_add_of_nonnegative_left h
-  
+
+theorem less_equal_of_subtract_nonnegative {a b : ℚ} (h : 0 ≤ b - a) : a ≤ b := by
+  have := add_right_monotone a h
+  simp at this
+  rw [zero_add, ← subtract_definition, negate_add_cancel_right] at this
+  exact this
+
+theorem subtract_nonnegative_of_less_equal {a b : ℚ} (h : a ≤ b) : 0 ≤ b - a := by
+  have := add_right_monotone (-a) h
+  simp [subtract_self] at this
+  exact this
+
 theorem less_equal_of_subtract_nonpositive {a b : ℚ} (h : a - b ≤ 0) : a ≤ b := by
   have := add_right_monotone b h
   simp [zero_add] at this
@@ -887,6 +907,11 @@ abbrev PositiveRational := {x : ℚ // 0 < x}
 abbrev NegativeRational := {x : ℚ // x < 0}
 abbrev NonPositiveRational := {x : ℚ // x ≤ 0}
 
+notation "ℚ≥0" => NonNegativeRational
+notation "ℚ>0" => PositiveRational
+notation "ℚ<0" => NegativeRational
+notation "ℚ≤0" => NonPositiveRational
+
 def magnitude (x : ℚ) : ℚ := maximum x (-x)
 
 macro:max atomic("|" noWs) a:term noWs "|" : term => `(magnitude $a)
@@ -917,6 +942,11 @@ theorem zero_of_magnitude_value_zero {x : ℚ} (h : |x| = 0) : x = 0 := by
     exact this
   | Or.inr hx => 
     exact (maximum_equal_left (greater_equal_of_not_less_equal hx)).symm.trans h
+
+theorem magnitude_positive {x : ℚ} (h : x ≠ 0) : 0 < |x| :=
+  match less_than_or_equal_of_less_equal (magnitude_nonnegative x) with
+  | Or.inl hx => hx
+  | Or.inr hx => absurd hx.symm (mt zero_of_magnitude_value_zero h)
 
 theorem magnitude_equal_of_nonnegative {x : ℚ} (h : 0 ≤ x) : |x| = x :=
   maximum_equal_left (less_equal_transitive (negate_antitone h) h)
@@ -1024,7 +1054,7 @@ theorem distance_commutative (x y : ℚ) : distance x y = distance y x := by
   unfold distance
   rw [← magnitude_negate, negate_subtract]
 
-theorem distance_triangle (x y z : ℚ) : distance x z ≤ distance x y + distance y z := by
+theorem distance_triangle (x z y : ℚ) : distance x z ≤ distance x y + distance y z := by
   unfold distance
   have := magnitude_add_less_equal (x - y) (y - z)
   rw [← subtract_definition, add_associative, ← subtract_definition, 
@@ -1037,7 +1067,8 @@ theorem distance_less_equal_reflexive {ε : ℚ} (hε : 0 < ε) : Relation.Refle
   exact less_equal_of_less_than hε
 
 /-
-Thought that I was going to have to develop several theorems 
+Thought that I was going to have to develop several theorems for multiplication 
+by 1/2 or 1 preserving the inequalilty, but multiply_less_*_multiply covers all cases!
 -/
 theorem equal_of_forall_distance_less_equal {x y : ℚ} : (∀ {ε}, 0 < ε → distance x y ≤ ε) → x = y := by
   intro h
@@ -1050,35 +1081,53 @@ theorem equal_of_forall_distance_less_equal {x y : ℚ} : (∀ {ε}, 0 < ε → 
     exact False.elim (this (And.intro hxy h))
   intro x y
   intro ⟨hxy, h⟩
-  skip
-  -- have : |(x + y) / ⟨2, by decide⟩| ≤ |x + y| := less_equal_reflexive _
-  /-
-  intro h
-  match Decidable.em (x = y) with
-  | Or.inl hxy => exact hxy
-  | Or.inr hxy =>
-  -/
+  have hdxy := magnitude_positive <| Ne.symm <| not_equal_of_less_than 
+            <| subtract_positive_of_less_than hxy
+  apply absurd
+  . have := multiply_positive_left_strict_monotone (by decide : 0 < 1 /. ⟨2, by decide⟩) hdxy
+    simp only [multiply_zero] at this
+    have := h this
+    rw [distance_commutative, distance] at this
+    exact this
+  . have := less_than_of_less_equal_of_less_than
+      (multiply_nonnegative_left_monotone (by decide : 0 ≤ 1 /. ⟨2, by decide⟩) (less_equal_reflexive |y - x|))
+      (multiply_positive_right_strict_monotone hdxy (by decide : 1 /. ⟨2, by decide⟩ < 1))
+    simp only [one_multiply] at this
+    exact not_less_equal_of_greater_than this
 
-/-
-theorem distance_less_equal_symmetric {ε : ℚ} (hε : 0 < ε) : Relation.Symmetric (distance . . ≤ ε) := by
-  skip
+theorem distance_less_equal_symmetric {ε : ℚ} (_ : 0 < ε) : Relation.Symmetric (distance . . ≤ ε) := by
+  intro x y h
+  rw [distance_commutative] at h
+  exact h
 
 theorem distance_less_equal_transitive {ε δ x y : ℚ} (hε : 0 < ε) (hδ : 0 < δ) :
-    distance x y ≤ ε → distance y z ≤ δ → distance x z ≤ (ε + δ) := by
-  skip
+    distance x y ≤ ε → distance y z ≤ δ → distance x z ≤ (ε + δ)
+  | hxy, hyz => less_equal_transitive (distance_triangle x z y) (add_less_equal_add hxy hyz)
 
-theorem distance_less_equal_add {ε δ w x y z : ℚ} (hε : 0 < ε) (hδ : 0 < δ) :
+theorem distance_less_equal_add {ε δ w x y z : ℚ} (_ : 0 < ε) (_ : 0 < δ) :
     distance x y ≤ ε → distance z w ≤ δ → distance (x + z) (y + w) ≤ (ε + δ) := by
-  skip
+  intro hxy hzw
+  have := distance_triangle (x + z) (y + w) (y + z)
+  unfold distance at this
+  rw [← subtract_definition _ (y + z), negate_add, add_left_commutative, add_negate_cancel_right, ← subtract_definition (y + z) (y + w), negate_add, add_right_commutative, add_negate_cancel_left, ← distance, add_commutative (-y) _, add_commutative (-w) _, subtract_definition, ← distance, subtract_definition, ← distance] at this
+  exact less_equal_transitive this (add_less_equal_add hxy hzw)
 
-theorem distance_less_equal_subtract {ε δ w x y z : ℚ} (hε : 0 < ε) (hδ : 0 < δ) :
+theorem distance_less_equal_subtract {ε δ w x y z : ℚ} (_ : 0 < ε) (_ : 0 < δ) :
     distance x y ≤ ε → distance z w ≤ δ → distance (x - z) (y - w) ≤ (ε + δ) := by
-  skip
+  intro hxy hzw
+  have := distance_triangle (x - z) (y - w) (y - z)
+  unfold distance at this
+  rw [subtract_subtract x z (y - z), ← subtract_definition y z, add_left_commutative, add_inverse, add_zero, ← subtract_definition (y + (-z)) (y - w), negate_subtract, add_right_commutative, ← subtract_definition w y, add_left_commutative, add_inverse, add_zero, subtract_definition, ← distance, ← distance, ← distance, distance_commutative w z] at this
+  exact less_equal_transitive this (add_less_equal_add hxy hzw)
+
 
 -- TODO: name
-theorem distance_less_equal_of_less_than {ε ε' x y : ℚ} (hε : 0 < ε) (hε' : ε < ε') : distance x y ≤ ε → distance x y ≤ ε' := by
-  skip
+-- TODO: corallary, also weaker than it could be since <
+theorem distance_less_equal_of_less_than {ε ε' x y : ℚ} (_ : 0 < ε) (hε' : ε < ε') : distance x y ≤ ε → distance x y ≤ ε' := by
+  intro h
+  exact less_equal_of_less_than <| less_than_of_less_equal_of_less_than h hε'
 
+/-
 -- TODO: name
 theorem distance_less_equal_between {ε w x y z: ℚ} (hε : 0 < ε) :
     distance x y ≤ ε → distance x z ≤ ε →

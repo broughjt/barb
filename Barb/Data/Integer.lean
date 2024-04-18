@@ -379,7 +379,7 @@ theorem multiply_right_cancel {a b c : ℤ} (h : a * c = b * c) (c_nonzero : c �
 theorem multiply_nonzero_of_nonzero {a b : ℤ} (ha : a ≠ 0) (hb : b ≠ 0) : a * b ≠ 0 := by
   intro h
   apply hb
-  apply (Integer.multiply_left_cancel (a := a) . ha)
+  apply (multiply_left_cancel (a := a) . ha)
   rw [h, multiply_zero]
 
 theorem nonzero_of_multiply_nonzero {a b : ℤ} (h : a * b ≠ 0) : a ≠ 0 ∧ b ≠ 0 :=
@@ -509,6 +509,12 @@ abbrev NonZeroInteger := {a : ℤ // a ≠ 0}
 abbrev NegativeInteger := {a : ℤ // a < 0}
 abbrev NonPositiveInteger := {a : ℤ // a ≤ 0}
 
+notation "ℤ≥0" => NonNegativeInteger
+notation "ℤ>0" => PositiveInteger
+notation "ℤ≠0" => NonZeroInteger
+notation "ℤ<0" => NegativeInteger
+notation "ℤ≤0" => NonPositiveInteger
+
 namespace NonNegativeInteger
 
 def preToNatural' : ℕ × ℕ → Option ℕ
@@ -541,14 +547,14 @@ def toNatural' : ℤ → Option ℕ :=
     have := Natural.right_greater_equal_of_add_left_less_equal h hkl
     exact absurd this hnm
 
-def toNatural : NonNegativeInteger → ℕ
+def toNatural : ℤ≥0 → ℕ
   | (⟨a, a_nonnegative⟩) =>
     Option.get (toNatural' a) <| by
     have ⟨n, hn⟩ := equal_ofNatural_of_nonnegative a_nonnegative
     rw [toNatural', ← hn, ofNatural, Quotient.lift_construct, preToNatural']
     simp [Natural.zero_less_equal, subtract_zero, ite_true, Option.isSome]
 
-def fromNatural (n : ℕ) : NonNegativeInteger :=
+def fromNatural (n : ℕ) : ℤ≥0 :=
   ⟨n, ofNatural_nonnegative n⟩
 
 theorem fromNatural_toNatural_left_inverse : Function.LeftInverse toNatural fromNatural := by
@@ -842,7 +848,7 @@ theorem negative_left_of_multiply_negative_of_positive_right {a b : ℤ} (h : a 
     have := multiply_positive a_positive hb
     exact absurd (less_than_transitive this h) (less_than_irreflexive 0)
   | Or.inr (Or.inl a_zero) =>
-    rw [← a_zero, Integer.zero_multiply] at h
+    rw [← a_zero, zero_multiply] at h
     exact absurd h (less_than_irreflexive 0)
   | Or.inr (Or.inr a_negative) => exact a_negative
   
