@@ -15,3 +15,12 @@ instance One.toOfNat1 {α} [One α] : OfNat α (nat_lit 1) where
 
 instance One.ofOfNat1 {α} [OfNat α (nat_lit 1)] : One α where
   one := 1
+  
+class Invert (α : Type u) where
+  invert : α → α
+
+class HeterogeneousInvert (α : Type u) (β : Type v) where
+  heterogeneous_invert : α → β
+
+-- postfix:max "⁻¹" => Invert.invert
+postfix:max "⁻¹" => HeterogeneousInvert.heterogeneous_invert

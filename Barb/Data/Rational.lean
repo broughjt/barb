@@ -2,6 +2,7 @@ import Barb.Algebra
 import Barb.Data.Integer
 import Barb.Data.Option
 import Barb.Logic
+import Barb.Syntax
 
 open Integer (NonZeroInteger)
 
@@ -75,6 +76,8 @@ theorem zero_definition : (0 : ℚ) = Quotient.mk instanceSetoidRationalEquivale
 instance one : Rational := ⟦(1, ⟨1, by decide⟩)⟧
 
 theorem one_definition : (1 : ℚ) = Quotient.mk instanceSetoidRationalEquivalent (1, ⟨1, by decide⟩) := rfl
+
+abbrev NonZeroRational := {x : ℚ // x ≠ 0}
 
 def add : ℚ → ℚ → ℚ :=
   let add' := λ
@@ -168,13 +171,19 @@ def reciprocal' : ℚ → Option ℚ :=
     have := Integer.multiply_nonzero_of_nonzero ha hd
     exact absurd (hcb.symm.trans h.symm) this.symm
 
-def reciprocal (x : ℚ) (h : x ≠ 0) : ℚ :=
-  Option.get (reciprocal' x) <| by
+def reciprocal : NonZeroRational → ℚ :=
+  λ ⟨x, hx⟩ => Option.get (reciprocal' x) <| by
   have ⟨(a, ⟨b, b_nonzero⟩), hab⟩ := Quotient.exists_rep x
-  have a_nonzero := numerator_nonzero_of_nonzero (hab.symm ▸ h)
+  have a_nonzero := numerator_nonzero_of_nonzero (hab.symm ▸ hx)
   rw [← hab, reciprocal', Quotient.lift_construct, Option.isSome]
   have := preReciprocal_some ⟨a, b, b_nonzero⟩ a_nonzero
   simp [this]
+
+instance : HeterogeneousInvert NonZeroRational Rational where
+  heterogeneous_invert := reciprocal
+
+-- TODO: Print instances for natural, integer, and rational so we can evaluate stuff, also a // b syntax for constructing rationals from integers (or naturals), also NonZero for rational, extend HInv, and require it for a field
+example : Rational := (⟨(2 : ℚ), by decide⟩ : NonZeroRational)⁻¹
 
 theorem add_associative : ∀ (x y z : ℚ), (x + y) + z = x + (y + z) := by
   apply Quotient.ind₃
@@ -246,8 +255,9 @@ theorem right_distributive : ∀ (x y z : ℚ), (x + y) * z = x * z + y * z := b
   intro x y z
   rw [multiply_commutative, left_distributive, multiply_commutative z x, multiply_commutative z y]
 
-theorem multiply_inverse : ∀ (x : ℚ) (h : x ≠ 0), x * (reciprocal x h) = 1 := by
-  apply Quotient.ind
+theorem multiply_inverse : ∀ (x : NonZeroRational), x.val * (reciprocal x) = 1 := by
+  intro ⟨x, hx⟩
+  apply Quotient.inductionOn x.val
   intro (a, ⟨b, b_nonzero⟩) h
   have h' := numerator_nonzero_of_nonzero h
   simp at h'
@@ -853,6 +863,7 @@ theorem multiply_nonpositive_of_nonpositive_of_nonnegative {a b : ℚ} (ha : a �
   exact multiply_nonnegative_right_monotone hb ha
   
 -- Tricky: We only require that c is nonnegative, a is totally cool to be negative because that will make a*b negative which preserves order
+-- See note on equal_of_forall_distance_less_equal
 theorem multiply_less_equal_multiply {a b c d : ℚ} (hac : a ≤ c) (hbd : b ≤ d) (hb : 0 ≤ b) (hc : 0 ≤ c) : a * b ≤ c * d :=
   less_equal_transitive
   (multiply_nonnegative_right_monotone hb hac)
@@ -871,11 +882,10 @@ theorem multiply_nonpositive_right_antitone {c : ℚ} (hc : c ≤ 0) : Antitone 
   rw [multiply_commutative a c, multiply_commutative b c]
   exact multiply_nonpositive_left_antitone hc h
 
-def NonNegativeRational := {x : ℚ // 0 ≤ x}
-def PositiveRational := {x : ℚ // 0 < x}
-def NonZeroRational := {x : ℚ // x ≠ 0}
-def NegativeRational := {x : ℚ // x < 0}
-def NonPositiveRational := {x : ℚ // x ≤ 0}
+abbrev NonNegativeRational := {x : ℚ // 0 ≤ x}
+abbrev PositiveRational := {x : ℚ // 0 < x}
+abbrev NegativeRational := {x : ℚ // x < 0}
+abbrev NonPositiveRational := {x : ℚ // x ≤ 0}
 
 def magnitude (x : ℚ) : ℚ := maximum x (-x)
 
@@ -1021,14 +1031,27 @@ theorem distance_triangle (x y z : ℚ) : distance x z ≤ distance x y + distan
     negate_add_cancel_left] at this
   exact this
 
-/-
 theorem distance_less_equal_reflexive {ε : ℚ} (hε : 0 < ε) : Relation.Reflexive (distance . . ≤ ε) := by
   intro x
   rw [distance_self x]
   exact less_equal_of_less_than hε
 
+/-
+Thought that I was going to have to develop several theorems 
+-/
 theorem equal_of_forall_distance_less_equal {x y : ℚ} : (∀ {ε}, 0 < ε → distance x y ≤ ε) → x = y := by
+  intro h
+  suffices ∀ {x y}, ¬(x < y ∧ (∀ {ε}, 0 < ε → distance x y ≤ ε)) from
+  match less_than_trichotomous x y with
+  | Or.inl hxy => False.elim (this (And.intro hxy h))
+  | Or.inr (Or.inl hxy) => hxy
+  | Or.inr (Or.inr hxy) => by
+    rw [distance_commutative x y] at h
+    exact False.elim (this (And.intro hxy h))
+  intro x y
+  intro ⟨hxy, h⟩
   skip
+  -- have : |(x + y) / ⟨2, by decide⟩| ≤ |x + y| := less_equal_reflexive _
   /-
   intro h
   match Decidable.em (x = y) with
@@ -1036,6 +1059,7 @@ theorem equal_of_forall_distance_less_equal {x y : ℚ} : (∀ {ε}, 0 < ε → 
   | Or.inr hxy =>
   -/
 
+/-
 theorem distance_less_equal_symmetric {ε : ℚ} (hε : 0 < ε) : Relation.Symmetric (distance . . ≤ ε) := by
   skip
 
