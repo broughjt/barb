@@ -430,14 +430,14 @@ def LessThan (x y : ℚ) : Prop :=
 instance : LT Rational where
   lt := LessThan
 
-@[simp] theorem less_than_definition : (x < y) = (LessThan x y) := rfl
+theorem less_than_definition : (x < y) = (LessThan x y) := rfl
 
 def LessEqual (x y : ℚ) : Prop := x < y ∨ x = y
 
 instance : LE Rational where
   le := LessEqual
 
-@[simp] theorem less_equal_definition : (x ≤ y) = (LessEqual x y) := rfl
+theorem less_equal_definition : (x ≤ y) = (LessEqual x y) := rfl
 
 theorem LessThan.irreflexive : Relation.Irreflexive LessThan := by
   intro x
@@ -562,7 +562,7 @@ instance decidePositive (x : ℚ) : Decidable (0 < x) :=
   else
     let positive_or_negative_of_equal_positive' :
         (0 : ℚ) < Quotient.mk instanceSetoidRationalEquivalent (a, ⟨b, b_nonzero⟩) → (0 < a ∧ 0 < b) ∨ (a < 0 ∧ b < 0) := by
-      simp [LessThan, subtract_zero, Quotient.lift_construct_on]
+      simp [less_than_definition, LessThan, subtract_zero, Quotient.lift_construct_on]
       intro ⟨(c, d), h⟩
       exact positive_or_negative_of_equal_positive h
     isFalse (mt positive_or_negative_of_equal_positive' h)
@@ -843,7 +843,6 @@ theorem less_equal_of_negate_less_equal_negate {a b : ℚ} (h : -b ≤ -a) : a �
 theorem multiply_nonnegative_left_monotone {x : ℚ} (hx : 0 ≤ x) : Monotone (x * .) := by
   unfold Monotone
   intro y z h
-  simp at h
   match h, hx with
   | Or.inl h, Or.inl hx => 
     exact Or.inl (multiply_positive_left_strict_monotone hx h)
@@ -986,7 +985,7 @@ theorem magnitude_less_equal_of_negate_less_equal {x y : ℚ} : -y ≤ x → x �
   λ hyx hxy =>
   magnitude_less_equal_equivalent_negate_less_equal_self.mp (And.intro hyx hxy)
 
-theorem negate_less_equal_of_magnitude_less_equal (x y : ℚ) : |x| ≤ y → -y ≤ x ∧ x ≤ y :=
+theorem negate_less_equal_of_magnitude_less_equal {x y : ℚ} : |x| ≤ y → -y ≤ x ∧ x ≤ y :=
   magnitude_less_equal_equivalent_negate_less_equal_self.mpr
   
 theorem magnitude_multiply_equal_multiply_magnitude (x y : ℚ) : |x * y| = |x| * |y| := by
@@ -1019,6 +1018,8 @@ theorem magnitude_add_less_equal (x y : ℚ) : |x + y| ≤ |x| + |y| := by
   . exact add_less_equal_add (less_equal_magnitude x) (less_equal_magnitude y)
 
 def distance (x y : ℚ) := |x - y|
+
+theorem distance_definition : distance x y = |x - y| := rfl
 
 theorem distance_nonnegative (x y : ℚ) : 0 ≤ distance x y := by
   exact magnitude_nonnegative (x - y)
@@ -1120,33 +1121,73 @@ theorem distance_less_equal_subtract {ε δ w x y z : ℚ} (_ : 0 < ε) (_ : 0 <
   rw [subtract_subtract x z (y - z), ← subtract_definition y z, add_left_commutative, add_inverse, add_zero, ← subtract_definition (y + (-z)) (y - w), negate_subtract, add_right_commutative, ← subtract_definition w y, add_left_commutative, add_inverse, add_zero, subtract_definition, ← distance, ← distance, ← distance, distance_commutative w z] at this
   exact less_equal_transitive this (add_less_equal_add hxy hzw)
 
-
 -- TODO: name
 -- TODO: corallary, also weaker than it could be since <
-theorem distance_less_equal_of_less_than {ε ε' x y : ℚ} (_ : 0 < ε) (hε' : ε < ε') : distance x y ≤ ε → distance x y ≤ ε' := by
-  intro h
-  exact less_equal_of_less_than <| less_than_of_less_equal_of_less_than h hε'
+theorem distance_less_equal_of_less_than {ε ε' x y : ℚ} (_ : 0 < ε) (hε' : ε < ε') : distance x y ≤ ε → distance x y ≤ ε' :=
+  λ h => less_equal_of_less_than <| less_than_of_less_equal_of_less_than h hε'
+
+theorem distance_less_equal_between' {ε w x y z: ℚ} (_ : 0 < ε) :
+    distance x y ≤ ε → distance x z ≤ ε →
+    y ≤ w → w ≤ z →
+    distance x w ≤ ε := by
+  intro hxy hxz hyw hwz
+  apply magnitude_less_equal_of_negate_less_equal
+  . apply less_equal_transitive
+    exact And.left <| negate_less_equal_of_magnitude_less_equal hxz
+    exact add_left_monotone x <| negate_antitone hwz
+  . apply less_equal_transitive
+    exact add_left_monotone x <| negate_antitone hyw
+    exact And.right <| negate_less_equal_of_magnitude_less_equal hxy
 
 /-
--- TODO: name
 theorem distance_less_equal_between {ε w x y z: ℚ} (hε : 0 < ε) :
     distance x y ≤ ε → distance x z ≤ ε →
     (y ≤ w ∧ w ≤ z) ∨ (z ≤ w ∧ w ≤ y) →
     distance x w ≤ ε := by
-  skip
+  intro hxy hxz
+  intro hw
+  match hw with
+  | Or.inl ⟨hyw, hwz⟩ => exact distance_less_equal_between' hε hxy hxz (And.intro hyw hwz)
+  | Or.inr ⟨hzw, hwy⟩ => exact distance_less_equal_between' hε hxz hxy (And.intro hzw hwy)
+-/
 
-theorem distance_less_equal_multiply_left {ε w x y : ℚ} (hε : 0 < ε) (hw : w ≠ 0) :
+-- TODO: Don't need the hw?
+theorem distance_less_equal_multiply_left {ε w x y : ℚ} (_ : 0 < ε) (_ : w ≠ 0) :
     distance x y ≤ ε → distance (w * x) (w * y) ≤ (|w| * ε) := by
-  skip
+  intro hxy
+  have := multiply_nonnegative_left_monotone (magnitude_nonnegative w) hxy
+  simp only [distance] at this
+  rw [← magnitude_multiply_equal_multiply_magnitude, ← subtract_definition, left_distributive, ← negate_multiply_equal_multiply_negate] at this
+  exact this
 
 theorem distance_less_equal_multiply_right {ε z x y : ℚ} (hε : 0 < ε) (hz : z ≠ 0) :
     distance x y ≤ ε → distance (x * z) (y * z) ≤ (ε * |z|) := by
   rw [multiply_commutative x z, multiply_commutative y z, multiply_commutative ε |z|]
   exact distance_less_equal_multiply_left hε hz
 
--- TODO: name
-theorem distance_less_equal_multiply {ε δ w x y z : ℚ} (hε : 0 < ε) (hδ : 0 < δ) :
+-- TODO: Need to revisit this one for understanding, formalized Tao's proof because of time.
+theorem distance_less_equal_multiply {ε δ w x y z : ℚ} (hε : 0 < ε) (_ : 0 < δ) :
     distance x y ≤ ε → distance z w ≤ δ →
     distance (x * z) (y * w) ≤ (ε * |z| + δ * |x| + ε * δ) := by
-  skip
--/
+  intro hxy hzw
+  let a := y - x;
+  have hy : y - x + x = a + x := congrArg (. + x) (rfl : a = y - x)
+  rw [← subtract_definition, negate_add_cancel_right] at hy
+  have ha : |a| ≤ ε := by simp only [← distance_definition, distance_commutative]; exact hxy
+  let b := w - z;
+  have hw : w - z + z = b + z := congrArg (. + z) (rfl : b = w - z)
+  rw [← subtract_definition, negate_add_cancel_right] at hw
+  have hb : |b| ≤ δ := by simp only [← distance_definition, distance_commutative w z]; exact hzw
+  have hyw : y*w = a*b + a*z + x*b + x*z := by rw [hy, hw, right_distributive, left_distributive, left_distributive, ← add_associative]
+  rw [distance_commutative, hyw, distance, ← subtract_definition, add_negate_cancel_right, add_commutative (a*b) (a*z), add_right_commutative, multiply_commutative x b]
+  apply less_equal_transitive (magnitude_add_less_equal _ _)
+  apply less_equal_transitive
+  apply add_right_monotone (|a * b|) (magnitude_add_less_equal _ _)
+  apply add_less_equal_add
+  apply add_less_equal_add
+  rw [magnitude_multiply_equal_multiply_magnitude a z]
+  exact multiply_nonnegative_right_monotone (magnitude_nonnegative z) ha
+  rw [magnitude_multiply_equal_multiply_magnitude b x]
+  exact multiply_nonnegative_right_monotone (magnitude_nonnegative x) hb
+  rw [magnitude_multiply_equal_multiply_magnitude a b]
+  exact multiply_less_equal_multiply ha hb (magnitude_nonnegative _) (less_equal_of_less_than hε)
