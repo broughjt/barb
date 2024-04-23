@@ -429,15 +429,10 @@ theorem LessEqual.transitive : Relation.Transitive LessEqual := by
   rw [ofNatural_add, ← add_associative, ha, hb]
 
 theorem less_equal_of_subtract_nonnegative {a b : ℤ} : 0 ≤ b - a → a ≤ b := by
-  intro ⟨n, (h : 0 + ↑n = b - a)⟩
-  apply Exists.intro n
-  rw [add_commutative a ↑n, ← zero_add (↑n + a), ← add_associative, h,
-    ← subtract_definition, add_associative, add_inverse_left, add_zero]
+  skip
 
 theorem subtract_nonnegative_of_less_equal {a b : ℤ} : a ≤ b → 0 ≤ b - a := by
-  intro ⟨n, (h : a + ↑n = b)⟩
-  apply Exists.intro n
-  rw [← add_inverse a, add_right_commutative, h, subtract_definition]
+  skip
 
 theorem nonnegative_of_negative_less_equal_positive {n m : ℕ} : m ≤ n → (0 : ℤ) ≤ ⟦(n, m)⟧ := by
   intro ⟨a, (ha : m + a = n)⟩
@@ -455,16 +450,10 @@ theorem negative_less_equal_positive_of_nonnegative {n m : ℕ} : (0 : ℤ) ≤ 
 instance decideNonNegative (a : ℤ) : Decidable (0 ≤ a) :=
   Quotient.recOnSubsingleton a
   λ ((n, m) : ℕ × ℕ) =>
-  if h : m ≤ n then
-    isTrue (nonnegative_of_negative_less_equal_positive h)
-  else
-    isFalse (mt negative_less_equal_positive_of_nonnegative h)
+  skip
 
 instance decideLessEqual (a b : ℤ) : Decidable (a ≤ b) :=
-  if h : 0 ≤ b - a then
-    isTrue (less_equal_of_subtract_nonnegative h)
-  else
-    isFalse (mt subtract_nonnegative_of_less_equal h)
+  skip
 
 theorem LessEqual.strongly_connected : Relation.StronglyConnected LessEqual :=
   have lift_less_equal {n m k l : ℕ} : n + l ≤ k + m → LessEqual ⟦(n, m)⟧ ⟦(k, l)⟧ := by
