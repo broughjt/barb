@@ -64,14 +64,22 @@ notation "ℚ" => Rational
 
 instance decideEqual : DecidableEq Rational := decideRationalEquivalentQuotientEqual
 
-instance : OfNat Rational n where
-  ofNat := ⟦(Integer.ofNatural (Natural.fromNat n), ⟨1, by decide⟩)⟧
+def ofInteger (a : ℤ) : ℚ := ⟦(a, ⟨1, by decide⟩)⟧
 
-instance zero : Rational := ⟦(0, ⟨1, by decide⟩)⟧
+def ofNatural : ℕ → ℚ := ofInteger ∘ Integer.ofNatural
+
+instance : Coe Integer Rational := ⟨ofInteger⟩
+
+instance : Coe Natural Rational := ⟨ofNatural⟩
+
+instance : OfNat Rational n where
+  ofNat := ofNatural (Natural.fromNat n)
+
+instance zero : Rational := ofNatural 0
 
 theorem zero_definition : (0 : ℚ) = Quotient.mk instanceSetoidRationalEquivalent (0, ⟨1, by decide⟩) := rfl
 
-instance one : Rational := ⟦(1, ⟨1, by decide⟩)⟧
+instance one : Rational := ofNatural 1
 
 theorem one_definition : (1 : ℚ) = Quotient.mk instanceSetoidRationalEquivalent (1, ⟨1, by decide⟩) := rfl
 
@@ -410,6 +418,108 @@ theorem negate_multiply_equal_negate_multiply (a b : ℚ) : -(a * b) = -a * b :=
 
 theorem negate_multiply_equal_multiply_negate (a b : ℚ) : -(a * b) = a * -b := by
   rw [multiply_commutative, negate_multiply_equal_negate_multiply, multiply_commutative]
+
+theorem equal_zero_of_multiply_equal_zero : ∀ {x y : ℚ}, x * y = 0 → x = 0 ∨ y = 0 := by
+  apply Quotient.ind₂
+  intro ⟨a, b, hb⟩ ⟨c, d, hd⟩
+  intro h
+  have h' : (a * c) * 1 = 0 * (b * d) := Quotient.exact h
+  rw [Integer.multiply_one, Integer.zero_multiply] at h'
+  match Integer.equal_zero_of_multiply_equal_zero h' with
+  | Or.inl ha =>
+    apply Or.inl
+    subst ha
+    apply Quotient.sound
+    show 0 * 1 = 0 * b
+    simp [Integer.zero_multiply]
+  | Or.inr hb =>
+    apply Or.inr
+    subst hb
+    apply Quotient.sound
+    show 0 * 1 = 0 * d
+    simp [Integer.zero_multiply]
+
+theorem multiply_equal_zero_of_equal_zero : ∀ {a b : ℚ}, a = 0 ∨ b = 0 → a * b = 0 := by
+  intro a b h
+  match h with
+  | Or.inl ha => rw [ha, zero_multiply]
+  | Or.inr hb => rw [hb, multiply_zero]
+
+theorem multiply_left_commutative (n m k : ℚ) : n * (m * k) = m * (n * k) := by
+  rw [← multiply_associative, multiply_commutative n m, multiply_associative]
+
+theorem multiply_right_commutative (n m k : ℚ) : (n * m) * k = (n * k) * m := by
+  rw [multiply_associative, multiply_commutative m k, ← multiply_associative]
+
+theorem multiply_left_cancel {a b c : ℚ} (h : a * b = a * c) (a_nonzero : a ≠ 0) : b = c := by
+  suffices c - b = 0 from (equal_of_subtract_equal_zero this).symm
+  apply (Or.resolve_left . a_nonzero)
+  apply equal_zero_of_multiply_equal_zero
+  rw [← subtract_definition, left_distributive, ← h,
+    ← negate_multiply_equal_multiply_negate, add_inverse]
+
+theorem multiply_right_cancel {a b c : ℚ} (h : a * c = b * c) (c_nonzero : c ≠ 0) : a = b := by
+  apply multiply_left_cancel (a := c)
+  rw [multiply_commutative c a, multiply_commutative c b]
+  exact h
+  exact c_nonzero
+
+theorem multiply_nonzero_of_nonzero {a b : ℚ} (ha : a ≠ 0) (hb : b ≠ 0) : a * b ≠ 0 := by
+  intro h
+  apply hb
+  apply (multiply_left_cancel (a := a) . ha)
+  rw [h, multiply_zero]
+
+theorem nonzero_of_multiply_nonzero {a b : ℚ} (h : a * b ≠ 0) : a ≠ 0 ∧ b ≠ 0 :=
+  not_or.mp (mt multiply_equal_zero_of_equal_zero h)
+
+theorem ofInteger_add (a b : ℤ) : ofInteger (a + b) = ofInteger a + ofInteger b := by
+  apply Quotient.sound
+  simp [Integer.multiply_one]
+  rfl
+
+theorem ofInteger_multiply (a b : ℤ) : ofInteger (a * b) = ofInteger a * ofInteger b := by
+  apply Quotient.sound
+  rfl
+
+theorem ofInteger_injective : Function.Injective ofInteger := by
+  intro a b h
+  have : a * 1 = b * 1 := Quotient.exact h
+  simp [Integer.multiply_one, Integer.one_multiply] at this
+  exact this
+
+theorem ofNatural_add (n m : ℕ) : ofNatural (n + m) = ofNatural n + ofNatural m := by
+  apply Quotient.sound
+  simp [Integer.multiply_one]
+  rfl
+
+theorem ofNatural_multiply (n m : ℕ) : ofNatural (n * m) = ofNatural n * ofNatural m := by
+  apply Quotient.sound
+  show Integer.ofNatural (n * m) * 1 = (Integer.ofNatural n * Integer.ofNatural m) * 1
+  simp [Integer.multiply_one]
+  exact Integer.ofNatural_multiply n m
+
+theorem ofNatural_injective : Function.Injective ofNatural := by
+  intro n m h
+  have : Integer.ofNatural n * 1 = Integer.ofNatural m * 1 := Quotient.exact h
+  simp [Integer.multiply_one] at this
+  exact Integer.ofNatural_injective this
+
+/-
+theorem ofNatural_add (n m : ℕ) : ofNatural (n + m) = ofNatural n + ofNatural m := 
+
+theorem ofNatural_multiply (n m : ℕ) : ofNatural (n * m) = ofNatural n * ofNatural m := by
+  unfold ofNatural
+  apply Quotient.sound
+  show (n * m) + (n * 0 + 0 * m) = (n * m + 0 * 0) + 0
+  simp [Natural.add_zero, Natural.zero_add, Natural.multiply_zero, Natural.zero_multiply]
+
+theorem ofNatural_injective : Function.Injective ofNatural := by
+  intro a b h
+  rw [← Natural.add_zero a, Quotient.exact h, Natural.add_zero]
+
+theorem ofNatural_zero : ofNatural 0 = (0 : ℤ) := rfl
+-/
 
 def LessThan (x y : ℚ) : Prop :=
   let positive'
@@ -1191,3 +1301,146 @@ theorem distance_less_equal_multiply {ε δ w x y z : ℚ} (hε : 0 < ε) (_ : 0
   exact multiply_nonnegative_right_monotone (magnitude_nonnegative x) hb
   rw [magnitude_multiply_equal_multiply_magnitude a b]
   exact multiply_less_equal_multiply ha hb (magnitude_nonnegative _) (less_equal_of_less_than hε)
+
+open Natural (zero successor)
+
+def exponentiate : ℚ → ℕ → ℚ
+  | _, Natural.zero => 1
+  | x, Natural.successor n => (exponentiate x n) * x
+
+instance : HPow Rational Natural Rational where
+  hPow := exponentiate
+
+theorem exponentiate_zero (x : ℚ) : x^(0 : ℕ) = 1 := rfl
+
+theorem exponentiate_successor (x : ℚ) (n : ℕ) : x ^ (successor n) = x ^ n * x := rfl
+
+theorem exponentiate_add (x : ℚ) (n m : ℕ) : x^n * x^m = x^(n + m) := by
+  induction n with
+  | zero => simp [Natural.zero_definition, exponentiate_zero, one_multiply, Natural.zero_add]
+  | successor n ih =>
+    rw [Natural.successor_add, exponentiate_successor, exponentiate_successor]
+    match Decidable.em (x = 0) with
+    | Or.inl hx => simp [hx, multiply_zero, zero_multiply]
+    | Or.inr _ => rw [multiply_right_commutative]; exact congrArg (. * x) ih
+
+theorem exponentiate_multiply (x : ℚ) (n m : ℕ) : (x^n)^m = x^(n * m) := by
+  induction m with
+  | zero => simp [Natural.zero_definition, exponentiate_zero]
+  | successor m ih =>
+    rw [exponentiate_successor, Natural.multiply_successor, ← exponentiate_add]
+    exact congrArg (. * x^n) ih
+
+theorem multiply_exponentiate (x y : ℚ) (n : ℕ) : (x * y)^n = x^n * y^n := by
+  induction n with
+  | zero => simp [Natural.zero_definition, exponentiate_zero, multiply_one]
+  | successor n ih =>
+    simp [exponentiate_successor]
+    rw [multiply_associative, multiply_left_commutative x, ← multiply_associative (x^n)]
+    exact congrArg (. * (x*y)) ih
+
+-- TODO: This is bad
+theorem equal_zero_of_exponentiate_zero_of_positive {x : ℚ} {n : ℕ} : 0 < n → x^n = 0 → x = 0 := by
+  induction n with
+  | zero => intro hn; contradiction
+  | successor n ih =>
+    intro _ hx
+    rw [exponentiate_successor] at hx
+    match equal_zero_of_multiply_equal_zero hx with
+    | Or.inl hxn =>
+      match Natural.equal_zero_or_positive n with
+      | Or.inl hn => rw [hn, exponentiate_zero] at hxn; contradiction
+      | Or.inr hn => exact ih hn hxn
+    | Or.inr h => exact h
+    
+theorem exponentiate_zero_of_equal_zero_of_positive {x : ℚ} {n : ℕ} (hn : 0 < n) (hx : x = 0) : x^n = 0 := by
+  match n with
+  | Natural.zero => contradiction
+  | Natural.successor n => rw [exponentiate_successor, hx, multiply_zero]
+
+theorem exponentiate_zero_equivalent_equal_zero_of_positive {x : ℚ} {n : ℕ} (hn : 0 < n) :
+    x^n = 0 ↔ x = 0 :=
+  ⟨equal_zero_of_exponentiate_zero_of_positive hn, exponentiate_zero_of_equal_zero_of_positive hn⟩
+  
+theorem exponentiate_nonnegative {x : ℚ} {n : ℕ} (hx : 0 ≤ x) : 0 ≤ x^n := by
+  induction n with
+  | zero => 
+    rw [Natural.zero_definition, exponentiate_zero]
+    decide
+  | successor n ih =>
+    rw [exponentiate_successor]
+    have := multiply_nonnegative_right_monotone hx ih
+    simp [zero_multiply] at this
+    exact this
+
+theorem exponentiate_positive {x : ℚ} {n : ℕ} (hx : 0 < x) : 0 < x^n := by
+  induction n with
+  | zero => simp [Natural.zero_definition, exponentiate_zero]; decide
+  | successor n ih => 
+    simp [exponentiate_successor]
+    exact multiply_positive ih hx
+
+theorem exponentiate_nonzero {x : ℚ} (hx : x ≠ 0) (n : ℕ) : x^n ≠ 0 := by
+  induction n with
+  | zero => rw [Natural.zero_definition, exponentiate_zero]; decide
+  | successor n ih => 
+    rw [exponentiate_successor]
+    exact multiply_nonzero_of_nonzero ih hx
+
+-- TODO: Figure out how to actually use the monotone definition, or change the name to reflect that its only the nonnegative part of the rationals
+theorem exponentiate_nonnegative_monotone {x y : ℚ} (n : ℕ) (hx : 0 ≤ x) (hxy : x ≤ y) : x^n ≤ y^n := by
+  induction n with
+  | zero =>
+    simp [Natural.zero_definition, exponentiate_zero]
+    exact less_equal_reflexive 1
+  | successor n ih =>
+    simp [exponentiate_successor]
+    apply multiply_less_equal_multiply ih hxy hx 
+    exact exponentiate_nonnegative (less_equal_transitive hx hxy)
+
+theorem exponentiate_nonnegative_strict_monotone {x y : ℚ} {n : ℕ} (hx : 0 ≤ x) (hxy : x < y) (hn : 0 < n) : x^n < y^n := by
+  induction n with
+  | zero => contradiction
+  | successor n ih =>
+    match Natural.equal_zero_or_positive n with
+    | Or.inl hn =>
+      simp [hn, exponentiate_successor, exponentiate_zero, one_multiply]
+      exact hxy
+    | Or.inr hn =>
+      match less_than_or_equal_of_less_equal hx with
+      | Or.inl hx =>
+        simp [exponentiate_successor]
+        apply multiply_less_than_multiply (ih hn) hxy hx
+        exact exponentiate_positive (less_than_transitive hx hxy)
+      | Or.inr hx => 
+        rw [← hx, exponentiate_successor, multiply_zero]
+        exact exponentiate_positive (hx.symm ▸ hxy)
+
+theorem exponentiate_magnitude (x : ℚ) (n : ℕ) : |x^n| = |x|^n := by
+  induction n with
+  | zero => simp [Natural.zero_definition, exponentiate_zero]; rfl
+  | successor n ih =>
+    simp [exponentiate_successor, magnitude_multiply_equal_multiply_magnitude]
+    exact congrArg (. * |x|) ih
+
+-- TODO: Is this just the Archimedean property in disguise? Or a corralary of the archimedian property? If so we should state it explicitly with a definition
+theorem exists_integer_between : ∀ x : ℚ, ∃ a : ℤ, ↑a ≤ x ∧ x ≤ ↑a + 1 := by
+  intro x
+  
+
+/-
+def exponentiate' : ℚ≠0 → ℤ → ℚ
+  | ⟨x, hx⟩, a =>
+    if ha : 0 ≤ a
+    then exponentiate x (Integer.NonNegativeInteger.toNatural ⟨a, ha⟩)
+    else
+      let n := Integer.NonPositiveInteger.toNatural ⟨a, less_equal_of_not_greater_equal ha⟩
+      reciprocal ⟨(exponentiate x n), exponentiate_nonzero hx n⟩
+
+instance : HPow NonZeroRational Integer Rational where
+  hPow := exponentiate'
+
+theorem exponentiate_definition (x : ℚ≠0) (a : ℤ) : exponentiate' x a = ((x : NonZeroRational)^(a : Integer) : Rational) := rfl
+
+-- theorem exponentiate'_nonzero (x : ℚ≠0) (a : ℤ) : x^a ≠ 0 := by
+-/

@@ -26,6 +26,8 @@ instance : ToString Natural where
 
 notation "ℕ" => Natural
 
+theorem zero_definition : zero = 0 := rfl
+
 theorem successor_not_equal_zero (n : ℕ) : successor n ≠ 0 :=
   Natural.noConfusion
 
@@ -556,6 +558,22 @@ theorem multiply_right_cancel {n m k : ℕ} (h_equal : n * k = m * k) (h_positiv
     _     = k * m := multiply_commutative m k
   multiply_left_cancel this h_positive
 
+-- TODO: Fully understand the recursion chapter before messing with this again
+--
+theorem divideWithRemainder_foo {n m : ℕ} : 0 < m ∧ m ≤ n → distance n m < n :=
+  sorry
+
+def divideWithRemainder (n m : ℕ) (hm : m ≠ 0) : ℕ × ℕ :=
+  if 0 < m ∧ m ≤ n
+  then 
+    have : distance n m < n := sorry
+    let ⟨q', r'⟩ := (divideWithRemainder (distance n m) m hm)
+    ⟨q' + 1, r'⟩
+  else ⟨0, n⟩
+termination_by divideWithRemainder n m _ => n
+--
+
+ 
 theorem quotient_remainder {n q : ℕ} (q_positive : q ≠ 0) :
   ∃ (p : ℕ × ℕ),
   let ⟨m, r⟩ := p; n = m * q + r ∧ r < q := by

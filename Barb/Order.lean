@@ -154,11 +154,17 @@ theorem less_than_trichotomous [DecidableTotalOrder α] (a b : α) : a < b ∨ a
     (λ h : a ≤ b => Or.elim (less_than_or_equal_of_less_equal h) Or.inl (Or.inr ∘ Or.inl))
     (λ h : a ≥ b => Or.elim (less_than_or_equal_of_less_equal h) (Or.inr ∘ Or.inr) (Or.inr ∘ Or.inl ∘ Eq.symm))
 
-theorem less_equal_of_not_less_than [DecidableTotalOrder α] {a b : α} (h : ¬a < b) : b ≤ a :=
+theorem less_equal_of_not_greater_than [DecidableTotalOrder α] {a b : α} (h : ¬a < b) : b ≤ a :=
   match less_than_trichotomous b a with
   | Or.inl h_less => less_equal_of_less_than h_less
   | Or.inr (Or.inl h_equal) => less_equal_of_equal h_equal
   | Or.inr (Or.inr h_greater) => absurd h_greater h
+
+theorem less_than_of_not_greater_equal [DecidableTotalOrder α] {a b : α} (h : ¬a ≤ b) : b < a :=
+  match less_than_trichotomous b a with
+  | Or.inl h_less => h_less
+  | Or.inr (Or.inl h_equal) => False.elim <| h <| less_equal_of_equal h_equal.symm
+  | Or.inr (Or.inr h_greater) => False.elim <| h <| less_equal_of_less_than h_greater
 
 theorem less_than_or_less_equal [DecidableTotalOrder α] (a b : α) : a < b ∨ b ≤ a := by
   match less_than_trichotomous a b with

@@ -877,3 +877,125 @@ theorem less_equal_multiply_cancel_left_of_positive {a b c : ℤ} (h : a * b ≤
 theorem less_equal_multiply_cancel_right_of_positive {a b c : ℤ} (h : a * c ≤ b * c) (hc : 0 < c) : a ≤ b := by
   rw [multiply_commutative a c, multiply_commutative b c] at h
   exact less_equal_multiply_cancel_left_of_positive h hc
+
+namespace NonPositiveInteger
+
+def toNatural : ℤ≤0 → ℕ
+  | ⟨a, ha⟩ => NonNegativeInteger.toNatural ⟨-a, negate_antitone ha⟩
+
+def fromNatural (n : ℕ) : ℤ≤0 :=
+  let ⟨a, ha⟩ := NonNegativeInteger.fromNatural n
+  ⟨-a, negate_antitone ha⟩
+  
+theorem fromNatural_toNatural_left_inverse : Function.LeftInverse toNatural fromNatural := NonNegativeInteger.fromNatural_toNatural_left_inverse
+
+theorem fromNatural_toNatural_right_inverse : Function.RightInverse toNatural fromNatural := by
+  intro ⟨a, ha⟩
+  unfold toNatural fromNatural
+  have := NonNegativeInteger.fromNatural_toNatural_right_inverse ⟨-a, negate_antitone ha⟩
+  simp at this
+  simp [this]
+
+end NonPositiveInteger
+
+-- TODO: Copied from rationals
+def magnitude (a : ℤ) : ℤ := maximum a (-a)
+
+macro:max atomic("|" noWs) a:term noWs "|" : term => `(magnitude $a)
+
+theorem magnitude_negate (x : ℤ) : |-x| = |x| := by
+  unfold magnitude 
+  rw [negate_negate, maximum_commutative]
+
+theorem magnitude_nonnegative (x : ℤ) : 0 ≤ |x| := by
+  unfold magnitude
+  match less_than_trichotomous 0 x with
+  | Or.inl h => 
+    exact less_equal_maximum_left_of_less_equal (-x) (less_equal_of_less_than h)
+  | Or.inr (Or.inl h) =>
+    rw [← h, ← negate_zero, maximum_self]
+    exact less_equal_reflexive 0
+  | Or.inr (Or.inr h) =>
+    exact less_equal_maximum_right_of_less_equal x (negate_antitone (less_equal_of_less_than h))
+
+theorem magnitude_zero : |0| = 0 := rfl
+
+theorem zero_of_magnitude_value_zero {x : ℤ} (h : |x| = 0) : x = 0 := by
+  rw [magnitude] at h
+  match Decidable.em (x ≤ -x) with
+  | Or.inl hx => 
+    have := congrArg negate ((maximum_equal_right hx).symm.trans h)
+    simp at this
+    exact this
+  | Or.inr hx => 
+    exact (maximum_equal_left (greater_equal_of_not_less_equal hx)).symm.trans h
+
+theorem magnitude_positive {x : ℤ} (h : x ≠ 0) : 0 < |x| :=
+  match less_than_or_equal_of_less_equal (magnitude_nonnegative x) with
+  | Or.inl hx => hx
+  | Or.inr hx => absurd hx.symm (mt zero_of_magnitude_value_zero h)
+
+theorem magnitude_equal_of_nonnegative {x : ℤ} (h : 0 ≤ x) : |x| = x :=
+  maximum_equal_left (less_equal_transitive (negate_antitone h) h)
+
+theorem magnitude_equal_negate_of_nonpositive {x : ℤ} (h : x ≤ 0) : |x| = -x :=
+  maximum_equal_right (less_equal_transitive h (negate_antitone h))
+  
+theorem magnitude_equal_of_positive (x : ℤ) : 0 < x → |x| = x :=
+  magnitude_equal_of_nonnegative ∘ less_equal_of_less_than
+
+theorem magnitude_equal_negate_of_negative (x : ℤ) : x < 0 → |x| = -x :=
+  magnitude_equal_negate_of_nonpositive ∘ less_equal_of_less_than
+
+theorem less_equal_magnitude (x : ℤ) : x ≤ |x| :=
+  less_equal_maximum_left x (-x)
+
+theorem negate_magnitude_less_equal (x : ℤ) : -|x| ≤ x := by
+  have := negate_antitone (less_equal_magnitude (-x))
+  simp [magnitude_negate] at this
+  exact this
+  
+theorem magnitude_less_equal_equivalent_negate_less_equal_self {x y : ℤ} :
+    -y ≤ x ∧ x ≤ y ↔ |x| ≤ y := by
+  apply Iff.intro
+  . intro h
+    rw [magnitude]
+    have := negate_antitone h.left
+    simp at this
+    exact maximum_less_equal h.right this
+  . intro h
+    rw [magnitude] at h
+    have := negate_antitone (less_equal_right_of_maximum_less_equal h)
+    simp at this
+    exact And.intro this (less_equal_left_of_maximum_less_equal h)
+
+theorem magnitude_less_equal_of_negate_less_equal {x y : ℤ} : -y ≤ x → x ≤ y → |x| ≤ y :=
+  λ hyx hxy =>
+  magnitude_less_equal_equivalent_negate_less_equal_self.mp (And.intro hyx hxy)
+
+theorem negate_less_equal_of_magnitude_less_equal {x y : ℤ} : |x| ≤ y → -y ≤ x ∧ x ≤ y :=
+  magnitude_less_equal_equivalent_negate_less_equal_self.mpr
+  
+theorem magnitude_multiply_equal_multiply_magnitude (x y : ℤ) : |x * y| = |x| * |y| := by
+  match less_equal_strongly_connected 0 x, less_equal_strongly_connected 0 y with
+  | Or.inl hx, Or.inl hy =>
+    have := multiply_nonnegative hx hy
+    rw [magnitude_equal_of_nonnegative this, magnitude_equal_of_nonnegative hx, 
+      magnitude_equal_of_nonnegative hy]
+  | Or.inl hx, Or.inr hy =>
+    have := multiply_nonpositive_of_nonnegative_of_nonpositive hx hy
+    rw [magnitude_equal_negate_of_nonpositive this, magnitude_equal_of_nonnegative hx, 
+      magnitude_equal_negate_of_nonpositive hy, ← negate_multiply_equal_multiply_negate]
+  | Or.inr hx, Or.inl hy =>
+    have := multiply_nonpositive_of_nonnegative_of_nonpositive hy hx
+    rw [multiply_commutative] at this
+    rw [magnitude_equal_negate_of_nonpositive this, magnitude_equal_negate_of_nonpositive hx, 
+      magnitude_equal_of_nonnegative hy, ← negate_multiply_equal_negate_multiply]
+  | Or.inr hx, Or.inr hy =>
+    have := multiply_nonpositive hx hy
+    rw [magnitude_equal_of_nonnegative this, magnitude_equal_negate_of_nonpositive hx, 
+      ← negate_multiply_equal_negate_multiply, magnitude_equal_negate_of_nonpositive hy, 
+      ← negate_multiply_equal_multiply_negate, negate_negate]
+
+-- def divideWithRemainder (a : ℤ) (b' : ℤ≠0) : ℤ × ℤ :=
+  
