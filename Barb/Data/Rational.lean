@@ -83,13 +83,17 @@ instance one : Rational := ofNatural 1
 
 theorem one_definition : (1 : ℚ) = Quotient.mk instanceSetoidRationalEquivalent (1, ⟨1, by decide⟩) := rfl
 
-abbrev NonZeroRational := {x : ℚ // x ≠ 0}
+def NonZeroRational := {x : ℚ // x ≠ 0}
 
 notation "ℚ≠0" => NonZeroRational
 
 def divideInteger (a : ℤ) (b : ℤ≠0) : ℚ := ⟦(a, b)⟧
 
 infixl:70 " /. " => divideInteger
+
+-- Need this for reducing boilerplate for integer exponentiation later
+instance : Coe NonZeroRational Rational where
+  coe x := x.val
 
 def add : ℚ → ℚ → ℚ :=
   let add' := λ
@@ -181,7 +185,7 @@ def reciprocal' : ℚ → Option ℚ≠0 :=
     simp [this]
   case inr.inr ha =>
     suffices c ≠ 0 by
-    { simp [this]
+    { simp [this, NonZeroRational]
       apply Quotient.sound
       show b * c = d * a
       simp [h, Integer.multiply_commutative] }
@@ -202,6 +206,9 @@ def reciprocal : ℚ≠0 → ℚ≠0 :=
 instance : Invert NonZeroRational where
   invert := reciprocal
 
+@[simp]
+theorem reciprocal_definition : reciprocal x = x⁻¹ := rfl
+
 theorem add_associative : ∀ (x y z : ℚ), (x + y) + z = x + (y + z) := by
   apply Quotient.ind₃
   intro (a, ⟨b, _⟩) (c, ⟨d, _⟩) (e, ⟨f, _⟩)
@@ -209,7 +216,9 @@ theorem add_associative : ∀ (x y z : ℚ), (x + y) + z = x + (y + z) := by
   show ((a*d + c*b)*f + e*(b*d))*(b*(d*f)) = (a*(d*f) + (c*f + e*d)*b)*((b*d)*f)
   let n_left := ((a*d + c*b)*f + e*(b*d)); let n_right := (a*(d*f) + (c*f + e*d)*b)
   let d_left := (b*(d*f)); let d_right := ((b*d)*f)
-  suffices n_left = n_right ∧ d_left = d_right by simp [this.left, this.right]
+  suffices n_left = n_right ∧ d_left = d_right by 
+  { show n_left * d_left = n_right * d_right
+    simp [this.left, this.right] }
   apply And.intro
   . simp [n_left, n_right]
     rw [Integer.right_distributive, Integer.multiply_associative a d f,
@@ -272,14 +281,14 @@ theorem right_distributive : ∀ (x y z : ℚ), (x + y) * z = x * z + y * z := b
   intro x y z
   rw [multiply_commutative, left_distributive, multiply_commutative z x, multiply_commutative z y]
 
-theorem multiply_inverse : ∀ (x : ℚ≠0), x.val * (reciprocal x).val = 1 := by
+theorem multiply_inverse : ∀ (x : ℚ≠0), x.val * (x⁻¹).val = 1 := by
   intro ⟨x, hx⟩
   induction x using Quotient.inductionOn with
   | h p =>
     -- TODO: Why can't we just do this like | (a, ⟨b, hb⟩) =>
     let (a, ⟨b, hb⟩) := p
     have ha := mt (equal_zero_of_lift_numerator_equal_zero ⟨b, hb⟩) hx
-    simp [reciprocal, reciprocal', preReciprocal_some (a, ⟨b, hb⟩) ha]
+    simp [← reciprocal_definition, reciprocal, reciprocal', preReciprocal_some (a, ⟨b, hb⟩) ha]
     apply Quotient.sound
     show (a * b) * 1 = 1 * (b * a)
     simp [Integer.multiply_commutative]
@@ -470,6 +479,12 @@ theorem multiply_nonzero_of_nonzero {a b : ℚ} (ha : a ≠ 0) (hb : b ≠ 0) : 
   apply (multiply_left_cancel (a := a) . ha)
   rw [h, multiply_zero]
 
+-- Field lemmas
+  
+-- TODO: Figure out how to get the type checker to like RHS
+theorem multiply_reciprocal (a b : ℚ≠0) : (a⁻¹).val * (b⁻¹).val = ((⟨a.val * b.val, (sorry : a.val * b.val ≠ 0)⟩ : ℚ≠0)⁻¹).val := by
+  sorry
+
 theorem nonzero_of_multiply_nonzero {a b : ℚ} (h : a * b ≠ 0) : a ≠ 0 ∧ b ≠ 0 :=
   not_or.mp (mt multiply_equal_zero_of_equal_zero h)
 
@@ -530,11 +545,9 @@ def LessThan (x y : ℚ) : Prop :=
   intro a b (h : a ≈ b)
   apply propext
   apply Iff.intro
-  . simp
-    intro ⟨v, hv⟩
+  . intro ⟨v, hv⟩
     apply Exists.intro v (h.symmetric.transitive hv)
-  . simp
-    intro ⟨v, hv⟩
+  . intro ⟨v, hv⟩
     apply Exists.intro v (h.transitive hv)
 
 instance : LT Rational where
@@ -662,7 +675,7 @@ instance decidePositive (x : ℚ) : Decidable (0 < x) :=
   Quotient.recOnSubsingleton x
   λ ((a, ⟨b, b_nonzero⟩) : ℤ × ℤ≠0) =>
   if h : (0 < a ∧ 0 < b) ∨ (a < 0 ∧ b < 0) then
-    -- TODO: Figure out how to not have this
+    -- -- TODO: Figure out how to not have this
     let h' := by
       have : Natural.fromNat 0 = (0 : ℤ) := rfl
       rw [this, ← Integer.negate_zero, Integer.zero_multiply, Integer.multiply_one, Integer.add_zero]
@@ -673,7 +686,7 @@ instance decidePositive (x : ℚ) : Decidable (0 < x) :=
     let positive_or_negative_of_equal_positive' :
         (0 : ℚ) < Quotient.mk instanceSetoidRationalEquivalent (a, ⟨b, b_nonzero⟩) → (0 < a ∧ 0 < b) ∨ (a < 0 ∧ b < 0) := by
       simp [less_than_definition, LessThan, subtract_zero, Quotient.lift_construct_on]
-      intro ⟨(c, d), h⟩
+      intro (c, d) h
       exact positive_or_negative_of_equal_positive h
     isFalse (mt positive_or_negative_of_equal_positive' h)
 
@@ -1040,7 +1053,7 @@ theorem magnitude_nonnegative (x : ℚ) : 0 ≤ |x| := by
   | Or.inr (Or.inr h) =>
     exact less_equal_maximum_right_of_less_equal x (negate_antitone (less_equal_of_less_than h))
   
-theorem magnitude_zero : |0| = 0 := rfl
+theorem magnitude_zero : |(0 : ℚ)| = 0 := rfl
 
 theorem zero_of_magnitude_value_zero {x : ℚ} (h : |x| = 0) : x = 0 := by
   rw [magnitude] at h
@@ -1211,7 +1224,7 @@ theorem distance_less_equal_symmetric {ε : ℚ} (_ : 0 < ε) : Relation.Symmetr
   rw [distance_commutative] at h
   exact h
 
-theorem distance_less_equal_transitive {ε δ x y : ℚ} (hε : 0 < ε) (hδ : 0 < δ) :
+theorem distance_less_equal_transitive {ε δ x y : ℚ} (_ : 0 < ε) (_ : 0 < δ) :
     distance x y ≤ ε → distance y z ≤ δ → distance x z ≤ (ε + δ)
   | hxy, hyz => less_equal_transitive (distance_triangle x z y) (add_less_equal_add hxy hyz)
 
@@ -1283,11 +1296,11 @@ theorem distance_less_equal_multiply {ε δ w x y z : ℚ} (hε : 0 < ε) (_ : 0
   let a := y - x;
   have hy : y - x + x = a + x := congrArg (. + x) (rfl : a = y - x)
   rw [← subtract_definition, negate_add_cancel_right] at hy
-  have ha : |a| ≤ ε := by simp only [← distance_definition, distance_commutative]; exact hxy
+  have ha : |a| ≤ ε := by simp only [a, ← distance_definition, distance_commutative, hxy]
   let b := w - z;
   have hw : w - z + z = b + z := congrArg (. + z) (rfl : b = w - z)
   rw [← subtract_definition, negate_add_cancel_right] at hw
-  have hb : |b| ≤ δ := by simp only [← distance_definition, distance_commutative w z]; exact hzw
+  have hb : |b| ≤ δ := by simp only [b, ← distance_definition, distance_commutative w z]; exact hzw
   have hyw : y*w = a*b + a*z + x*b + x*z := by rw [hy, hw, right_distributive, left_distributive, left_distributive, ← add_associative]
   rw [distance_commutative, hyw, distance, ← subtract_definition, add_negate_cancel_right, add_commutative (a*b) (a*z), add_right_commutative, multiply_commutative x b]
   apply less_equal_transitive (magnitude_add_less_equal _ _)
@@ -1310,6 +1323,8 @@ def exponentiate : ℚ → ℕ → ℚ
 
 instance : HPow Rational Natural Rational where
   hPow := exponentiate
+
+theorem exponentiate_definition (x : ℚ) (a : ℕ) : (exponentiate x a) = x^a := rfl
 
 theorem exponentiate_zero (x : ℚ) : x^(0 : ℕ) = 1 := rfl
 
@@ -1423,24 +1438,54 @@ theorem exponentiate_magnitude (x : ℚ) (n : ℕ) : |x^n| = |x|^n := by
     simp [exponentiate_successor, magnitude_multiply_equal_multiply_magnitude]
     exact congrArg (. * |x|) ih
 
--- TODO: Is this just the Archimedean property in disguise? Or a corralary of the archimedian property? If so we should state it explicitly with a definition
-theorem exists_integer_between : ∀ x : ℚ, ∃ a : ℤ, ↑a ≤ x ∧ x ≤ ↑a + 1 := by
-  intro x
-  
+-- def NonZeroRational' := {x : ℚ // x ≠ 0}
 
-/-
-def exponentiate' : ℚ≠0 → ℤ → ℚ
+-- @[simp]
+-- def NonZeroRational'_definition : NonZeroRational = NonZeroRational' := rfl
+
+def exponentiate' : ℚ≠0 → ℤ → ℚ≠0
   | ⟨x, hx⟩, a =>
     if ha : 0 ≤ a
-    then exponentiate x (Integer.NonNegativeInteger.toNatural ⟨a, ha⟩)
+    then 
+      let n := Integer.NonNegativeInteger.toNatural ⟨a, ha⟩
+      ⟨exponentiate x n, exponentiate_nonzero hx n⟩
     else
       let n := Integer.NonPositiveInteger.toNatural ⟨a, less_equal_of_not_greater_equal ha⟩
-      reciprocal ⟨(exponentiate x n), exponentiate_nonzero hx n⟩
+      reciprocal ⟨exponentiate x n, exponentiate_nonzero hx n⟩
 
-instance : HPow NonZeroRational Integer Rational where
+instance : HPow NonZeroRational Integer NonZeroRational where
   hPow := exponentiate'
+  
+theorem exponentiate'_definition (x : ℚ≠0) (a : ℤ) : (exponentiate' x a) = x^a := rfl
 
-theorem exponentiate_definition (x : ℚ≠0) (a : ℤ) : exponentiate' x a = ((x : NonZeroRational)^(a : Integer) : Rational) := rfl
+theorem exponentiate'_add (x : ℚ≠0) (a b : ℤ) : (x^a).val * (x^b).val = (x^(a + b)).val := by
+  match less_than_or_less_equal a 0, less_than_or_less_equal b 0 with
+  | Or.inl ha, Or.inl hb =>
+    let ⟨x', hx'⟩ := x
+    have ha' := not_less_equal_of_greater_than ha
+    have hb' := not_less_equal_of_greater_than hb
+    have hab := not_less_equal_of_greater_than <| Integer.add_less_than_add ha hb
+    simp [Integer.add_zero] at hab
+    simp [← exponentiate'_definition, exponentiate', ha', hb', hab]
+    -- TODO: Waiting on type checked definition of reciprocal_multiply above
+    rw []
+  | Or.inl ha, Or.inr hb => sorry
+  | Or.inr ha, Or.inl hb => sorry
+  | Or.inr ha, Or.inr hb => sorry
+  
+theorem exponentiate'_multiply (x : ℚ≠0) (a b : ℤ) : (x^a)^b = x^(a * b) := by
+  sorry
+  
+theorem multiply_exponentiate' (x y : ℚ≠0) (a : ℤ) : 
+    let xy_nonzero := multiply_nonzero_of_nonzero x.property y.property
+    let xaya_nonzero := multiply_nonzero_of_nonzero (x^a).property (y^a).property
+    (⟨x.val * y.val, xy_nonzero⟩^a : ℚ≠0) 
+    = (⟨(x^a).val * (y^a).val, xaya_nonzero⟩ : ℚ≠0) := by
+  sorry
 
 -- theorem exponentiate'_nonzero (x : ℚ≠0) (a : ℤ) : x^a ≠ 0 := by
--/
+
+-- TODO: Is this just the Archimedean property in disguise? Or a corralary of the archimedian property? If so we should state it explicitly with a definition
+-- theorem exists_integer_between : ∀ x : ℚ, ∃ a : ℤ, ↑a ≤ x ∧ x ≤ ↑a + 1 := by
+  -- intro x
+  

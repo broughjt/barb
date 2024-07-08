@@ -172,6 +172,7 @@ theorem multiply_associative : ∀ (a b c : ℤ), (a * b) * c = a * (b * c) := b
     e = n*(k*q + l*p) + m*(k*p + l*q) := rfl
     _ = (n*k + m*l)*q + (n*l + m*k)*p := r.symm
     _ = g := rfl
+  show d + e = f + g
   simp [hdf, heg]
 
 theorem multiply_one : ∀ (a : ℤ), a * 1 = a := by

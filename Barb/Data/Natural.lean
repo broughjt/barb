@@ -560,17 +560,17 @@ theorem multiply_right_cancel {n m k : ℕ} (h_equal : n * k = m * k) (h_positiv
 
 -- TODO: Fully understand the recursion chapter before messing with this again
 --
-theorem divideWithRemainder_foo {n m : ℕ} : 0 < m ∧ m ≤ n → distance n m < n :=
-  sorry
+-- theorem divideWithRemainder_foo {n m : ℕ} : 0 < m ∧ m ≤ n → distance n m < n :=
+  -- sorry
 
-def divideWithRemainder (n m : ℕ) (hm : m ≠ 0) : ℕ × ℕ :=
-  if 0 < m ∧ m ≤ n
-  then 
-    have : distance n m < n := sorry
-    let ⟨q', r'⟩ := (divideWithRemainder (distance n m) m hm)
-    ⟨q' + 1, r'⟩
-  else ⟨0, n⟩
-termination_by divideWithRemainder n m _ => n
+-- def divideWithRemainder (n m : ℕ) (hm : m ≠ 0) : ℕ × ℕ :=
+  -- if 0 < m ∧ m ≤ n
+  -- then 
+    -- have : distance n m < n := sorry
+    -- let ⟨q', r'⟩ := (divideWithRemainder (distance n m) m hm)
+    -- ⟨q' + 1, r'⟩
+  -- else ⟨0, n⟩
+-- termination_by divideWithRemainder n m _ => n
 --
 
  

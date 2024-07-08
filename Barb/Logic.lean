@@ -19,7 +19,7 @@ theorem ExistsUnique.elimination {p : α → Prop} (b : Prop)
 theorem or_imply : (a ∨ b → c) ↔ (a → c) ∧ (b → c) :=
   ⟨λ h => ⟨h ∘ .inl, h ∘ .inr⟩, λ ⟨ha, hb⟩ => Or.rec ha hb⟩
 
-theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imply
+-- theorem not_or : ¬(p ∨ q) ↔ ¬p ∧ ¬q := or_imply
 
 theorem Or.symmetric : a ∨ b → b ∨ a
   | inl a => inr a
@@ -39,15 +39,15 @@ theorem Or.implies_right {a b c : Prop} (f : b → c) : a ∨ b → a ∨ c
   | inl a => Or.inl a
   | inr b => Or.inr (f b)
 
-theorem Or.resolve_left {a b : Prop} (h : a ∨ b) (not_a : ¬a) : b :=
-  match h with
-  | Or.inl ha => absurd ha not_a
-  | Or.inr hb => hb
+-- theorem Or.resolve_left {a b : Prop} (h : a ∨ b) (not_a : ¬a) : b :=
+  -- match h with
+  -- | Or.inl ha => absurd ha not_a
+  -- | Or.inr hb => hb
 
-theorem Or.resolve_right {a b : Prop} (h : a ∨ b) (not_b : ¬b) : a :=
-  match h with
-  | Or.inl ha => ha
-  | Or.inr hb => absurd hb not_b
+-- theorem Or.resolve_right {a b : Prop} (h : a ∨ b) (not_b : ¬b) : a :=
+  -- match h with
+  -- | Or.inl ha => ha
+  -- | Or.inr hb => absurd hb not_b
 
 namespace Relation
 

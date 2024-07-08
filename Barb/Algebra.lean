@@ -20,4 +20,4 @@ class Nontrivial (α : Type u) : Prop where
 def NonZero (α : Type u) [Zero α] := { a : α // a ≠ 0 }
 
 class Field (α : Type u) extends CommutativeRing α, Nontrivial α, Invert (NonZero α) where
-  multiply_inverse : ∀ x : NonZero α, x.val * (invert x).val = 1
+  multiply_inverse : ∀ x : NonZero α, x.val * x⁻¹.val = 1
