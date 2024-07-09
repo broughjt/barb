@@ -482,7 +482,9 @@ theorem multiply_nonzero_of_nonzero {a b : ℚ} (ha : a ≠ 0) (hb : b ≠ 0) : 
 -- Field lemmas
   
 -- TODO: Figure out how to get the type checker to like RHS
-theorem multiply_reciprocal (a b : ℚ≠0) : (a⁻¹).val * (b⁻¹).val = ((⟨a.val * b.val, (sorry : a.val * b.val ≠ 0)⟩ : ℚ≠0)⁻¹).val := by
+theorem multiply_reciprocal (a b : ℚ≠0) : 
+    let ab_nonzero := multiply_nonzero_of_nonzero a.property b.property
+    (a⁻¹).val * (b⁻¹).val = (⟨a.val * b.val, ab_nonzero⟩⁻¹ : ℚ≠0).val := by
   sorry
 
 theorem nonzero_of_multiply_nonzero {a b : ℚ} (h : a * b ≠ 0) : a ≠ 0 ∧ b ≠ 0 :=
@@ -1466,9 +1468,11 @@ theorem exponentiate'_add (x : ℚ≠0) (a b : ℤ) : (x^a).val * (x^b).val = (x
     have hb' := not_less_equal_of_greater_than hb
     have hab := not_less_equal_of_greater_than <| Integer.add_less_than_add ha hb
     simp [Integer.add_zero] at hab
-    simp [← exponentiate'_definition, exponentiate', ha', hb', hab]
+    simp [← exponentiate'_definition, exponentiate', ha', hb', hab, multiply_reciprocal]
     -- TODO: Waiting on type checked definition of reciprocal_multiply above
-    rw []
+    apply congrArg (λ x : ℚ≠0 => x⁻¹.val)
+    -- TODO: Need NonPositive version
+    -- rw [← Integer.NonPositiveInteger.toNatural_add]
   | Or.inl ha, Or.inr hb => sorry
   | Or.inr ha, Or.inl hb => sorry
   | Or.inr ha, Or.inr hb => sorry

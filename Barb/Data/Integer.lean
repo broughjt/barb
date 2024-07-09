@@ -516,60 +516,6 @@ notation "ℤ≠0" => NonZeroInteger
 notation "ℤ<0" => NegativeInteger
 notation "ℤ≤0" => NonPositiveInteger
 
-namespace NonNegativeInteger
-
-def preToNatural' : ℕ × ℕ → Option ℕ
-  | (n, m) => if n ≥ m then some (Natural.distance n m) else none
-
-@[simp]
-theorem preToNatural_none (x : ℕ × ℕ) (h : x.1 < x.2) : preToNatural' x = none := by
-  have := not_less_equal_of_greater_than h
-  simp [preToNatural', not_less_equal_of_greater_than h]
-
-@[simp]
-theorem preToNatural_some (x : ℕ × ℕ) (h : x.1 ≥ x.2) : preToNatural' x = some (Natural.distance x.1 x.2) := by
-  simp [preToNatural', h]
-
-def toNatural' : ℤ → Option ℕ :=
-  Quotient.lift preToNatural' <| by
-  intro (n, m) (k, l) (h : n + l = k + m)
-  cases Decidable.em (m ≤ n)
-  <;> cases Decidable.em (l ≤ k)
-  <;> simp_all [preToNatural', preToNatural_none, preToNatural_some]
-  case inl.inl hnm hkl =>
-    rw [Natural.add_commutative k m] at h
-    exact Natural.distance_equal_of_add_equal h
-  case inl.inr hnm hkl =>
-    rw [Natural.add_commutative k m] at h
-    have := Natural.right_greater_equal_of_add_left_less_equal h.symm hnm
-    exact absurd this hkl
-  case inr.inl hnm hkl =>
-    rw [Natural.add_commutative n l] at h
-    have := Natural.right_greater_equal_of_add_left_less_equal h hkl
-    exact absurd this hnm
-
-def toNatural : ℤ≥0 → ℕ
-  | (⟨a, a_nonnegative⟩) =>
-    Option.get (toNatural' a) <| by
-    have ⟨n, hn⟩ := equal_ofNatural_of_nonnegative a_nonnegative
-    rw [toNatural', ← hn, ofNatural, Quotient.lift_construct, preToNatural']
-    simp [Natural.zero_less_equal, subtract_zero, ite_true, Option.isSome]
-
-def fromNatural (n : ℕ) : ℤ≥0 :=
-  ⟨n, ofNatural_nonnegative n⟩
-
-theorem fromNatural_toNatural_left_inverse : Function.LeftInverse toNatural fromNatural := by
-  intro n
-  simp [fromNatural, ofNatural, toNatural, toNatural', preToNatural', Natural.distance_zero_left]
-  
-theorem fromNatural_toNatural_right_inverse : Function.RightInverse toNatural fromNatural := by
-  intro ⟨a, b, h⟩
-  rw [zero_add, ofNatural] at h
-  subst h
-  simp [toNatural, toNatural', preToNatural', fromNatural, ofNatural, Natural.distance_zero_left]
-
-end NonNegativeInteger
-
 theorem add_left_monotone (a : ℤ) : Monotone (a + .) := by
   intro b c h
   let ⟨n, hn⟩ := h
@@ -878,6 +824,69 @@ theorem less_equal_multiply_cancel_left_of_positive {a b c : ℤ} (h : a * b ≤
 theorem less_equal_multiply_cancel_right_of_positive {a b c : ℤ} (h : a * c ≤ b * c) (hc : 0 < c) : a ≤ b := by
   rw [multiply_commutative a c, multiply_commutative b c] at h
   exact less_equal_multiply_cancel_left_of_positive h hc
+
+namespace NonNegativeInteger
+
+def preToNatural' : ℕ × ℕ → Option ℕ
+  | (n, m) => if n ≥ m then some (Natural.distance n m) else none
+
+@[simp]
+theorem preToNatural_none (x : ℕ × ℕ) (h : x.1 < x.2) : preToNatural' x = none := by
+  have := not_less_equal_of_greater_than h
+  simp [preToNatural', not_less_equal_of_greater_than h]
+
+@[simp]
+theorem preToNatural_some (x : ℕ × ℕ) (h : x.1 ≥ x.2) : preToNatural' x = some (Natural.distance x.1 x.2) := by
+  simp [preToNatural', h]
+
+def toNatural' : ℤ → Option ℕ :=
+  Quotient.lift preToNatural' <| by
+  intro (n, m) (k, l) (h : n + l = k + m)
+  cases Decidable.em (m ≤ n)
+  <;> cases Decidable.em (l ≤ k)
+  <;> simp_all [preToNatural', preToNatural_none, preToNatural_some]
+  case inl.inl hnm hkl =>
+    rw [Natural.add_commutative k m] at h
+    exact Natural.distance_equal_of_add_equal h
+  case inl.inr hnm hkl =>
+    rw [Natural.add_commutative k m] at h
+    have := Natural.right_greater_equal_of_add_left_less_equal h.symm hnm
+    exact absurd this hkl
+  case inr.inl hnm hkl =>
+    rw [Natural.add_commutative n l] at h
+    have := Natural.right_greater_equal_of_add_left_less_equal h hkl
+    exact absurd this hnm
+
+def toNatural : ℤ≥0 → ℕ
+  | (⟨a, a_nonnegative⟩) =>
+    Option.get (toNatural' a) <| by
+    have ⟨n, hn⟩ := equal_ofNatural_of_nonnegative a_nonnegative
+    rw [toNatural', ← hn, ofNatural, Quotient.lift_construct, preToNatural']
+    simp [Natural.zero_less_equal, subtract_zero, ite_true, Option.isSome]
+
+def fromNatural (n : ℕ) : ℤ≥0 :=
+  ⟨n, ofNatural_nonnegative n⟩
+
+theorem fromNatural_toNatural_left_inverse : Function.LeftInverse toNatural fromNatural := by
+  intro n
+  simp [fromNatural, ofNatural, toNatural, toNatural', preToNatural', Natural.distance_zero_left]
+  
+theorem fromNatural_toNatural_right_inverse : Function.RightInverse toNatural fromNatural := by
+  intro ⟨a, b, h⟩
+  rw [zero_add, ofNatural] at h
+  subst h
+  simp [toNatural, toNatural', preToNatural', fromNatural, ofNatural, Natural.distance_zero_left]
+
+theorem toNatural_add (a b : ℤ≥0) : 
+    let hab : 0 ≤ a.val + b.val := add_less_equal_add a.property b.property
+    toNatural a + toNatural b = toNatural ⟨a.val + b.val, hab⟩ := by
+  let ⟨n, hn⟩ := equal_ofNatural_of_nonnegative a.property
+  let ⟨m, hm⟩ := equal_ofNatural_of_nonnegative b.property
+  -- simp [toNatural, ← hn, ← hm, toNatural', ofNatural, Natural.distance_zero_left, ofNatural_add]
+  simp [toNatural, ← hn, ← hm, ← ofNatural_add, toNatural', ofNatural, Natural.distance_zero_left]
+  sorry
+
+end NonNegativeInteger
 
 namespace NonPositiveInteger
 
