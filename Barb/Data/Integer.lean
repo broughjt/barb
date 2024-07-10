@@ -882,9 +882,8 @@ theorem toNatural_add (a b : ℤ≥0) :
     toNatural a + toNatural b = toNatural ⟨a.val + b.val, hab⟩ := by
   let ⟨n, hn⟩ := equal_ofNatural_of_nonnegative a.property
   let ⟨m, hm⟩ := equal_ofNatural_of_nonnegative b.property
-  -- simp [toNatural, ← hn, ← hm, toNatural', ofNatural, Natural.distance_zero_left, ofNatural_add]
-  simp [toNatural, ← hn, ← hm, ← ofNatural_add, toNatural', ofNatural, Natural.distance_zero_left]
-  sorry
+  simp [toNatural, toNatural', ← hn, ← hm, ← ofNatural_add]
+  simp [ofNatural, Natural.distance_zero_left]
 
 end NonNegativeInteger
 
@@ -905,6 +904,11 @@ theorem fromNatural_toNatural_right_inverse : Function.RightInverse toNatural fr
   have := NonNegativeInteger.fromNatural_toNatural_right_inverse ⟨-a, negate_antitone ha⟩
   simp at this
   simp [this]
+  
+theorem toNatural_add (a b : ℤ≤0) : 
+    let hab : a.val + b.val ≤ 0 := add_less_equal_add a.property b.property
+    toNatural a + toNatural b = toNatural ⟨a.val + b.val, hab⟩ := by
+  simp [toNatural, NonNegativeInteger.toNatural_add, negate_add]
 
 end NonPositiveInteger
 

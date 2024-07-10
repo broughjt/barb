@@ -1469,11 +1469,15 @@ theorem exponentiate'_add (x : ℚ≠0) (a b : ℤ) : (x^a).val * (x^b).val = (x
     have hab := not_less_equal_of_greater_than <| Integer.add_less_than_add ha hb
     simp [Integer.add_zero] at hab
     simp [← exponentiate'_definition, exponentiate', ha', hb', hab, multiply_reciprocal]
-    -- TODO: Waiting on type checked definition of reciprocal_multiply above
     apply congrArg (λ x : ℚ≠0 => x⁻¹.val)
-    -- TODO: Need NonPositive version
-    -- rw [← Integer.NonPositiveInteger.toNatural_add]
-  | Or.inl ha, Or.inr hb => sorry
+    rw [← (Integer.NonPositiveInteger.toNatural_add ⟨a, less_equal_of_less_than ha⟩ ⟨b, less_equal_of_less_than hb⟩)]
+    simp [exponentiate_definition, exponentiate_add]
+  | Or.inl ha, Or.inr hb =>
+    let ⟨x', hx'⟩ := x
+    have ha' := not_less_equal_of_greater_than ha
+    simp [← exponentiate'_definition, exponentiate', ha', hb]
+    -- TODO: We got to here. Is there a way to rethink this proof to not case split again on the if here?
+    -- Something about a + b ≤ 0 or a + b > 0
   | Or.inr ha, Or.inl hb => sorry
   | Or.inr ha, Or.inr hb => sorry
   
