@@ -1473,9 +1473,27 @@ theorem exponentiate'_add (x : ℚ≠0) (a b : ℤ) : (x^a).val * (x^b).val = (x
     rw [← (Integer.NonPositiveInteger.toNatural_add ⟨a, less_equal_of_less_than ha⟩ ⟨b, less_equal_of_less_than hb⟩)]
     simp [exponentiate_definition, exponentiate_add]
   | Or.inl ha, Or.inr hb =>
-    let ⟨x', hx'⟩ := x
-    have ha' := not_less_equal_of_greater_than ha
-    simp [← exponentiate'_definition, exponentiate', ha', hb]
+    match less_than_or_less_equal (a + b) 0 with
+    | Or.inl hab =>
+      let ⟨x', hx'⟩ := x
+      simp [← exponentiate'_definition, exponentiate', hb, 
+        (not_less_equal_of_greater_than ha), (not_less_equal_of_greater_than hab)]
+      have hab' := Integer.add_right_strict_monotone (-a + -b) hab
+      simp at hab'
+      rw [Integer.add_left_commutative, Integer.add_associative, Integer.add_inverse, Integer.negate_add_cancel_left, Integer.zero_add] at hab'
+      let ⟨n, hn⟩ := Integer.equal_ofNatural_of_nonnegative (less_equal_of_less_than hab')
+      let ⟨m, hm⟩ := Integer.equal_ofNatural_of_nonnegative hb
+      have quux := exponentiate_nonzero hx' n
+      have bar := congrArg (((⟨x' ^ n, quux⟩⁻¹ : ℚ≠0) : ℚ) * .) (exponentiate_add x' n m)
+      simp at bar
+      rw [← multiply_associative, multiply_commutative _ (x' ^ n), (multiply_inverse ⟨x' ^ n, quux⟩), one_multiply] at bar
+      -- Need to change m to just be let m := toNatural b and swap that part out, then substitute in and do the last bit
+      
+
+    | Or.inr hab => sorry
+    -- let ⟨x', hx'⟩ := x
+    -- have ha' := not_less_equal_of_greater_than ha
+    -- simp [← exponentiate'_definition, exponentiate', ha', hb]
     -- TODO: We got to here. Is there a way to rethink this proof to not case split again on the if here?
     -- Something about a + b ≤ 0 or a + b > 0
   | Or.inr ha, Or.inl hb => sorry
