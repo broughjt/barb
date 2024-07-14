@@ -480,12 +480,25 @@ theorem multiply_nonzero_of_nonzero {a b : ℚ} (ha : a ≠ 0) (hb : b ≠ 0) : 
   rw [h, multiply_zero]
 
 -- Field lemmas
-  
+
+theorem reciprocal_one : ((⟨1, by decide⟩ : ℚ≠0)⁻¹ : ℚ≠0) = (⟨1, by decide⟩ : ℚ≠0) := rfl
 -- TODO: Figure out how to get the type checker to like RHS
+
 theorem multiply_reciprocal (a b : ℚ≠0) : 
-    let ab_nonzero := multiply_nonzero_of_nonzero a.property b.property
-    (a⁻¹).val * (b⁻¹).val = (⟨a.val * b.val, ab_nonzero⟩⁻¹ : ℚ≠0).val := by
-  sorry
+    let hab := multiply_nonzero_of_nonzero a.property b.property
+    (⟨a.val * b.val, hab⟩⁻¹ : ℚ≠0).val = b⁻¹.val * a⁻¹.val := by
+  let hab := multiply_nonzero_of_nonzero a.property b.property
+  have := congrArg ((b⁻¹).val * (a⁻¹).val * .) (multiply_inverse ⟨a * b, hab⟩)
+  simp at this
+  rw [multiply_one, ← multiply_associative, multiply_associative (b⁻¹).val, ← multiply_associative (a⁻¹).val, multiply_commutative (a⁻¹).val, multiply_inverse, one_multiply, multiply_commutative (b⁻¹).val, multiply_inverse, one_multiply] at this
+  exact this
+
+theorem reciprocal_involutive (a : ℚ≠0) : a⁻¹⁻¹ = a := by
+  let ⟨a', ha⟩ := a
+  have := congrArg (a' * .) (multiply_inverse ⟨a', ha⟩⁻¹)
+  simp at this
+  rw [multiply_one, ← multiply_associative, multiply_inverse ⟨a', ha⟩, one_multiply] at this
+  exact Subtype.eq this
 
 theorem nonzero_of_multiply_nonzero {a b : ℚ} (h : a * b ≠ 0) : a ≠ 0 ∧ b ≠ 0 :=
   not_or.mp (mt multiply_equal_zero_of_equal_zero h)
@@ -1454,51 +1467,97 @@ def exponentiate' : ℚ≠0 → ℤ → ℚ≠0
     else
       let n := Integer.NonPositiveInteger.toNatural ⟨a, less_equal_of_not_greater_equal ha⟩
       reciprocal ⟨exponentiate x n, exponentiate_nonzero hx n⟩
-
-instance : HPow NonZeroRational Integer NonZeroRational where
+  instance : HPow NonZeroRational Integer NonZeroRational where
   hPow := exponentiate'
   
 theorem exponentiate'_definition (x : ℚ≠0) (a : ℤ) : (exponentiate' x a) = x^a := rfl
 
+theorem exponentiate'_zero (x : ℚ≠0) : x^(0 : ℤ) = (⟨1, by decide⟩ : ℚ≠0) := rfl
+
+theorem exponentiate'_negate (x : ℚ≠0) (a : ℤ) : x^(-a) = (x^a)⁻¹ := by
+  let ⟨x', hx⟩ := x
+  match less_than_trichotomous a 0 with
+  | Or.inl ha =>
+    simp [← exponentiate'_definition, exponentiate']
+    have negate_a_nonnegative := less_equal_of_less_than <| Integer.negate_strict_antitone ha
+    simp [← Integer.negate_zero] at negate_a_nonnegative
+    simp [not_less_equal_of_greater_than ha, negate_a_nonnegative, reciprocal_involutive, Integer.NonPositiveInteger.toNatural]
+  | Or.inr (Or.inl ha) =>
+    simp [ha, ← Integer.negate_zero, exponentiate'_zero, reciprocal_one]
+  | Or.inr (Or.inr ha) =>
+    simp [← exponentiate'_definition, exponentiate']
+    have not_negate_a_nonnegative := not_less_equal_of_greater_than <| Integer.negate_strict_antitone ha
+    simp [← Integer.negate_zero] at not_negate_a_nonnegative
+    simp [ less_equal_of_less_than ha, not_negate_a_nonnegative, Integer.NonPositiveInteger.toNatural]
+
 theorem exponentiate'_add (x : ℚ≠0) (a b : ℤ) : (x^a).val * (x^b).val = (x^(a + b)).val := by
+  -- Proof.
+  -- Case 1. If 0 ≤ a and 0 ≤ b then apply toNatural_add and exponentiate_add
+  -- Case 2. If a < 0 and b < 0 then apply multiply_reciprocal toNatural_add and exponentiate_add
+  -- Case 3. If a < 0 and 0 ≤ b then
+  --   If a + b < 0 then we need to show
+  --     ⊢ 1/(x^-a) * x^b = 1/(x^-(a+b))
+  --     We know 0 < -(a + b)
+  --     By exponentiate_add, we have x^b * x^-(a+b) = x^(b + -(a + b)) = x^-a. Substituting gives 
+  --     ⊢ 1/(x^b * x^-(a+b)) * x^b = 1/(x^-(a+b))
+  --     Rewrite with multiply_inverse.
+  --   If 0 ≤ a + b then we need to show
+  --     ⊢ 1/(x^-a) * x^b = x^(a + b)
+  --     By exponentiate_add, we have x^(-a) * x^(a + b) = x^(-a + (a + b)) = x^b
+  --     Substituing gives
+  --     ⊢ 1/(x^-a) * x^(-a) * x^(a + b) = x^(a + b)
+  --     Rewrite with multiply_inverse.
+  have c3 {c d : ℤ} (hc : c < 0) (hd : 0 ≤ d) : (x^c).val * (x^d).val = (x^(c + d)).val := by
+    let ⟨x', hx⟩ := x
+    match less_than_or_less_equal (c + d) 0 with
+    | Or.inl hcd =>
+      simp [← exponentiate'_definition, exponentiate', hd, not_less_equal_of_greater_than hc, not_less_equal_of_greater_than hcd, exponentiate_definition, Integer.NonPositiveInteger.toNatural]
+      let dn := Integer.NonNegativeInteger.toNatural ⟨d, hd⟩
+      have hcdn := less_equal_of_less_than <| Integer.negate_strict_antitone hcd
+      let cdn := Integer.NonNegativeInteger.toNatural ⟨-(c + d), hcdn⟩
+      have := exponentiate_add x' dn cdn
+      simp [dn, cdn, Integer.NonNegativeInteger.toNatural_add, Integer.negate_add, Integer.add_commutative (-c), Integer.add_negate_cancel_left] at this
+      simp [exponentiate_definition, ← this]
+      simp [← Integer.negate_add, Integer.add_commutative]
+      rw [multiply_reciprocal ⟨(x' ^ dn), exponentiate_nonzero hx dn⟩ ⟨x' ^ cdn, exponentiate_nonzero hx cdn⟩]
+      -- CONVERSION MODE!? HOW DID I NOT KNOW ABOUT THIS... I HAVE SUFFERED
+      conv => lhs; rw [multiply_associative]; arg 2; rw [multiply_commutative, multiply_inverse ⟨x' ^ dn, exponentiate_nonzero hx dn⟩]
+      simp [multiply_one]
+    | Or.inr hcd =>
+      simp [← exponentiate'_definition, exponentiate', hd, not_less_equal_of_greater_than hc, hcd, exponentiate_definition, Integer.NonPositiveInteger.toNatural]
+      let cn := Integer.NonNegativeInteger.toNatural ⟨-c, less_equal_of_less_than <| Integer.negate_strict_antitone hc⟩
+      let cdn := Integer.NonNegativeInteger.toNatural ⟨c + d, hcd⟩
+      have := exponentiate_add x' cn cdn
+      simp [cn, cdn, Integer.NonNegativeInteger.toNatural_add, Integer.negate_add_cancel_left] at this
+      rw [← this, ← multiply_associative]
+      conv => lhs; arg 1; rw [multiply_commutative, multiply_inverse ⟨x' ^ cn, _⟩]
+      simp [one_multiply]
+  let ⟨x', hx⟩ := x
   match less_than_or_less_equal a 0, less_than_or_less_equal b 0 with
   | Or.inl ha, Or.inl hb =>
-    let ⟨x', hx'⟩ := x
-    have ha' := not_less_equal_of_greater_than ha
-    have hb' := not_less_equal_of_greater_than hb
-    have hab := not_less_equal_of_greater_than <| Integer.add_less_than_add ha hb
-    simp [Integer.add_zero] at hab
-    simp [← exponentiate'_definition, exponentiate', ha', hb', hab, multiply_reciprocal]
+    simp [← exponentiate'_definition, exponentiate']
+    have hab : a + b < 0 := Integer.add_less_than_add ha hb
+    simp [not_less_equal_of_greater_than ha, not_less_equal_of_greater_than hb, not_less_equal_of_greater_than hab,
+      ← multiply_reciprocal, multiply_commutative]
     apply congrArg (λ x : ℚ≠0 => x⁻¹.val)
-    rw [← (Integer.NonPositiveInteger.toNatural_add ⟨a, less_equal_of_less_than ha⟩ ⟨b, less_equal_of_less_than hb⟩)]
-    simp [exponentiate_definition, exponentiate_add]
+    rw [← Integer.NonPositiveInteger.toNatural_add ⟨a, less_equal_of_less_than ha⟩ ⟨b, less_equal_of_less_than hb⟩]
+    simp [exponentiate_definition]
+    apply Subtype.eq
+    exact exponentiate_add x' _ _
   | Or.inl ha, Or.inr hb =>
-    match less_than_or_less_equal (a + b) 0 with
-    | Or.inl hab =>
-      let ⟨x', hx'⟩ := x
-      simp [← exponentiate'_definition, exponentiate', hb, 
-        (not_less_equal_of_greater_than ha), (not_less_equal_of_greater_than hab)]
-      have hab' := Integer.add_right_strict_monotone (-a + -b) hab
-      simp at hab'
-      rw [Integer.add_left_commutative, Integer.add_associative, Integer.add_inverse, Integer.negate_add_cancel_left, Integer.zero_add] at hab'
-      let ⟨n, hn⟩ := Integer.equal_ofNatural_of_nonnegative (less_equal_of_less_than hab')
-      let ⟨m, hm⟩ := Integer.equal_ofNatural_of_nonnegative hb
-      have quux := exponentiate_nonzero hx' n
-      have bar := congrArg (((⟨x' ^ n, quux⟩⁻¹ : ℚ≠0) : ℚ) * .) (exponentiate_add x' n m)
-      simp at bar
-      rw [← multiply_associative, multiply_commutative _ (x' ^ n), (multiply_inverse ⟨x' ^ n, quux⟩), one_multiply] at bar
-      -- Need to change m to just be let m := toNatural b and swap that part out, then substitute in and do the last bit
-      
-
-    | Or.inr hab => sorry
-    -- let ⟨x', hx'⟩ := x
-    -- have ha' := not_less_equal_of_greater_than ha
-    -- simp [← exponentiate'_definition, exponentiate', ha', hb]
-    -- TODO: We got to here. Is there a way to rethink this proof to not case split again on the if here?
-    -- Something about a + b ≤ 0 or a + b > 0
-  | Or.inr ha, Or.inl hb => sorry
-  | Or.inr ha, Or.inr hb => sorry
+    exact c3 ha hb
+  | Or.inr ha, Or.inl hb =>
+    have := c3 hb ha
+    rw [multiply_commutative, Integer.add_commutative] at this
+    exact this
+  | Or.inr ha, Or.inr hb =>
+    simp [← exponentiate'_definition, exponentiate']
+    have hab : 0 ≤ a + b := Integer.add_less_equal_add ha hb
+    simp [ha, hb, hab]
+    simp [exponentiate_definition, ← Integer.NonNegativeInteger.toNatural_add ⟨a, ha⟩ ⟨b, hb⟩]
+    exact exponentiate_add x' _ _
   
+/-
 theorem exponentiate'_multiply (x : ℚ≠0) (a b : ℤ) : (x^a)^b = x^(a * b) := by
   sorry
   
@@ -1514,4 +1573,4 @@ theorem multiply_exponentiate' (x y : ℚ≠0) (a : ℤ) :
 -- TODO: Is this just the Archimedean property in disguise? Or a corralary of the archimedian property? If so we should state it explicitly with a definition
 -- theorem exists_integer_between : ∀ x : ℚ, ∃ a : ℤ, ↑a ≤ x ∧ x ≤ ↑a + 1 := by
   -- intro x
-  
+-/
