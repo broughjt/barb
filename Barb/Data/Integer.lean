@@ -885,6 +885,14 @@ theorem toNatural_add (a b : ℤ≥0) :
   simp [toNatural, toNatural', ← hn, ← hm, ← ofNatural_add]
   simp [ofNatural, Natural.distance_zero_left]
 
+theorem toNatural_multiply (a b : ℤ≥0) :
+    let hab : 0 ≤ a.val * b.val := multiply_nonnegative a.property b.property
+    toNatural a * toNatural b = toNatural ⟨a.val * b.val, hab⟩ := by
+  let ⟨n, hn⟩ := equal_ofNatural_of_nonnegative a.property
+  let ⟨m, hm⟩ := equal_ofNatural_of_nonnegative b.property
+  simp [toNatural, toNatural', ← hn, ← hm, ← ofNatural_multiply]
+  simp [ofNatural, Natural.distance_zero_left]
+
 end NonNegativeInteger
 
 namespace NonPositiveInteger
@@ -909,6 +917,16 @@ theorem toNatural_add (a b : ℤ≤0) :
     let hab : a.val + b.val ≤ 0 := add_less_equal_add a.property b.property
     toNatural a + toNatural b = toNatural ⟨a.val + b.val, hab⟩ := by
   simp [toNatural, NonNegativeInteger.toNatural_add, negate_add]
+
+theorem toNatural_multiply (a b : ℤ≤0) :
+    let hab : 0 ≤ a.val * b.val := multiply_nonpositive a.property b.property
+    toNatural a * toNatural b = Integer.NonNegativeInteger.toNatural ⟨a.val * b.val, hab⟩ := by
+  simp [toNatural]
+  have := Integer.NonNegativeInteger.toNatural_multiply ⟨-a.val, negate_antitone a.property⟩ ⟨-b.val, negate_antitone b.property⟩
+  simp at this
+  conv at this in (-a.val * -b.val) => 
+    rw [← negate_multiply_equal_multiply_negate, ← negate_multiply_equal_negate_multiply, negate_negate]
+  exact this
 
 end NonPositiveInteger
 
