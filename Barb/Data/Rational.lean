@@ -1462,7 +1462,7 @@ theorem inverse_exponentiate (x : ℚ) (hx : x ≠ 0) (n : ℕ) :
     simp [exponentiate_successor]
     conv => lhs; rw [multiply_reciprocal ⟨x ^ n, exponentiate_nonzero hx n⟩ ⟨x, hx⟩, multiply_commutative]
     rw [ih]
-
+  
 -- def NonZeroRational' := {x : ℚ // x ≠ 0}
 
 -- @[simp]
@@ -1500,6 +1500,12 @@ theorem exponentiate'_nonnegative (x : ℚ≠0) (a : ℤ) (ha : 0 ≤ a) :
   x^a = ⟨x^Integer.NonNegativeInteger.toNatural ⟨a, ha⟩, exponentiate_nonzero x.property (Integer.NonNegativeInteger.toNatural ⟨a, ha⟩)⟩ := by
   let ⟨x', hx⟩ := x
   simp [← exponentiate'_definition, exponentiate', ha, exponentiate_definition]
+  
+theorem exponentiate'_negative (x : ℚ≠0) (a : ℤ) (ha : a < 0) :
+    let n := Integer.NonPositiveInteger.toNatural ⟨a, less_equal_of_less_than ha⟩
+    x^a = reciprocal ⟨x^n, exponentiate_nonzero x.property n⟩ := by
+  let ⟨x', hx⟩ := x
+  simp [← exponentiate'_definition, exponentiate', not_less_equal_of_greater_than ha, exponentiate_definition]
 
 theorem exponentiate'_negate (x : ℚ≠0) (a : ℤ) : x^(-a) = (x^a)⁻¹ := by
   let ⟨x', hx⟩ := x
@@ -1596,83 +1602,12 @@ theorem exponentiate'_multiply (x : ℚ≠0) (a b : ℤ) : (x^a)^b = x^(a * b) :
   ⊢ (x^-a)^-b = x^(a*b)
   Apply exponentiate_multiply and negate_multiply_*.
   -/
-  let ⟨x', hx⟩ := x
   match less_than_or_less_equal a 0, less_than_or_less_equal b 0 with
   | Or.inl ha, Or.inl hb =>
-    -- let n := Integer.NonPositiveInteger.toNatural ⟨a, less_equal_of_less_than ha⟩
-    let an := Integer.NonNegativeInteger.toNatural ⟨-a, less_equal_of_less_than <| Integer.negate_strict_antitone ha⟩
-    let bn := Integer.NonNegativeInteger.toNatural ⟨-b, less_equal_of_less_than <| Integer.negate_strict_antitone hb⟩
-    simp [← exponentiate'_definition, exponentiate', not_less_equal_of_greater_than ha]
-    have hbn : bn = Integer.NonNegativeInteger.toNatural ⟨-b, less_equal_of_less_than <| Integer.negate_strict_antitone hb⟩ := rfl
-    let abn := Integer.NonNegativeInteger.toNatural ⟨a * b, less_equal_of_less_than <| Integer.multiply_negative ha hb⟩
-    rw [inverse_exponentiate]
-    -- simp [Integer.NonPositiveInteger.toNatural]
-    -- let ⟨y, hy⟩ : ℚ≠0 := ⟨x' ^ an, exponentiate_nonzero hx an⟩⁻¹
-    -- simp [less_equal_of_less_than <| Integer.multiply_negative ha hb, Integer.NonPositiveInteger.toNatural, exponentiate_definition, not_less_equal_of_greater_than hb]
-    -- rw [inverse_exponentiate]
-    
-    -- let ⟨y, hy⟩ : ℚ≠0 := ⟨x' ^ an, exponentiate_nonzero hx an⟩⁻¹
-    -- rw [foo]
-    -- let ⟨y, hy⟩ := ⟨x'.exponentiate n, exponentiate_nonzero n⟩⁻¹
-    -- simp [← exponentiate'_definition, exponentiate', not_less_equal_of_greater_than ha, not_less_equal_of_greater_than hb]
-    -- conv =>
-    --   rhs
-    --   simp [← exponentiate'_definition, exponentiate', 
-    --     less_equal_of_less_than <| Integer.multiply_negative ha hb, exponentiate_definition]; 
-    --   pattern a * b
-    -- conv =>
-    --   rhs
-    --   arg 1; arg 2
-    --   rw [← Integer.NonPositiveInteger.toNatural_multiply ⟨a, less_equal_of_less_than ha⟩ ⟨b, less_equal_of_less_than hb⟩]
-    -- conv => 
-    --   rhs; 
-    --   arg 1; 
-    --   rw [← exponentiate_multiply]; 
-    -- simp [Integer.NonPositiveInteger.toNatural]
-    -- have ha' : 0 ≤ -a := less_equal_of_less_than <| Integer.negate_strict_antitone ha
-    -- have foo := exponentiate'_nonnegative ⟨x', hx⟩ (-a) ha'
-    -- conv => rhs; arg 1; arg 1; rw [← exponentiate'_nonnegative ⟨x', hx⟩ (-a) ha']
-    -- rw [← exponentiate' ⟨x', hx⟩ a]
-      -- rw [← Integer.negate_negate (a * b), Integer.negate_multiply_equal_multiply_negate, Integer.negate_multiply_equal_negate_multiply]
-    -- rw [← Integer.NonPositiveInteger.toNatural_multiply ⟨a, less_equal_of_less_than ha⟩ ⟨b, less_equal_of_less_than hb⟩]
-    
-      
-    -- simp [← exponentiate'_definition, exponentiate', not_less_equal_of_greater_than ha]
-    -- let an := Integer.NonNegativeInteger.toNatural ⟨-a, less_equal_of_less_than <| Integer.negate_strict_antitone ha⟩
-    -- let bn := Integer.NonNegativeInteger.toNatural ⟨-b, less_equal_of_less_than <| Integer.negate_strict_antitone hb⟩
-    -- have hbn : bn = Integer.NonNegativeInteger.toNatural ⟨-b, less_equal_of_less_than <| Integer.negate_strict_antitone hb⟩ := rfl
-    -- let abn := Integer.NonNegativeInteger.toNatural ⟨a * b, less_equal_of_less_than <| Integer.multiply_negative ha hb⟩
-    -- simp [less_equal_of_less_than <| Integer.multiply_negative ha hb, Integer.NonPositiveInteger.toNatural, exponentiate_definition]
-    -- let ⟨y, hy⟩ : ℚ≠0 := ⟨x' ^ an, exponentiate_nonzero hx an⟩⁻¹
-    -- let foo : ℚ≠0 := ⟨y, hy⟩
-    -- have bar := inverse_exponentiate x' hx an
-    -- let z := y
-    -- simp [not_less_equal_of_greater_than hb]
-    -- apply Subtype.eq
-    -- rw [inverse_exponentiate y hy bn]
-    -- -- HOW TO GET Y TO UNFOLD???
-    -- conv => lhs; simp [foo]
-    -- rw [inverse_exponentiate x' hx bn]
-    -- let y' := y
-    -- simp [not_less_equal_of_greater_than hb, less_equal_of_less_than <| Integer.multiply_negative ha hb, Integer.NonPositiveInteger.toNatural, exponentiate_definition]
-    -- apply Subtype.eq
-    -- rw [inverse_exponentiate y hy bn]
-    -- conv => lhs; arg 1; simp [Subtype.eta]
-    -- simp [inverse_exponentiate x' hx an]
-    -- let xian := ⟨xi, hxi⟩.val ^ an
-    -- simp [inverse_exponentiate]
-    -- conv => lhs; rw [inverse_exponentiate]
-    -- conv => lhs; rw [inverse_exponentiate y hy bn]
-    -- conv => 
-      -- rhs; arg 1; arg 2; 
-    -- rw [← Integer.NonPositiveInteger.toNatural_multiply ⟨a, less_equal_of_less_than ha⟩ ⟨b, less_equal_of_less_than hb⟩]
-    
-    
-    --simp [exponentiate_definition, an, bn, abn]
-    --simp [Integer.NonPositiveInteger.toNatural, less_equal_of_less_than <| Integer.multiply_negative ha hb]
-    -- simp [not_less_equal_of_greater_than hb]
-    -- have foo := Integer.multiply_negative ha hb
-    -- simp [← exponentiate'_definition, exponentiate', not_less_equal_of_greater_than ha, less_equal_of_less_than foo]
+    rw [exponentiate'_negative x a ha]
+    let an := Integer.NonPositiveInteger.toNatural ⟨a, less_equal_of_less_than ha⟩
+    have foo := inverse_exponentiate x.val x.property an
+    sorry
   | Or.inl ha, Or.inr hb => sorry
   | Or.inr ha, Or.inl hb => sorry
   | Or.inr ha, Or.inr hb =>
