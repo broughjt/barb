@@ -1462,32 +1462,15 @@ theorem inverse_exponentiate (x : ℚ) (hx : x ≠ 0) (n : ℕ) :
     simp [exponentiate_successor]
     conv => lhs; rw [multiply_reciprocal ⟨x ^ n, exponentiate_nonzero hx n⟩ ⟨x, hx⟩, multiply_commutative]
     rw [ih]
-  
--- def NonZeroRational' := {x : ℚ // x ≠ 0}
 
--- @[simp]
--- def NonZeroRational'_definition : NonZeroRational = NonZeroRational' := rfl
-  
--- def exponentiate'2 (x : ℚ≠0) (a : ℤ) : ℚ≠0 :=
---   if ha : 0 ≤ a
---   then
---     let n := Integer.NonNegativeInteger.toNatural ⟨a, ha⟩
---     ⟨exponentiate x.val n, exponentiate_nonzero x.property n⟩
---   else
---     let n := Integer.NonPositiveInteger.toNatural ⟨a, less_equal_of_not_greater_equal ha⟩
---     reciprocal ⟨exponentiate x.val n, exponentiate_nonzero x.property n⟩
-  
--- 
-
-def exponentiate' : ℚ≠0 → ℤ → ℚ≠0
-  | ⟨x, hx⟩, a =>
-    if ha : 0 ≤ a
-    then 
-      let n := Integer.NonNegativeInteger.toNatural ⟨a, ha⟩
-      ⟨exponentiate x n, exponentiate_nonzero hx n⟩
-    else
-      let n := Integer.NonPositiveInteger.toNatural ⟨a, less_equal_of_not_greater_equal ha⟩
-      reciprocal ⟨exponentiate x n, exponentiate_nonzero hx n⟩
+def exponentiate' (x : ℚ≠0) (a : ℤ) : ℚ≠0 :=
+  if ha : 0 ≤ a
+  then
+    let n := Integer.NonNegativeInteger.toNatural ⟨a, ha⟩
+    ⟨exponentiate x.val n, exponentiate_nonzero x.property n⟩
+  else
+    let n := Integer.NonPositiveInteger.toNatural ⟨a, less_equal_of_not_greater_equal ha⟩
+    reciprocal ⟨exponentiate x.val n, exponentiate_nonzero x.property n⟩
 
 instance : HPow NonZeroRational Integer NonZeroRational where
   hPow := exponentiate'
@@ -1523,6 +1506,27 @@ theorem exponentiate'_negate (x : ℚ≠0) (a : ℤ) : x^(-a) = (x^a)⁻¹ := by
     simp [← Integer.negate_zero] at not_negate_a_nonnegative
     simp [ less_equal_of_less_than ha, not_negate_a_nonnegative, Integer.NonPositiveInteger.toNatural]
 
+theorem exponentiate'_add (x : ℚ≠0) (a b : ℤ) : (x^a).val * (x^b).val = (x^(a + b)).val := by
+  /-
+  Proof. By cases on a and b.
+  Case 1. Suppose 0 ≤ a and 0 ≤ b. Apply `exponentiate_add` and `toNatural_add`.
+  Case 2. Suppose a < 0 and b < 0. Then apply `multiply_reciprocal` to combine 
+    the terms on the left hand side, reducing to case 1.
+  Case 3. 
+    It suffices to assume a < 0 and 0 ≤ b. This follows from commutativity of addition 
+    and multiplication. Then we have two subcases.
+
+    If a + b < 0, then we must show ⊢ 1/(x^-a) * x^b = 1/(x^-(a+b)). Observing that -(a + b) is 
+    positive and can therefore be used in the natural exponent operation, notice that we 
+    have x^b * x^-(a+b) = x^(b + -(a + b)) = x^-a. Substitution gives
+    ⊢ 1/(x^b * x^-(a+b)) * x^b = 1/(x^-(a+b)).
+    Rewrite using `multiply_inverse` and simplify.
+
+    A similar argument applies when 0 ≤ a + b, but we substitute for x^b instead.
+  -/
+  sorry
+
+/-
 theorem exponentiate'_add (x : ℚ≠0) (a b : ℤ) : (x^a).val * (x^b).val = (x^(a + b)).val := by
   -- Proof.
   -- Case 1. If 0 ≤ a and 0 ≤ b then apply toNatural_add and exponentiate_add
@@ -1589,7 +1593,9 @@ theorem exponentiate'_add (x : ℚ≠0) (a b : ℤ) : (x^a).val * (x^b).val = (x
     simp [ha, hb, hab]
     simp [exponentiate_definition, ← Integer.NonNegativeInteger.toNatural_add ⟨a, ha⟩ ⟨b, hb⟩]
     exact exponentiate_add x' _ _
+-/
   
+/-
 theorem exponentiate'_multiply (x : ℚ≠0) (a b : ℤ) : (x^a)^b = x^(a * b) := by
   /- Proof. 
   Case 1. Suppose 0 ≤ a and 0 ≤ b. Then we need to show
@@ -1615,7 +1621,8 @@ theorem exponentiate'_multiply (x : ℚ≠0) (a b : ℤ) : (x^a)^b = x^(a * b) :
     let an := Integer.NonNegativeInteger.toNatural ⟨a, ha⟩
     let bn := Integer.NonNegativeInteger.toNatural ⟨b, hb⟩
     simp [exponentiate_definition, an, bn, ← Integer.NonNegativeInteger.toNatural_multiply ⟨a, ha⟩ ⟨b, hb⟩, exponentiate_multiply]
-  
+-/  
+
 /-
 theorem multiply_exponentiate' (x y : ℚ≠0) (a : ℤ) : 
     let xy_nonzero := multiply_nonzero_of_nonzero x.property y.property
