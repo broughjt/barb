@@ -1345,6 +1345,12 @@ theorem exponentiate_zero (x : ℚ) : x^(0 : ℕ) = 1 := rfl
 
 theorem exponentiate_successor (x : ℚ) (n : ℕ) : x ^ (successor n) = x ^ n * x := rfl
 
+theorem one_exponentiate (n : ℕ) : 1 ^ n  = (1 : ℚ) := by
+  induction n with
+  | zero => rw [Natural.zero_definition, exponentiate_zero]
+  | successor n ih =>
+    rw [← exponentiate_definition, exponentiate, multiply_one, exponentiate_definition, ih]
+
 theorem exponentiate_add (x : ℚ) (n m : ℕ) : x^n * x^m = x^(n + m) := by
   induction n with
   | zero => simp [Natural.zero_definition, exponentiate_zero, one_multiply, Natural.zero_add]
@@ -1479,6 +1485,17 @@ theorem exponentiate'_definition (x : ℚ≠0) (a : ℤ) : (exponentiate' x a) =
 
 theorem exponentiate'_zero (x : ℚ≠0) : x^(0 : ℤ) = (⟨1, by decide⟩ : ℚ≠0) := rfl
 
+-- TODO: Is there something wrong with the macros we've defined that we need to 
+-- go fix? This is stupid
+theorem one_exponentiate' (a : ℤ) : let one : ℚ≠0 := ⟨1, by decide⟩;
+    one^a = one := by
+  if h : 0 ≤ a
+  then
+    simp [← exponentiate'_definition, exponentiate', h, exponentiate_definition, one_exponentiate]
+  else
+    simp [← exponentiate'_definition, exponentiate', h, exponentiate_definition, one_exponentiate]
+    sorry
+
 theorem exponentiate'_nonnegative (x : ℚ≠0) (a : ℤ) (ha : 0 ≤ a) :
   x^a = ⟨x^Integer.NonNegativeInteger.toNatural ⟨a, ha⟩, exponentiate_nonzero x.property (Integer.NonNegativeInteger.toNatural ⟨a, ha⟩)⟩ := by
   let ⟨x', hx⟩ := x
@@ -1567,20 +1584,9 @@ theorem exponentiate'_add (x : ℚ≠0) (a b : ℤ) : (x^a).val * (x^b).val = (x
     exact exponentiate_add _ _ _
 
 theorem exponentiate'_multiply (x : ℚ≠0) (a b : ℤ) : (x^a)^b = x^(a * b) := by
-  /-
-  Proof.
-  Case 1. Suppose 0 ≤ a and 0 ≤ b. Then we need to show
-  ⊢ (x^a)^b = x^(a*b).
-  Apply `exponentiate_multiply`.
-  
-  Case 2. Suppose a < 0 and b < 0. Then we need to show
-  ⊢ (((x^-a)^-1)^-b)^-1 = x^(a*b)
-  Applying `inverse_exponentiate`, `reciprocal_involutive` and simplfying gives
-  ⊢ (x^-a)^-b = x^(a*b)
-  Apply `exponentiate_multiply` and `negate_multiply_*`. (TODO: write the actual theorem).
-  
-  Case 3. TODO: write
-  -/
+  -- Trick was to develop `inverse_multiply`
+  -- Also had a lot of trouble with exponentiate' match definition to the point 
+  -- that I just redefined it to avoid the trouble
   match less_than_or_less_equal a 0, less_than_or_less_equal b 0 with
   | Or.inl ha, Or.inl hb =>
     let bn := Integer.NonPositiveInteger.toNatural ⟨b, less_equal_of_less_than hb⟩
@@ -1591,42 +1597,33 @@ theorem exponentiate'_multiply (x : ℚ≠0) (a b : ℤ) : (x^a)^b = x^(a * b) :
     simp [← exponentiate'_definition, exponentiate', hab, exponentiate_definition, bn, 
       Integer.NonPositiveInteger.toNatural, exponentiate_multiply, Integer.NonNegativeInteger.toNatural_multiply]
     simp [← Integer.negate_multiply_equal_negate_multiply, ← Integer.negate_multiply_equal_multiply_negate]
-  | Or.inl ha, Or.inr hb => sorry
-  | Or.inr ha, Or.inl hb => sorry
+  | Or.inl ha, Or.inr hb =>
+    if hb' : b = 0
+    then
+      simp [hb', exponentiate'_zero, Integer.multiply_zero]
+    else
+      let hb'' := less_than_of_less_equal_of_not_equal hb (Ne.symm hb')
+      let hab := Integer.multiply_negative_of_negative_of_positive ha hb''
+      simp [← exponentiate'_definition, exponentiate', not_less_equal_of_greater_than ha, hb, not_less_equal_of_greater_than hab, exponentiate_definition] 
+      simp [← inverse_exponentiate, Integer.NonPositiveInteger.toNatural]
+      simp [exponentiate_multiply, Integer.NonNegativeInteger.toNatural_multiply]
+      simp [Subtype.eta, Integer.negate_multiply_equal_negate_multiply]
+  | Or.inr ha, Or.inl hb =>
+    if ha' : a = 0
+    then
+      simp [ha', Integer.zero_multiply, exponentiate'_zero, one_exponentiate']
+    else
+      have ha'' := less_than_of_less_equal_of_not_equal ha (Ne.symm ha')
+      let hab := Integer.multiply_negative_of_positive_of_negative ha'' hb
+      simp [← exponentiate'_definition, exponentiate', ha, not_less_equal_of_greater_than hb, not_less_equal_of_greater_than hab, exponentiate_definition] 
+      simp [Integer.NonPositiveInteger.toNatural, exponentiate_multiply, Integer.NonNegativeInteger.toNatural_multiply]
+      simp [Integer.negate_multiply_equal_multiply_negate]
   | Or.inr ha, Or.inr hb =>
     simp [← exponentiate'_definition, exponentiate', ha, hb, Integer.multiply_nonnegative ha hb]
     let an := Integer.NonNegativeInteger.toNatural ⟨a, ha⟩
     let bn := Integer.NonNegativeInteger.toNatural ⟨b, hb⟩
     simp [exponentiate_definition, an, bn, ← Integer.NonNegativeInteger.toNatural_multiply ⟨a, ha⟩ ⟨b, hb⟩, exponentiate_multiply]
   
-/-
-theorem exponentiate'_multiply (x : ℚ≠0) (a b : ℤ) : (x^a)^b = x^(a * b) := by
-  /- Proof. 
-  Case 1. Suppose 0 ≤ a and 0 ≤ b. Then we need to show
-  ⊢ (x^a)^b = x^(a*b)
-  Apply exponentiate_multiply.
-  
-  Case 2. Suppose a < 0 and b < 0. Then we need to show
-  ⊢ (((x^-a)^-1)^-b)^-1 = x^(a*b)
-  Applying inverse_exponentiate, reciprocal_involutive and simplfying gives
-  ⊢ (x^-a)^-b = x^(a*b)
-  Apply exponentiate_multiply and negate_multiply_*.
-  -/
-  match less_than_or_less_equal a 0, less_than_or_less_equal b 0 with
-  | Or.inl ha, Or.inl hb =>
-    rw [exponentiate'_negative x a ha]
-    let an := Integer.NonPositiveInteger.toNatural ⟨a, less_equal_of_less_than ha⟩
-    have foo := inverse_exponentiate x.val x.property an
-    sorry
-  | Or.inl ha, Or.inr hb => sorry
-  | Or.inr ha, Or.inl hb => sorry
-  | Or.inr ha, Or.inr hb =>
-    simp [← exponentiate'_definition, exponentiate', ha, hb, Integer.multiply_nonnegative ha hb]
-    let an := Integer.NonNegativeInteger.toNatural ⟨a, ha⟩
-    let bn := Integer.NonNegativeInteger.toNatural ⟨b, hb⟩
-    simp [exponentiate_definition, an, bn, ← Integer.NonNegativeInteger.toNatural_multiply ⟨a, ha⟩ ⟨b, hb⟩, exponentiate_multiply]
--/  
-
 /-
 theorem multiply_exponentiate' (x y : ℚ≠0) (a : ℤ) : 
     let xy_nonzero := multiply_nonzero_of_nonzero x.property y.property
