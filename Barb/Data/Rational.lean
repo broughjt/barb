@@ -535,22 +535,6 @@ theorem ofNatural_injective : Function.Injective ofNatural := by
   simp [Integer.multiply_one] at this
   exact Integer.ofNatural_injective this
 
-/-
-theorem ofNatural_add (n m : ℕ) : ofNatural (n + m) = ofNatural n + ofNatural m := 
-
-theorem ofNatural_multiply (n m : ℕ) : ofNatural (n * m) = ofNatural n * ofNatural m := by
-  unfold ofNatural
-  apply Quotient.sound
-  show (n * m) + (n * 0 + 0 * m) = (n * m + 0 * 0) + 0
-  simp [Natural.add_zero, Natural.zero_add, Natural.multiply_zero, Natural.zero_multiply]
-
-theorem ofNatural_injective : Function.Injective ofNatural := by
-  intro a b h
-  rw [← Natural.add_zero a, Quotient.exact h, Natural.add_zero]
-
-theorem ofNatural_zero : ofNatural 0 = (0 : ℤ) := rfl
--/
-
 def LessThan (x y : ℚ) : Prop :=
   let positive'
     | (a, ⟨b, b_nonzero⟩) => ∃ v : Integer.PositiveInteger × Integer.PositiveInteger,
@@ -793,6 +777,7 @@ instance totalOrder : DecidableTotalOrder Rational where
       | Or.inr h_equal => exact False.elim (h.right (Or.inr h_equal.symm))
 
 theorem add_left_strict_monotone : ∀ x : ℚ, StrictMonotone (x + .) := by
+  unfold StrictMonotone
   apply Quotient.ind₃
   -- TODO: Rename the variables, this was left over from when it was different
   intro ⟨e, f, f_nonzero⟩ ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩ 
@@ -854,7 +839,6 @@ theorem less_than_of_negate_less_than_negate {x y : ℚ} (h : -y < -x) : x < y :
   suffices - -x < - -y by simp at this; exact this
   negate_strict_antitone h
 
--- TODO
 theorem multiply_positive_left_strict_monotone : ∀ {x: ℚ}, 0 < x → StrictMonotone (x * .) := by
   apply Quotient.ind
   intro ⟨a, b, b_nonzero⟩
@@ -865,6 +849,7 @@ theorem multiply_positive_left_strict_monotone : ∀ {x: ℚ}, 0 < x → StrictM
   rw [Integer.multiply_one, ← Integer.negate_zero, Integer.zero_multiply, Integer.add_zero, Integer.multiply_one] at hab
   apply Exists.intro (⟨u*s, Integer.multiply_positive u_positive s_positive⟩, ⟨v*t, Integer.multiply_positive v_positive t_positive⟩)
   show (a*e*(b*d) + -(a*c)*(b*f))*(v*t) = (u*s)*((b*f)*(b*d))
+  -- TODO
   rw [Integer.multiply_associative, Integer.multiply_left_commutative e, ← Integer.multiply_associative a, ← Integer.negate_multiply_equal_negate_multiply, Integer.multiply_associative a c, Integer.multiply_left_commutative c, ← Integer.multiply_associative a b, Integer.negate_multiply_equal_multiply_negate, ← Integer.left_distributive, Integer.multiply_commutative, Integer.multiply_commutative v t, Integer.multiply_left_commutative, Integer.multiply_associative t, ← Integer.multiply_associative, Integer.multiply_associative u s, ← Integer.multiply_associative s, ← Integer.multiply_associative s, ← hab, Integer.multiply_associative _ f, Integer.multiply_left_commutative f, ← Integer.multiply_associative _ b, Integer.multiply_left_commutative u, Integer.multiply_commutative v, Integer.negate_multiply_equal_negate_multiply, Integer.multiply_right_commutative a t]
   exact congrArg ((a * b * t) * .) hefcd
 
@@ -1039,6 +1024,77 @@ theorem multiply_nonpositive_right_antitone {c : ℚ} (hc : c ≤ 0) : Antitone 
   rw [multiply_commutative a c, multiply_commutative b c]
   exact multiply_nonpositive_left_antitone hc h
 
+theorem reciprocal_positive_strict_antitone : ∀ {x y : ℚ} (hx : 0 < x) (hxy : x < y),
+    let x' : ℚ≠0 := ⟨x, Ne.symm <| not_equal_of_less_than hx⟩
+    let y' : ℚ≠0 := ⟨y, Ne.symm <| not_equal_of_less_than <| hx.transitive hxy⟩
+    y'⁻¹.val < x'⁻¹.val := by
+  -- Introduce extra implied assumptions explicitly to make quotient induction easier
+  suffices h : ∀ (x y : ℚ) (hx : 0 < x) (_ : 0 < y) (_ : x ≠ 0) (_ : y ≠ 0) (_ : x ≠ y) (hxylt : x < y),
+    let x' : ℚ≠0 := ⟨x, Ne.symm <| not_equal_of_less_than hx⟩
+    let y' : ℚ≠0 := ⟨y, Ne.symm <| not_equal_of_less_than <| hx.transitive hxylt⟩
+    y'⁻¹.val < x'⁻¹.val 
+  by 
+  { intro x y hx hxy
+    let hy : 0 < y := hx.transitive hxy
+    exact h x y hx hy (not_equal_of_less_than hx).symm (not_equal_of_less_than hy).symm (not_equal_of_less_than hxy) hxy
+    }
+  apply Quotient.ind₂
+  intro ⟨a, b, hb⟩ ⟨c, d, hd⟩
+  -- hx : 0 < x
+  intro ⟨(⟨a1, ha1⟩, ⟨b1, hb1⟩), (ha1b1 : (a*1 + (-0)*b)*b1 = a1*(b*1))⟩
+  simp [Integer.multiply_one, ← Integer.negate_zero, Integer.zero_multiply, Integer.add_zero] at ha1b1
+  -- hy : 0 < y
+  intro ⟨(⟨c1, hc1⟩, ⟨d1, hd1⟩), (hc1d1 : (c*1 + (-0)*d)*d1 = c1*(d*1))⟩
+  simp [Integer.multiply_one, ← Integer.negate_zero, Integer.zero_multiply, Integer.add_zero] at hc1d1
+  -- hx0 : x ≠ 0
+  intro hab1'
+  have ha : a ≠ 0 := mt (equal_zero_of_lift_numerator_equal_zero ⟨b, hb⟩) hab1'
+  -- hy0 : y ≠ 0
+  intro hcd1'
+  have hc : c ≠ 0 := mt (equal_zero_of_lift_numerator_equal_zero ⟨d, hd⟩) hcd1'
+  -- hxyne : x ≠ y
+  intro habcd1'
+  have habcd1 := mt Quotient.sound habcd1'
+  simp [RationalEquivalent] at habcd1
+  -- hxylt : x < y
+  -- ∃ u,v>0, c/d - a/b = u/v
+  intro ⟨(⟨u, hu⟩, ⟨v, hv⟩), (huv : (c*b + (-a)*d)*v = u*(d*b))⟩
+  rw [← Integer.negate_multiply_equal_negate_multiply, Integer.subtract_definition] at huv
+  simp [← reciprocal_definition, reciprocal, reciprocal', preReciprocal_some ⟨a, b, hb⟩ ha, preReciprocal_some ⟨c, d, hd⟩ hc]
+  -- have 
+  -- (c*b - a*d)*v = u*(d*b)
+  -- a*b1 = a1*b 
+  -- c*d1 = c1*d 
+  -- gives (a1*c1)*b*d = a*c*(b1*d1)
+  -- gives (c*b - a*d)*v*(a1*c1) = (u*a1*c1)*b*d = a*c*(u*b1*d1)
+  have ha1c1bd : (a1*c1)*(b*d) = (a*c)*(b1*d1) := by
+    rw [← Integer.multiply_associative (a1*c1) b d, Integer.multiply_right_commutative a1 c1 b, ← ha1b1, Integer.multiply_associative, ← hc1d1, Integer.multiply_associative, Integer.multiply_left_commutative b1, ← Integer.multiply_associative]
+  have hub1d1ac : (u*a1*c1)*(b*d) = (u*b1*d1)*(a*c) := by
+    rw [Integer.multiply_associative u, Integer.multiply_associative u, Integer.multiply_associative u, Integer.multiply_associative u, Integer.multiply_commutative (b1*d1)]
+    exact congrArg (u * .) ha1c1bd
+  have hua1c1bd : (b*c + (-d)*a)*(v*a1*c1) = (u*a1*c1)*(b*d) := by
+    rw [Integer.multiply_commutative b c, ← Integer.negate_multiply_equal_negate_multiply, Integer.subtract_definition, Integer.multiply_commutative d a]
+    rw [Integer.multiply_associative v, ← Integer.multiply_associative _ v]
+    rw [Integer.multiply_associative u, Integer.multiply_commutative u, Integer.multiply_associative (a1 * c1), Integer.multiply_commutative (a1 * c1), Integer.multiply_commutative b d]
+    exact congrArg (. * (a1 * c1)) huv
+  have hva1c1 : 0 < v*a1*c1 := by
+    rw [Integer.multiply_associative]
+    exact Integer.multiply_positive hv (Integer.multiply_positive ha1 hc1)
+  have hub1d1 : 0 < u*b1*d1 := by
+    rw [Integer.multiply_associative]
+    exact Integer.multiply_positive hu (Integer.multiply_positive hb1 hd1)
+  exact Exists.intro (⟨u*b1*d1, hub1d1⟩, ⟨v*a1*c1, hva1c1⟩) (hua1c1bd.trans hub1d1ac)
+
+-- TODO: reciprocal_negative
+theorem reciprocal_positive_antitone : ∀ {x y : ℚ} (hx : 0 < x) (hxy : x ≤ y),
+    let x' : ℚ≠0 := ⟨x, Ne.symm <| not_equal_of_less_than hx⟩
+    let y' : ℚ≠0 := ⟨y, Ne.symm <| not_equal_of_less_than <| less_than_of_less_than_of_less_equal hx hxy⟩
+    y'⁻¹.val ≤ x'⁻¹.val
+  | x, y, hx, hxy =>
+  match less_equal_equivalent_less_than_or_equal.mp hxy with
+  | Or.inl hxy' => less_equal_of_less_than <| reciprocal_positive_strict_antitone hx hxy'
+  | Or.inr hxy' => by simp [hxy', less_equal_of_equal]
+
 abbrev NonNegativeRational := {x : ℚ // 0 ≤ x}
 abbrev PositiveRational := {x : ℚ // 0 < x}
 abbrev NegativeRational := {x : ℚ // x < 0}
@@ -1206,7 +1262,7 @@ theorem distance_less_equal_reflexive {ε : ℚ} (hε : 0 < ε) : Relation.Refle
   exact less_equal_of_less_than hε
 
 /-
-Thought that I was going to have to develop several theorems for multiplication 
+Thought that I was going to have to develop several lemmas for multiplication 
 by 1/2 or 1 preserving the inequalilty, but multiply_less_*_multiply covers all cases!
 -/
 theorem equal_of_forall_distance_less_equal {x y : ℚ} : (∀ {ε}, 0 < ε → distance x y ≤ ε) → x = y := by
@@ -1459,7 +1515,7 @@ theorem exponentiate_magnitude (x : ℚ) (n : ℕ) : |x^n| = |x|^n := by
     simp [exponentiate_successor, magnitude_multiply_equal_multiply_magnitude]
     exact congrArg (. * |x|) ih
 
-theorem inverse_exponentiate (x : ℚ) (hx : x ≠ 0) (n : ℕ) : 
+theorem reciprocal_exponentiate (x : ℚ) (hx : x ≠ 0) (n : ℕ) : 
     (⟨x ^ n, exponentiate_nonzero hx n⟩⁻¹ : ℚ≠0).val = ((⟨x, hx⟩⁻¹ : ℚ≠0).val)^n := by
   induction n with
   | zero => rfl
@@ -1493,8 +1549,7 @@ theorem one_exponentiate' (a : ℤ) : let one : ℚ≠0 := ⟨1, by decide⟩;
   then
     simp [← exponentiate'_definition, exponentiate', h, exponentiate_definition, one_exponentiate]
   else
-    simp [← exponentiate'_definition, exponentiate', h, exponentiate_definition, one_exponentiate]
-    sorry
+    simp [← exponentiate'_definition, exponentiate', h, exponentiate_definition, one_exponentiate, reciprocal_one]
 
 theorem exponentiate'_nonnegative (x : ℚ≠0) (a : ℤ) (ha : 0 ≤ a) :
   x^a = ⟨x^Integer.NonNegativeInteger.toNatural ⟨a, ha⟩, exponentiate_nonzero x.property (Integer.NonNegativeInteger.toNatural ⟨a, ha⟩)⟩ := by
@@ -1592,7 +1647,7 @@ theorem exponentiate'_multiply (x : ℚ≠0) (a b : ℤ) : (x^a)^b = x^(a * b) :
     let bn := Integer.NonPositiveInteger.toNatural ⟨b, less_equal_of_less_than hb⟩
     have hab := less_equal_of_less_than <| Integer.multiply_negative ha hb
     apply Subtype.eq
-    rw [exponentiate'_negative _ b hb, inverse_exponentiate _ (x^a).property bn]
+    rw [exponentiate'_negative _ b hb, reciprocal_exponentiate _ (x^a).property bn]
     simp [exponentiate'_negative x a ha, Subtype.eta, reciprocal_involutive]
     simp [← exponentiate'_definition, exponentiate', hab, exponentiate_definition, bn, 
       Integer.NonPositiveInteger.toNatural, exponentiate_multiply, Integer.NonNegativeInteger.toNatural_multiply]
@@ -1605,7 +1660,7 @@ theorem exponentiate'_multiply (x : ℚ≠0) (a b : ℤ) : (x^a)^b = x^(a * b) :
       let hb'' := less_than_of_less_equal_of_not_equal hb (Ne.symm hb')
       let hab := Integer.multiply_negative_of_negative_of_positive ha hb''
       simp [← exponentiate'_definition, exponentiate', not_less_equal_of_greater_than ha, hb, not_less_equal_of_greater_than hab, exponentiate_definition] 
-      simp [← inverse_exponentiate, Integer.NonPositiveInteger.toNatural]
+      simp [← reciprocal_exponentiate, Integer.NonPositiveInteger.toNatural]
       simp [exponentiate_multiply, Integer.NonNegativeInteger.toNatural_multiply]
       simp [Subtype.eta, Integer.negate_multiply_equal_negate_multiply]
   | Or.inr ha, Or.inl hb =>
@@ -1624,17 +1679,41 @@ theorem exponentiate'_multiply (x : ℚ≠0) (a b : ℤ) : (x^a)^b = x^(a * b) :
     let bn := Integer.NonNegativeInteger.toNatural ⟨b, hb⟩
     simp [exponentiate_definition, an, bn, ← Integer.NonNegativeInteger.toNatural_multiply ⟨a, ha⟩ ⟨b, hb⟩, exponentiate_multiply]
   
-/-
 theorem multiply_exponentiate' (x y : ℚ≠0) (a : ℤ) : 
     let xy_nonzero := multiply_nonzero_of_nonzero x.property y.property
     let xaya_nonzero := multiply_nonzero_of_nonzero (x^a).property (y^a).property
-    (⟨x.val * y.val, xy_nonzero⟩^a : ℚ≠0) 
-    = (⟨(x^a).val * (y^a).val, xaya_nonzero⟩ : ℚ≠0) := by
-  sorry
--/
-
--- theorem exponentiate'_nonzero (x : ℚ≠0) (a : ℤ) : x^a ≠ 0 := by
+    (⟨x.val * y.val, xy_nonzero⟩^a : ℚ≠0) = (⟨(x^a).val * (y^a).val, xaya_nonzero⟩ : ℚ≠0) := by
+  if ha : 0 ≤ a
+  then
+    simp [← exponentiate'_definition, exponentiate', ha, exponentiate_definition, multiply_exponentiate]
+  else
+    simp [← exponentiate'_definition, exponentiate', ha, exponentiate_definition]
+    simp [← multiply_reciprocal, multiply_commutative, multiply_exponentiate, Subtype.eta]
 
 -- TODO: Is this just the Archimedean property in disguise? Or a corralary of the archimedian property? If so we should state it explicitly with a definition
 -- theorem exists_integer_between : ∀ x : ℚ, ∃ a : ℤ, ↑a ≤ x ∧ x ≤ ↑a + 1 := by
   -- intro x
+
+theorem exponentiate'_nonnegative_monotone {x y : ℚ} (a : ℤ) (ha : 0 ≤ a) (hx : 0 < x) (hxy : x ≤ y) : 
+    let hx' := Ne.symm <| not_equal_of_less_than hx
+    let hy' := Ne.symm <| not_equal_of_less_than <| less_than_of_less_than_of_less_equal hx hxy
+    let x' : ℚ≠0 := ⟨x, hx'⟩
+    let y' : ℚ≠0 := ⟨y, hy'⟩
+    (x'^a).val ≤ (y'^a).val := by
+  simp [← exponentiate'_definition, exponentiate', ha, exponentiate_definition]
+  let an := Integer.NonNegativeInteger.toNatural ⟨a, ha⟩
+  exact exponentiate_nonnegative_monotone an (less_equal_of_less_than hx) hxy
+
+theorem exponentiate'_negative_antitone {x y : ℚ} (a : ℤ) (ha : a < 0) (hx : 0 < x) (hxy : x ≤ y) : 
+    let hx' := Ne.symm <| not_equal_of_less_than hx
+    let hy' := Ne.symm <| not_equal_of_less_than <| less_than_of_less_than_of_less_equal hx hxy
+    let x' : ℚ≠0 := ⟨x, hx'⟩
+    let y' : ℚ≠0 := ⟨y, hy'⟩
+    (y'^a).val ≤ (x'^a).val := by
+  simp [← exponentiate'_definition, exponentiate', ha, exponentiate_definition]
+  simp [not_less_equal_of_greater_than ha, Integer.NonPositiveInteger.toNatural]
+  let an := Integer.NonNegativeInteger.toNatural ⟨-a, less_equal_of_less_than <| Integer.negate_strict_antitone ha⟩
+  have : x ^ an ≤ y ^ an := exponentiate_nonnegative_monotone an (less_equal_of_less_than hx) hxy
+  exact reciprocal_positive_antitone (exponentiate_positive hx) this
+
+-- TODO: Analogous lemmas for other ordering possibilities

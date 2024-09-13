@@ -1030,4 +1030,3 @@ theorem magnitude_multiply_equal_multiply_magnitude (x y : ℤ) : |x * y| = |x| 
       ← negate_multiply_equal_multiply_negate, negate_negate]
 
 -- def divideWithRemainder (a : ℤ) (b' : ℤ≠0) : ℤ × ℤ :=
-  
