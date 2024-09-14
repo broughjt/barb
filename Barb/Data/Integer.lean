@@ -268,6 +268,13 @@ theorem negate_involutive : Function.Involutive negate := by
 @[simp]
 theorem negate_negate : ∀ a : ℤ, - -a = a := λ a => negate_involutive a
 
+theorem negate_injective : Function.Injective negate := by
+  unfold Function.Injective
+  intro x y h
+  have := congrArg negate h
+  simp at this
+  exact this
+
 theorem subtract_self (a : ℤ) : a - a = 0 := add_inverse a
 
 theorem subtract_zero (a : ℤ) : a - 0 = a := by

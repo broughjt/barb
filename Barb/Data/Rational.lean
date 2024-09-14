@@ -329,6 +329,13 @@ theorem negate_involutive : Function.Involutive negate := by
 @[simp]
 theorem negate_negate : ∀ x : ℚ, - -x = x := λ x => negate_involutive x
 
+theorem negate_injective : Function.Injective negate := by
+  unfold Function.Injective
+  intro x y h
+  have := congrArg negate h
+  simp at this
+  exact this
+
 -- TODO: Copy pasted from Integers, this is all general to rings I think
 -- Lesson (worth writing about): If you start building up a collection theorems which only appeal to a few lemmas you proved earlier, it's time to abstract because you are dealing with a more general structure of which your original type is an example
 
@@ -499,6 +506,35 @@ theorem reciprocal_involutive (a : ℚ≠0) : a⁻¹⁻¹ = a := by
   simp at this
   rw [multiply_one, ← multiply_associative, multiply_inverse ⟨a', ha⟩, one_multiply] at this
   exact Subtype.eq this
+
+theorem reciprocal_of_multiply_equal_one_left {x y : ℚ≠0} : x.val * y.val = 1 → y = x⁻¹ := by
+  intro h
+  have := congrArg (x⁻¹.val * .) h
+  simp [← multiply_associative, multiply_commutative _ x.val, multiply_inverse, one_multiply, multiply_one] at this
+  exact Subtype.eq this
+
+theorem reciprocal_of_multiply_equal_one_right {x y : ℚ≠0} : x.val * y.val = 1 → x = y⁻¹ := by
+  intro h
+  have := congrArg (. * y⁻¹.val) h
+  simp [multiply_associative, multiply_inverse, multiply_one, one_multiply] at this
+  exact Subtype.eq this
+
+theorem negate_reciprocal : ∀ {x : ℚ} (hx : x ≠ 0),
+    let x' : ℚ≠0 := ⟨x, hx⟩
+    let x'' : ℚ≠0 := ⟨-x, mt (@negate_injective x 0) hx⟩;
+    -((x' : ℚ≠0)⁻¹).val = x''⁻¹.val := by
+  apply Quotient.ind
+  intro ⟨a, b, hb⟩
+  intro hab1'
+  have ha : a ≠ 0 := mt (equal_zero_of_lift_numerator_equal_zero ⟨b, hb⟩) hab1'
+  simp [← reciprocal_definition, reciprocal, reciprocal', preReciprocal_some ⟨a, b, hb⟩ ha]
+  have ha' : -a ≠ 0 := mt (@Integer.negate_injective a 0) ha
+  simp [← negate_definition, negate, Quotient.map, Quot.map]
+  conv => rhs; arg 1; arg 1; arg 3; rw [← Quotient.mk]
+  simp [preReciprocal_some ⟨-a, b, hb⟩ ha']
+  apply Quot.sound
+  show (-b)*(-a) = b*a
+  simp [← Integer.negate_multiply_equal_multiply_negate, ← Integer.negate_multiply_equal_negate_multiply]
 
 theorem nonzero_of_multiply_nonzero {a b : ℚ} (h : a * b ≠ 0) : a ≠ 0 ∧ b ≠ 0 :=
   not_or.mp (mt multiply_equal_zero_of_equal_zero h)
@@ -1095,6 +1131,37 @@ theorem reciprocal_positive_antitone : ∀ {x y : ℚ} (hx : 0 < x) (hxy : x ≤
   | Or.inl hxy' => less_equal_of_less_than <| reciprocal_positive_strict_antitone hx hxy'
   | Or.inr hxy' => by simp [hxy', less_equal_of_equal]
 
+theorem reciprocal_positive {x : ℚ} (hx : 0 < x) : 
+    let x' : ℚ≠0 := ⟨x, Ne.symm <| not_equal_of_less_than hx⟩
+    0 < x'⁻¹.val := by
+  suffices ∀ (x : ℚ) (h1 : x ≠ 0) (_ : 0 < x),
+    let x' : ℚ≠0 := ⟨x, h1⟩
+    0 < x'⁻¹.val from this x (Ne.symm <| not_equal_of_less_than hx) hx
+  apply Quotient.ind
+  intro ⟨a, b, hb⟩ 
+  intro (ha' : _)
+  have ha : a ≠ 0 := mt (equal_zero_of_lift_numerator_equal_zero ⟨b, hb⟩) ha'
+  intro ⟨(⟨u, hu⟩, ⟨v, hv⟩), (huv : (a*1 + (-0)*b)*v = u*(b*1))⟩
+  simp [Integer.multiply_one, ← Integer.negate_zero, Integer.zero_multiply, Integer.add_zero] at huv
+  simp [← reciprocal_definition, reciprocal, reciprocal', preReciprocal_some ⟨a, b, hb⟩ ha]
+  exists (⟨v, hv⟩, ⟨u, hu⟩)
+  show (b*1 + (-0)*a)*u = v*(a*1)
+  simp [Integer.multiply_one, ← Integer.negate_zero, Integer.zero_multiply, Integer.add_zero]
+  simp [Integer.multiply_commutative, huv]
+
+theorem reciprocal_negative {x : ℚ} (hx : x < 0) : 
+    let x' : ℚ≠0 := ⟨x, not_equal_of_less_than hx⟩
+    x'⁻¹.val < 0 := by
+  have h1 := negate_strict_antitone hx
+  simp [← negate_zero] at h1
+  have h2 := reciprocal_positive h1
+  simp at h2
+  have h3 := negate_reciprocal (not_equal_of_less_than hx)
+  simp [← h3] at h2
+  have h4 := negate_strict_antitone h2
+  simp at h4
+  exact h4
+
 abbrev NonNegativeRational := {x : ℚ // 0 ≤ x}
 abbrev PositiveRational := {x : ℚ // 0 < x}
 abbrev NegativeRational := {x : ℚ // x < 0}
@@ -1126,7 +1193,7 @@ theorem magnitude_nonnegative (x : ℚ) : 0 ≤ |x| := by
   
 theorem magnitude_zero : |(0 : ℚ)| = 0 := rfl
 
-theorem zero_of_magnitude_value_zero {x : ℚ} (h : |x| = 0) : x = 0 := by
+theorem zero_of_magnitude_zero {x : ℚ} (h : |x| = 0) : x = 0 := by
   rw [magnitude] at h
   match Decidable.em (x ≤ -x) with
   | Or.inl hx => 
@@ -1139,7 +1206,7 @@ theorem zero_of_magnitude_value_zero {x : ℚ} (h : |x| = 0) : x = 0 := by
 theorem magnitude_positive {x : ℚ} (h : x ≠ 0) : 0 < |x| :=
   match less_than_or_equal_of_less_equal (magnitude_nonnegative x) with
   | Or.inl hx => hx
-  | Or.inr hx => absurd hx.symm (mt zero_of_magnitude_value_zero h)
+  | Or.inr hx => absurd hx.symm (mt zero_of_magnitude_zero h)
 
 theorem magnitude_equal_of_nonnegative {x : ℚ} (h : 0 ≤ x) : |x| = x :=
   maximum_equal_left (less_equal_transitive (negate_antitone h) h)
@@ -1210,6 +1277,17 @@ theorem magnitude_add_less_equal (x y : ℚ) : |x + y| ≤ |x| + |y| := by
   . rw [negate_add]
     exact add_less_equal_add (negate_magnitude_less_equal x) (negate_magnitude_less_equal y)
   . exact add_less_equal_add (less_equal_magnitude x) (less_equal_magnitude y)
+
+theorem magnitude_reciprocal (x : ℚ≠0) :
+    let x' : ℚ≠0 := ⟨|x.val|, Ne.symm <| not_equal_of_less_than <| magnitude_positive x.property⟩
+    |x⁻¹.val| = x'⁻¹ := by
+  match less_than_connected x.property with
+  | Or.inl (hx : x.val < 0) =>
+    have := reciprocal_negative hx
+    simp [magnitude_equal_negate_of_negative x.val hx, magnitude_equal_negate_of_negative x⁻¹.val (reciprocal_negative hx)]
+    rw [← negate_reciprocal (not_equal_of_less_than hx), Subtype.eta]
+  | Or.inr (hx : 0 < x.val) =>
+    simp [magnitude_equal_of_positive x.val hx, magnitude_equal_of_positive x⁻¹.val (reciprocal_positive hx), Subtype.eta]
 
 def distance (x y : ℚ) := |x - y|
 
@@ -1690,9 +1768,19 @@ theorem multiply_exponentiate' (x y : ℚ≠0) (a : ℤ) :
     simp [← exponentiate'_definition, exponentiate', ha, exponentiate_definition]
     simp [← multiply_reciprocal, multiply_commutative, multiply_exponentiate, Subtype.eta]
 
--- TODO: Is this just the Archimedean property in disguise? Or a corralary of the archimedian property? If so we should state it explicitly with a definition
--- theorem exists_integer_between : ∀ x : ℚ, ∃ a : ℤ, ↑a ≤ x ∧ x ≤ ↑a + 1 := by
-  -- intro x
+
+theorem reciprocal_exponentiate' (x : ℚ≠0) (a : ℤ) : (x ^ a)⁻¹ = (x⁻¹)^a := by
+  if ha : 0 ≤ a
+  then
+    simp [← exponentiate'_definition, exponentiate', ha, exponentiate_definition]
+    apply Subtype.eq
+    exact reciprocal_exponentiate x.val x.property (Integer.NonNegativeInteger.toNatural ⟨a, ha⟩)
+  else
+    simp [← exponentiate'_definition, exponentiate', ha, exponentiate_definition]
+    simp [reciprocal_involutive]
+    let ⟨x', hx⟩ := x
+    have ha' := less_equal_of_not_greater_equal ha
+    simp [← reciprocal_exponentiate x' hx (Integer.NonPositiveInteger.toNatural ⟨a, ha'⟩), Subtype.eta, reciprocal_involutive]
 
 theorem exponentiate'_nonnegative_monotone {x y : ℚ} (a : ℤ) (ha : 0 ≤ a) (hx : 0 < x) (hxy : x ≤ y) : 
     let hx' := Ne.symm <| not_equal_of_less_than hx
@@ -1717,3 +1805,54 @@ theorem exponentiate'_negative_antitone {x y : ℚ} (a : ℤ) (ha : a < 0) (hx :
   exact reciprocal_positive_antitone (exponentiate_positive hx) this
 
 -- TODO: Analogous lemmas for other ordering possibilities
+
+/- TODO:
+
+This one's especially difficult to prove without using contradiction?
+The only way I'm seeing to do it is to factor x^n - y^n = (x - y)*{sum}.
+
+See https://math.stackexchange.com/questions/117660/proving-xn-yn-x-yxn-1-xn-2-y-x-yn-2-yn-1.
+
+Then I think we can show that the sum is nonzero, and since x^n - y^n
+= 0, we have x - y = 0. But this will require a ton of sum lemmas that
+we don't have, so I'm going to postpone this one for now
+unfortunately.
+theorem exponentiate'_positive_nonzero_injective : ∀ {x y : ℚ} {a : ℤ} 
+    (hx : 0 < x) (hy : 0 < y) (ha : a ≠ 0),
+    let x' : ℚ≠0 := ⟨x, Ne.symm <| not_equal_of_less_than hx⟩
+    let y' : ℚ≠0 := ⟨y, Ne.symm <| not_equal_of_less_than hy⟩
+    x'^a = y'^a → x = y := by
+  intro x y a hx hy ha x' y' h
+  suffices x'.val * (y'⁻¹).val = 1 by
+  { have h1 := congrArg (. * y) this
+    simp [one_multiply, multiply_associative, multiply_commutative y'⁻¹.val] at h1
+    have h2 : y = y'.val := rfl
+    rw [h2, multiply_inverse, multiply_one] at h1
+    exact h1 }
+  let f : ℚ≠0 → ℚ≠0 := λ z => ⟨z.val * (y' ^ (-a)).val, multiply_nonzero_of_nonzero z.property (y' ^ (-a)).property⟩
+  have h3 := congrArg f h
+  simp [f] at h3
+  simp [exponentiate'_add, Integer.add_inverse, exponentiate'_zero] at h3
+  simp [exponentiate'_negate, reciprocal_exponentiate', ← multiply_exponentiate'] at h3
+  exact equal_one_of_exponentiate_positive_equal_one a (multiply_positive hx (reciprocal_positive y')) ha h3
+-/
+  
+theorem exponentiate'_magnitude (x : ℚ≠0) (a : ℤ) : 
+    let x' : ℚ≠0 := ⟨|x.val|, mt zero_of_magnitude_zero x.property⟩
+    |(x^a).val| = (x'^a).val := by
+  if ha : 0 ≤ a
+  then
+    simp [← exponentiate'_definition, exponentiate', ha, exponentiate_definition, exponentiate_magnitude]
+  else
+    simp [← exponentiate'_definition, exponentiate', ha, exponentiate_definition, Integer.NonPositiveInteger.toNatural] 
+    rw [magnitude_reciprocal]
+    congr
+    simp [exponentiate_magnitude]
+
+-- TODO:
+  -- Exercise 4.3.5
+  -- Proposition 4.4.1 theorem exists_integer_between : ∀ x : ℚ, ∃ a : ℤ, ↑a ≤ x ∧ x ≤ ↑a + 1 := by
+  -- Proposition 4.4.2
+  -- Proposition 4.4.3
+  -- Proposition 4.4.4
+  -- Proposition 4.4.5
