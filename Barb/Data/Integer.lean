@@ -900,6 +900,17 @@ theorem toNatural_multiply (a b : ℤ≥0) :
   simp [toNatural, toNatural', ← hn, ← hm, ← ofNatural_multiply]
   simp [ofNatural, Natural.distance_zero_left]
 
+theorem toNatural_positive (a : ℤ) (ha : 0 < a) : 0 < toNatural ⟨a, less_equal_of_less_than <| ha⟩ := by
+  apply And.intro
+  . exact Natural.zero_less_equal _
+  . intro h
+    have := congrArg Integer.NonNegativeInteger.fromNatural (Natural.equal_zero_of_less_equal_zero h)
+    have rw := fromNatural_toNatural_right_inverse ⟨a, less_equal_of_less_than <| ha⟩
+    simp at rw
+    simp [rw] at this
+    simp [fromNatural, ofNatural_zero] at this
+    exact absurd this (not_equal_of_less_than ha).symm
+
 end NonNegativeInteger
 
 namespace NonPositiveInteger
@@ -1036,4 +1047,59 @@ theorem magnitude_multiply_equal_multiply_magnitude (x y : ℤ) : |x * y| = |x| 
       ← negate_multiply_equal_negate_multiply, magnitude_equal_negate_of_nonpositive hy, 
       ← negate_multiply_equal_multiply_negate, negate_negate]
 
--- def divideWithRemainder (a : ℤ) (b' : ℤ≠0) : ℤ × ℤ :=
+-- def divide_lemma1 {a b : ℤ} : 0 < b → b ≤ a → a - b < a := by
+--   sorry
+
+-- def divide (a b : ℤ) (ha : 0 ≤ a) (hb : 0 < b) : ℤ :=
+--   if h : b ≤ a
+--   then
+--     have bar : a - b < a := divide_lemma1 hb h
+--     have foo := subtract_nonnegative_of_less_equal h
+--     (divide (a - b) b foo hb) + 1
+--   else
+--     0
+-- termination_by a b => a - b
+-- decreasing_by 
+--   simp
+  
+/-
+instance instanceLessThanWellFounded : WellFoundedRelation Integer where
+  rel := (. < .)
+  wf := by
+    apply WellFounded.intro
+    intro a
+    apply Acc.intro
+    intro b
+
+theorem div_lemma6 {x y : ℤ} : 0 < y ∧ y ≤ x → x - y < x :=
+  sorry
+
+def div6.F (x : ℤ) (f : (x₁ : ℤ) → x₁ < x → ℤ → ℤ) (y : ℤ) : ℤ :=
+  if h : 0 < y ∧ y ≤ x then
+    (f (x - y) (div_lemma6 h) y) + 1
+  else
+    0
+
+noncomputable def div6 := WellFounded.fix instanceLessThanWellFounded.wf div6.F
+-/
+
+def divide (a b : ℤ) (ha : 0 ≤ a) (hb : 0 < b) : ℤ≥0 :=
+  if h : b ≤ a then
+    have hba := subtract_nonnegative_of_less_equal h
+    have : NonNegativeInteger.toNatural ⟨a - b, hba⟩ < NonNegativeInteger.toNatural ⟨a, ha⟩ := by
+      let j := NonNegativeInteger.toNatural ⟨b, less_equal_of_less_than <| hb⟩
+      apply @Natural.less_than_of_equal_add_positive _ _ j
+      . have := NonNegativeInteger.toNatural_positive b hb
+        have hj : j = NonNegativeInteger.toNatural ⟨b, less_equal_of_less_than <| hb⟩ := rfl
+        rw [← hj] at this
+        exact Ne.symm <| not_equal_of_less_than <| this
+      . simp [j, NonNegativeInteger.toNatural_add, ← subtract_definition, add_associative, add_inverse_left, add_zero]
+    let ⟨q, hq⟩ := divide (a - b) b hba hb
+    have h01 : 0 ≤ 1 := by decide
+    have hq' : 0 ≤ q + 1 := add_less_equal_add hq h01
+    ⟨q + 1, hq'⟩
+  else
+    ⟨0, by decide⟩
+termination_by NonNegativeInteger.toNatural ⟨a, ha⟩
+decreasing_by assumption
+

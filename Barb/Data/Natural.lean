@@ -322,6 +322,9 @@ theorem not_successor_less_equal_zero (n : ℕ) : ¬(successor n ≤ 0) := by
   rw [successor_add] at ha
   exact (successor_not_equal_zero _) ha
 
+theorem less_equal_of_less_than_successor {n m : ℕ} : n < successor m → n ≤ m :=
+  less_equal_of_successor_less_equal_successor ∘ successor_less_equal_of_less_than
+
 theorem zero_less_than_successor (n : ℕ) : successor n > 0 :=
   Or.resolve_left (equal_zero_or_positive (successor n)) (successor_not_equal_zero _)
 
@@ -558,6 +561,41 @@ theorem multiply_right_cancel {n m k : ℕ} (h_equal : n * k = m * k) (h_positiv
     _     = k * m := multiply_commutative m k
   multiply_left_cancel this h_positive
 
+/-
+/-  
+theorem divide_lemma1 {n m : ℕ} : 0 < m → m ≤ n → distance n m < n := by
+  sorry
+
+def sub (n m : ℕ) : ℕ := sorry
+
+-- def divide (n m : ℕ) (hm : m ≠ 0) : ℕ :=
+--   if h : n < m then 
+--     -- have : distance n m < n := divide_lemma1 (zero_less_than_positive hm) h
+--     0
+--   else 
+--     have : 0 < n := sorry
+--     have : sub n m < n := sorry
+--     1 + (divide (sub n m) m hm)
+-- termination_by n
+
+-- def divide (n m : ℕ) (ok : m > 0) : Nat :=
+--   if h : n < m then
+--     0
+--   else
+--     have : 0 < n := sorry
+--     have : distance n m < n := sorry
+--     1 + divide (distance n m) m ok
+-- termination_by n
+
+def div (n m : Nat) (om : m > 0) : Nat :=
+  if h : n < m then
+    0
+  else
+    have : 0 < n := sorry
+    have : n - m < n := sorry
+    1 + div (n - m) m om
+termination_by n
+
 -- TODO: Fully understand the recursion chapter before messing with this again
 --
 -- theorem divideWithRemainder_foo {n m : ℕ} : 0 < m ∧ m ≤ n → distance n m < n :=
@@ -572,7 +610,6 @@ theorem multiply_right_cancel {n m k : ℕ} (h_equal : n * k = m * k) (h_positiv
   -- else ⟨0, n⟩
 -- termination_by divideWithRemainder n m _ => n
 --
-
  
 theorem quotient_remainder {n q : ℕ} (q_positive : q ≠ 0) :
   ∃ (p : ℕ × ℕ),
@@ -617,3 +654,128 @@ def power (m : ℕ) : ℕ → ℕ
 
 instance : Pow Natural Natural where
   pow := power
+-/
+
+theorem div_rec_lemma {x y : Nat} : 0 < y ∧ y ≤ x → x - y < x := by
+  sorry
+
+def div (x y : Nat) : Nat :=
+  if 0 < y ∧ y ≤ x then
+    div (x - y) y + 1
+  else
+    0
+decreasing_by
+  simp_wf
+  sorry
+
+instance instanceLessThanWellFounded : WellFoundedRelation Natural where
+  rel := (. < .)
+  wf := sorry
+
+def ack : ℕ → ℕ → ℕ
+  | 0, m => m + 1
+  | successor n, 0   => ack n 1
+  | successor n, successor m => ack n (ack (successor n) m)
+termination_by x y => (x, y)
+decreasing_by
+  all_goals simp_wf
+  . apply Prod.Lex.left; simp_arith
+  . apply Prod.Lex.right; simp_arith
+  . apply Prod.Lex.left; simp_arith
+
+theorem div2_rec_lemma {x y : ℕ} : 0 < y ∧ y ≤ x → distance x y < x := by
+  sorry
+
+def div2 (x y : ℕ) : ℕ :=
+  if h : 0 < y ∧ y ≤ x then
+    (div2 (distance x y) y) + 1
+  else
+    0
+termination_by x
+decreasing_by 
+  simp_wf
+  
+  have : distance x y < x := div2_rec_lemma h
+  simp_arith
+
+theorem div_lemma3 {x y : Nat} : 0 < y ∧ y ≤ x → x - y < x :=
+  fun h => Nat.sub_lt (Nat.lt_of_lt_of_le h.left h.right) h.left
+
+def div3.F (x : Nat) (f : (x₁ : Nat) → x₁ < x → Nat → Nat) (y : Nat) : Nat :=
+  if h : 0 < y ∧ y ≤ x then
+    f (x - y) (div_lemma3 h) y + 1
+  else
+    Nat.zero
+
+noncomputable def div3 := WellFounded.fix (measure id).wf div3.F
+
+def subtract : ℕ → ℕ → ℕ := sorry
+  
+instance : Sub Natural where
+  sub := subtract
+
+theorem div_lemma4 {x y : ℕ} : 0 < y ∧ y ≤ x → x - y < x :=
+  sorry
+
+def div4.F (x : ℕ) (f : (x₁ : ℕ) → x₁ < x → ℕ → ℕ) (y : ℕ) : ℕ :=
+  if h : 0 < y ∧ y ≤ x then
+    (f (x - y) (div_lemma4 h) y) + 1
+  else
+    0
+
+noncomputable def div4 := WellFounded.fix instanceLessThanWellFounded.wf div4.F
+
+theorem div_lemma5 {x y : ℕ} : 0 < y ∧ y ≤ x → distance x y < x :=
+  sorry
+
+def div5.F (x : ℕ) (f : (x₁ : ℕ) → x₁ < x → ℕ → ℕ) (y : ℕ) : ℕ :=
+  if h : 0 < y ∧ y ≤ x then
+    (f (distance x y) (div_lemma5 h) y) + 1
+  else
+    0
+
+noncomputable def div5 := WellFounded.fix instanceLessThanWellFounded.wf div5.F
+-/
+  
+instance instanceLessThanWellFounded : WellFoundedRelation Natural where
+  rel := (. < .)
+  wf := by
+    apply WellFounded.intro
+    intro n
+    induction n with
+    | zero =>
+      apply Acc.intro 0
+      intro m h
+      exact absurd h (not_less_than_zero m)
+    | successor n ih =>
+      apply Acc.intro (successor n)
+      intro m h
+      have : m < n ∨ m = n := less_than_or_equal_of_less_equal <| less_equal_of_less_than_successor h
+      match this with
+      | Or.inl h' => exact Acc.inv ih h'
+      | Or.inr h' => subst h'; exact ih
+
+/-
+theorem distance_less_than {n m : ℕ} : 0 < m ∧ m ≤ n → distance n m < n := by
+  intro ⟨hm, hmn⟩
+  induction n with
+  | zero => 
+    exact absurd (equal_zero_of_less_equal_zero hmn) (not_equal_of_less_than hm |> Ne.symm)
+  | successor n ih => 
+    match less_than_or_equal_of_less_equal hmn with
+    | Or.inl h =>
+      have := ih (less_equal_of_less_than_successor h)
+      sorry
+    | Or.inr h => 
+      subst h
+      simp [distance_self, zero_less_than_successor]
+
+def divide (n m : ℕ) (hm : m ≠ 0) : ℕ :=
+  if h : 0 < m ∧ m ≤ n then
+    have := distance_less_than h
+    (divide (distance n m) m (not_equal_of_less_than h.left).symm) + 1
+  else
+    0
+termination_by n
+decreasing_by apply this
+-/

@@ -1849,9 +1849,9 @@ theorem exponentiate'_magnitude (x : ℚ≠0) (a : ℤ) :
     congr
     simp [exponentiate_magnitude]
 
+
 -- TODO:
-  -- Exercise 4.3.5
-  -- Proposition 4.4.1 theorem exists_integer_between : ∀ x : ℚ, ∃ a : ℤ, ↑a ≤ x ∧ x ≤ ↑a + 1 := by
+  -- Proposition 4.4.1 theorem exists_integer_between : ∀ x : ℚ, ∃! a : ℤ, ↑a ≤ x ∧ x ≤ ↑a + 1 := by
   -- Proposition 4.4.2
   -- Proposition 4.4.3
   -- Proposition 4.4.4
