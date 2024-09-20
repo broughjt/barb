@@ -1103,3 +1103,5 @@ def divide (a b : ℤ) (ha : 0 ≤ a) (hb : 0 < b) : ℤ≥0 :=
 termination_by NonNegativeInteger.toNatural ⟨a, ha⟩
 decreasing_by assumption
 
+-- #eval divide 4 2 (by decide) (by decide)
+#eval repr (3 : ℕ)
