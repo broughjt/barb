@@ -54,7 +54,7 @@ instance decideEqual : DecidableEq Integer := decideIntegerEquivalentQuotientEqu
 
 instance : OfNat Integer n where
   ofNat := ⟦(Natural.fromNat n, 0)⟧
-
+  
 instance Zero : Integer := ⟦(0, 0)⟧
 
 instance One : Integer := ⟦(1, 0)⟧
@@ -948,6 +948,15 @@ theorem toNatural_multiply (a b : ℤ≤0) :
 
 end NonPositiveInteger
 
+instance instanceRepr : Repr Integer where
+  reprPrec a p :=
+    if h : 0 ≤ a then
+      let n := Integer.NonNegativeInteger.toNatural ⟨a, h⟩
+      Natural.instanceRepr.reprPrec n p
+    else
+      let n := Integer.NonPositiveInteger.toNatural ⟨a, less_equal_of_not_greater_equal h⟩
+      Repr.addAppParen ("-" ++ Natural.instanceRepr.reprPrec n p) p
+
 -- TODO: Copied from rationals
 def magnitude (a : ℤ) : ℤ := maximum a (-a)
 
@@ -1083,7 +1092,27 @@ def div6.F (x : ℤ) (f : (x₁ : ℤ) → x₁ < x → ℤ → ℤ) (y : ℤ) :
 noncomputable def div6 := WellFounded.fix instanceLessThanWellFounded.wf div6.F
 -/
 
-def divide (a b : ℤ) (ha : 0 ≤ a) (hb : 0 < b) : ℤ≥0 :=
+-- def divide (a b : ℤ) (ha : 0 ≤ a) (hb : 0 < b) : ℤ≥0 :=
+--   if h : b ≤ a then
+--     have hba := subtract_nonnegative_of_less_equal h
+--     have : NonNegativeInteger.toNatural ⟨a - b, hba⟩ < NonNegativeInteger.toNatural ⟨a, ha⟩ := by
+--       let j := NonNegativeInteger.toNatural ⟨b, less_equal_of_less_than <| hb⟩
+--       apply @Natural.less_than_of_equal_add_positive _ _ j
+--       . have := NonNegativeInteger.toNatural_positive b hb
+--         have hj : j = NonNegativeInteger.toNatural ⟨b, less_equal_of_less_than <| hb⟩ := rfl
+--         rw [← hj] at this
+--         exact Ne.symm <| not_equal_of_less_than <| this
+--       . simp [j, NonNegativeInteger.toNatural_add, ← subtract_definition, add_associative, add_inverse_left, add_zero]
+--     let ⟨q, hq⟩ := divide (a - b) b hba hb
+--     have h01 : 0 ≤ 1 := by decide
+--     have hq' : 0 ≤ q + 1 := add_less_equal_add hq h01
+--     ⟨q + 1, hq'⟩
+--   else
+--     ⟨0, by decide⟩
+-- termination_by NonNegativeInteger.toNatural ⟨a, ha⟩
+
+/-
+def divideWithRemainder' (a b : ℤ) (ha : 0 ≤ a) (hb : 0 < b) : ℤ≥0 × ℤ :=
   if h : b ≤ a then
     have hba := subtract_nonnegative_of_less_equal h
     have : NonNegativeInteger.toNatural ⟨a - b, hba⟩ < NonNegativeInteger.toNatural ⟨a, ha⟩ := by
@@ -1094,14 +1123,137 @@ def divide (a b : ℤ) (ha : 0 ≤ a) (hb : 0 < b) : ℤ≥0 :=
         rw [← hj] at this
         exact Ne.symm <| not_equal_of_less_than <| this
       . simp [j, NonNegativeInteger.toNatural_add, ← subtract_definition, add_associative, add_inverse_left, add_zero]
-    let ⟨q, hq⟩ := divide (a - b) b hba hb
+    let (⟨q, hq⟩, a') := divideWithRemainder' (a - b) b hba hb
     have h01 : 0 ≤ 1 := by decide
     have hq' : 0 ≤ q + 1 := add_less_equal_add hq h01
-    ⟨q + 1, hq'⟩
+    (⟨q + 1, hq'⟩, a')
   else
-    ⟨0, by decide⟩
+    (⟨0, by decide⟩, a)
 termination_by NonNegativeInteger.toNatural ⟨a, ha⟩
-decreasing_by assumption
 
--- #eval divide 4 2 (by decide) (by decide)
-#eval repr (3 : ℕ)
+def divide (a b : ℤ) (ha : 0 ≤ a) (hb : 0 < b) : 
+    Σ' qr : ℤ × ℤ, 
+    let q := qr.1
+    let r := qr.2
+    a = q * b + r ∧ 0 ≤ r ∧ r < b :=
+  if h : b ≤ a then
+    have hba := subtract_nonnegative_of_less_equal h
+    have : NonNegativeInteger.toNatural ⟨a - b, hba⟩ < NonNegativeInteger.toNatural ⟨a, ha⟩ := by
+      let j := NonNegativeInteger.toNatural ⟨b, less_equal_of_less_than <| hb⟩
+      apply @Natural.less_than_of_equal_add_positive _ _ j
+      . have := NonNegativeInteger.toNatural_positive b hb
+        have hj : j = NonNegativeInteger.toNatural ⟨b, less_equal_of_less_than <| hb⟩ := rfl
+        rw [← hj] at this
+        exact Ne.symm <| not_equal_of_less_than <| this
+      . simp [j, NonNegativeInteger.toNatural_add, ← subtract_definition, add_associative, add_inverse_left, add_zero]
+    let ⟨(q, a'), _⟩ := divide (a - b) b hba hb
+    have h01 : 0 ≤ 1 := by decide
+    have hq' : 0 ≤ q + 1 := add_less_equal_add hq h01
+    (⟨q + 1, hq'⟩, a')
+  else
+    (⟨0, by decide⟩, a)
+termination_by NonNegativeInteger.toNatural ⟨a, ha⟩
+-/
+
+def divideWithRemainder' (a b : ℤ) (ha : 0 ≤ a) (hb : 0 < b) : 
+    Σ' qr : ℤ × ℤ, 
+    let (q, r) := qr
+    a = q*b + r ∧ 0 ≤ r ∧ r < b :=
+  if h : b ≤ a then
+    have hba := subtract_nonnegative_of_less_equal h
+    have : NonNegativeInteger.toNatural ⟨a - b, hba⟩ < NonNegativeInteger.toNatural ⟨a, ha⟩ := by
+      let j := NonNegativeInteger.toNatural ⟨b, less_equal_of_less_than <| hb⟩
+      apply @Natural.less_than_of_equal_add_positive _ _ j
+      . have := NonNegativeInteger.toNatural_positive b hb
+        have hj : j = NonNegativeInteger.toNatural ⟨b, less_equal_of_less_than <| hb⟩ := rfl
+        rw [← hj] at this
+        exact Ne.symm <| not_equal_of_less_than <| this
+      . simp [j, NonNegativeInteger.toNatural_add, ← subtract_definition, add_associative, add_inverse_left, add_zero]
+    let ⟨(q', r), ⟨hab', hr1, hr2⟩⟩ := divideWithRemainder' (a - b) b hba hb
+    have hab : a = (q' + 1) * b + r := by
+      rw [right_distributive, one_multiply]
+      have := congrArg (. + b) hab'
+      simp [← subtract_definition, add_associative, add_inverse_left, add_zero, add_commutative r b] at this
+      simp [← add_associative] at this
+      exact this
+    ⟨(q' + 1, r), And.intro hab (And.intro hr1 hr2)⟩
+  else
+    ⟨(0, a), And.intro (by simp [zero_multiply, zero_add]) (And.intro ha (less_than_of_not_greater_equal h))⟩
+termination_by NonNegativeInteger.toNatural ⟨a, ha⟩
+
+theorem divideWithRemainder'_unique (a b : ℤ) (ha : 0 ≤ a) (hb : 0 < b) :
+    let ⟨(q, r), h⟩ := divideWithRemainder' a b ha hb
+    ∀ (q' r' : ℤ), a = q'*b + r' → 0 ≤ r' → r' < b → (q' = q ∧ r' = r) := by
+  let ⟨(q, r), ⟨h, hr1, hr2⟩⟩ := divideWithRemainder' a b ha hb
+  intro q' r' h' hr1' hr2'
+  have h' := subtract_equal_zero_of_equal <| h'.symm.trans h
+  rw [← subtract_definition, negate_add, add_associative, add_left_commutative r', ← add_associative, 
+    negate_multiply_equal_negate_multiply, ← right_distributive, ← negate_negate (r' + -r), subtract_definition, negate_add, negate_negate] at h'
+  have h := equal_of_subtract_equal_zero h'
+  simp [subtract_definition, add_commutative] at h
+  if hq : q = q' then
+    constructor
+    . exact hq.symm
+    . rw [subtract_equal_zero_of_equal hq.symm, zero_multiply] at h
+      exact (equal_of_subtract_equal_zero h.symm).symm
+  else
+    have hqq' : q' - q ≠ 0 := mt equal_of_subtract_equal_zero (Ne.symm hq)
+    have hm : |q' - q| * b = |r - r'| := by
+      have := congrArg magnitude h
+      rw [magnitude_multiply_equal_multiply_magnitude, magnitude_equal_of_positive b hb] at this
+      exact this
+    have hl : |r - r'| < b := by
+      match less_equal_strongly_connected r r' with
+      | Or.inl hrr' =>
+        have hrr'' := subtract_nonnegative_of_less_equal hrr'
+        have : r' + (-r) < b + (-0) := sorry
+        rw [subtract_definition, ← negate_zero, add_zero, ← magnitude_equal_of_nonnegative hrr'', 
+          ← magnitude_negate, negate_subtract] at this
+        exact this
+      | Or.inr hrr' => sorry
+    have hr : b ≤ |q' - q| * b := sorry
+    rw [hm] at hr
+    have : b < b := less_than_of_less_equal_of_less_than hr hl
+    exact False.elim (less_than_irreflexive b this)
+
+def divideWithRemainder (a b : ℤ) (hb : b ≠ 0) :
+    Σ' qr : ℤ × ℤ,
+    let (q, r) := qr
+    a = q * b + r ∧ 0 ≤ r ∧ r < |b| :=
+  if h1 : 0 ≤ a ∧ 0 < b then
+    let ⟨(q, r), ⟨hab, hr1, hr2'⟩⟩ := divideWithRemainder' a b h1.left h1.right
+    have hr2 := by
+      simp [magnitude_equal_of_nonnegative (less_equal_of_less_than h1.right), hr2']
+    ⟨(q, r), ⟨hab, hr1, hr2⟩⟩
+  else if h2 : 0 ≤ a ∧ b < 0 then
+    let ⟨(q', r), ⟨hab', hr1, hr2'⟩⟩ := divideWithRemainder' a (-b) h2.left (negate_strict_antitone h2.right)
+    have hab := by
+      rw [← negate_multiply_equal_multiply_negate, negate_multiply_equal_negate_multiply] at hab'
+      exact hab'
+    have hr2 : r < |b| := by
+      have g1 := less_equal_magnitude (-b)
+      have g2 := magnitude_negate b
+      rw [g2] at g1
+      exact less_than_of_less_than_of_less_equal hr2' g1
+    ⟨(-q', r), And.intro hab (And.intro hr1 hr2)⟩
+  else if h3 : a ≤ 0 ∧ 0 < b then
+    let ⟨(q', r'), ⟨hab', hr1', hr2'⟩⟩ := divideWithRemainder' (-a) b (negate_antitone h3.left) h3.right
+    have hab : a = -(q' + 1) * b + (b - r') := by
+      have hab'' := congrArg negate hab'
+      simp [negate_add, negate_multiply_equal_negate_multiply] at hab''
+      rw [negate_add, right_distributive, ← negate_multiply_equal_negate_multiply 1 b, one_multiply, 
+        add_associative, ← subtract_definition, negate_add_cancel_left]
+      exact hab''
+    have hr1 := less_equal_of_less_than <| subtract_positive_of_less_than hr2'
+    have hr2 := by
+      rw [magnitude_equal_of_positive b (less_than_of_less_equal_of_less_than hr1' hr2')]
+      -- have := less_than_of_less_than_of_less_equal (negate_strict_antitone h.right) hr1
+      -- TODO: Why do we know the remainder is not zero?
+      sorry
+    ⟨(-(q' + 1), b - r'), And.intro hab (And.intro hr1 hr2)⟩
+  else
+    have ha : a ≤ 0 := sorry
+    have hb : b < 0 := sorry
+    let ⟨(q', r'), ⟨hab', hr1', hr2'⟩⟩ := divideWithRemainder' (-a) (-b) (negate_antitone ha) (negate_strict_antitone hb)
+    sorry
+    

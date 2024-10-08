@@ -18,12 +18,15 @@ def toNat : Natural → Nat
   | Natural.zero => Nat.zero
   | Natural.successor n => Nat.succ (toNat n)
 
-instance : OfNat Natural n where
+instance instanceOfNat : OfNat Natural n where
   ofNat := fromNat n
 
-instance : ToString Natural where
+instance instanceToString : ToString Natural where
   toString := toString ∘ toNat
 
+instance instanceRepr : Repr Natural where
+  reprPrec := reprPrec ∘ toNat
+  
 notation "ℕ" => Natural
 
 theorem zero_definition : zero = 0 := rfl
@@ -561,182 +564,6 @@ theorem multiply_right_cancel {n m k : ℕ} (h_equal : n * k = m * k) (h_positiv
     _     = k * m := multiply_commutative m k
   multiply_left_cancel this h_positive
 
-/-
-/-  
-theorem divide_lemma1 {n m : ℕ} : 0 < m → m ≤ n → distance n m < n := by
-  sorry
-
-def sub (n m : ℕ) : ℕ := sorry
-
--- def divide (n m : ℕ) (hm : m ≠ 0) : ℕ :=
---   if h : n < m then 
---     -- have : distance n m < n := divide_lemma1 (zero_less_than_positive hm) h
---     0
---   else 
---     have : 0 < n := sorry
---     have : sub n m < n := sorry
---     1 + (divide (sub n m) m hm)
--- termination_by n
-
--- def divide (n m : ℕ) (ok : m > 0) : Nat :=
---   if h : n < m then
---     0
---   else
---     have : 0 < n := sorry
---     have : distance n m < n := sorry
---     1 + divide (distance n m) m ok
--- termination_by n
-
-def div (n m : Nat) (om : m > 0) : Nat :=
-  if h : n < m then
-    0
-  else
-    have : 0 < n := sorry
-    have : n - m < n := sorry
-    1 + div (n - m) m om
-termination_by n
-
--- TODO: Fully understand the recursion chapter before messing with this again
---
--- theorem divideWithRemainder_foo {n m : ℕ} : 0 < m ∧ m ≤ n → distance n m < n :=
-  -- sorry
-
--- def divideWithRemainder (n m : ℕ) (hm : m ≠ 0) : ℕ × ℕ :=
-  -- if 0 < m ∧ m ≤ n
-  -- then 
-    -- have : distance n m < n := sorry
-    -- let ⟨q', r'⟩ := (divideWithRemainder (distance n m) m hm)
-    -- ⟨q' + 1, r'⟩
-  -- else ⟨0, n⟩
--- termination_by divideWithRemainder n m _ => n
---
- 
-theorem quotient_remainder {n q : ℕ} (q_positive : q ≠ 0) :
-  ∃ (p : ℕ × ℕ),
-  let ⟨m, r⟩ := p; n = m * q + r ∧ r < q := by
-  induction n with
-  | zero =>
-    apply Exists.intro ⟨0, 0⟩
-    apply And.intro
-    . calc
-      0 = 0 * q := (zero_multiply q).symm
-      _ = (0 * q) + 0 := (add_zero (0 * q)).symm
-    . have h_exists : 0 + q = q := zero_add q
-      exact less_than_of_equal_add_positive q_positive h_exists
-  | successor n ih =>
-    let ⟨⟨m, r⟩, ⟨(h_exists : n = m * q + r), (h_less_than : r < q)⟩⟩ := ih
-    show ∃ p, let ⟨m, r⟩ := p; successor n = m * q + r ∧ r < q
-    have : successor r = q ∨ successor r < q := 
-      (Or.commutative.mp ∘ less_than_or_equal_of_less_equal ∘ successor_less_equal_of_less_than) h_less_than
-    cases this with
-    | inl h_equal => 
-      apply Exists.intro ⟨successor m, 0⟩
-      apply And.intro
-      . calc
-          successor n = successor (m * q + r)         := congrArg successor h_exists
-          _           = m * q + successor r           := (add_successor (m * q) r).symm
-          _           = m * successor r + successor r := congrArg (m * . + successor r) h_equal.symm
-          _           = successor m * successor r     := (successor_multiply m (successor r)).symm
-          _           = successor m * q               := congrArg (successor m * .) h_equal
-          _           = successor m * q + 0           := (add_zero (successor m * q)).symm
-      . exact zero_less_than_positive q_positive
-    | inr h_less_than =>
-      apply Exists.intro ⟨m, successor r⟩
-      apply And.intro
-      . calc
-          successor n = successor (m * q + r) := congrArg successor h_exists
-          _ = m * q + successor r := (add_successor (m * q) r).symm
-      . exact h_less_than
-
-def power (m : ℕ) : ℕ → ℕ
-| 0 => 1
-| successor n => (power m n) * m
-
-instance : Pow Natural Natural where
-  pow := power
--/
-
-theorem div_rec_lemma {x y : Nat} : 0 < y ∧ y ≤ x → x - y < x := by
-  sorry
-
-def div (x y : Nat) : Nat :=
-  if 0 < y ∧ y ≤ x then
-    div (x - y) y + 1
-  else
-    0
-decreasing_by
-  simp_wf
-  sorry
-
-instance instanceLessThanWellFounded : WellFoundedRelation Natural where
-  rel := (. < .)
-  wf := sorry
-
-def ack : ℕ → ℕ → ℕ
-  | 0, m => m + 1
-  | successor n, 0   => ack n 1
-  | successor n, successor m => ack n (ack (successor n) m)
-termination_by x y => (x, y)
-decreasing_by
-  all_goals simp_wf
-  . apply Prod.Lex.left; simp_arith
-  . apply Prod.Lex.right; simp_arith
-  . apply Prod.Lex.left; simp_arith
-
-theorem div2_rec_lemma {x y : ℕ} : 0 < y ∧ y ≤ x → distance x y < x := by
-  sorry
-
-def div2 (x y : ℕ) : ℕ :=
-  if h : 0 < y ∧ y ≤ x then
-    (div2 (distance x y) y) + 1
-  else
-    0
-termination_by x
-decreasing_by 
-  simp_wf
-  
-  have : distance x y < x := div2_rec_lemma h
-  simp_arith
-
-theorem div_lemma3 {x y : Nat} : 0 < y ∧ y ≤ x → x - y < x :=
-  fun h => Nat.sub_lt (Nat.lt_of_lt_of_le h.left h.right) h.left
-
-def div3.F (x : Nat) (f : (x₁ : Nat) → x₁ < x → Nat → Nat) (y : Nat) : Nat :=
-  if h : 0 < y ∧ y ≤ x then
-    f (x - y) (div_lemma3 h) y + 1
-  else
-    Nat.zero
-
-noncomputable def div3 := WellFounded.fix (measure id).wf div3.F
-
-def subtract : ℕ → ℕ → ℕ := sorry
-  
-instance : Sub Natural where
-  sub := subtract
-
-theorem div_lemma4 {x y : ℕ} : 0 < y ∧ y ≤ x → x - y < x :=
-  sorry
-
-def div4.F (x : ℕ) (f : (x₁ : ℕ) → x₁ < x → ℕ → ℕ) (y : ℕ) : ℕ :=
-  if h : 0 < y ∧ y ≤ x then
-    (f (x - y) (div_lemma4 h) y) + 1
-  else
-    0
-
-noncomputable def div4 := WellFounded.fix instanceLessThanWellFounded.wf div4.F
-
-theorem div_lemma5 {x y : ℕ} : 0 < y ∧ y ≤ x → distance x y < x :=
-  sorry
-
-def div5.F (x : ℕ) (f : (x₁ : ℕ) → x₁ < x → ℕ → ℕ) (y : ℕ) : ℕ :=
-  if h : 0 < y ∧ y ≤ x then
-    (f (distance x y) (div_lemma5 h) y) + 1
-  else
-    0
-
-noncomputable def div5 := WellFounded.fix instanceLessThanWellFounded.wf div5.F
--/
-  
 instance instanceLessThanWellFounded : WellFoundedRelation Natural where
   rel := (. < .)
   wf := by
@@ -754,30 +581,3 @@ instance instanceLessThanWellFounded : WellFoundedRelation Natural where
       match this with
       | Or.inl h' => exact Acc.inv ih h'
       | Or.inr h' => subst h'; exact ih
-
-/-
-theorem distance_less_than {n m : ℕ} : 0 < m ∧ m ≤ n → distance n m < n := by
-  intro ⟨hm, hmn⟩
-  induction n with
-  | zero => 
-    exact absurd (equal_zero_of_less_equal_zero hmn) (not_equal_of_less_than hm |> Ne.symm)
-  | successor n ih => 
-    match less_than_or_equal_of_less_equal hmn with
-    | Or.inl h =>
-      have := ih (less_equal_of_less_than_successor h)
-      sorry
-    | Or.inr h => 
-      subst h
-      simp [distance_self, zero_less_than_successor]
-
-def divide (n m : ℕ) (hm : m ≠ 0) : ℕ :=
-  if h : 0 < m ∧ m ≤ n then
-    have := distance_less_than h
-    (divide (distance n m) m (not_equal_of_less_than h.left).symm) + 1
-  else
-    0
-termination_by n
-decreasing_by apply this
--/
-
-
