@@ -1255,3 +1255,111 @@ theorem divideWithRemainder'_unique {a b q r : ℤ} (_ : 0 ≤ a) (hb : 0 < b)
   have hb := magnitude_equal_of_positive hb
   rw [hb] at this
   exact this hr2
+
+def quotient (a b : ℤ) (hb : b ≠ 0) : ℤ :=
+  let ⟨(q, _), _⟩ := divideWithRemainder a b hb
+  q
+
+def remainder (a b : ℤ) (hb : b ≠ 0) : ℤ :=
+  let ⟨(_, r), _⟩ := divideWithRemainder a b hb
+  r
+
+def Divide (a b : ℤ) : Prop := ∃ q : ℤ, b = a * q
+
+instance : Dvd ℤ where
+  dvd := Divide
+
+theorem divide_definition (a b : ℤ) : (a ∣ b) = Divide a b := rfl
+ 
+theorem zero_divide (a : ℤ) : a ∣ 0 := Exists.intro 0 <| by
+  rw [multiply_zero]
+
+theorem divide_one (a : ℤ) : 1 ∣ a := Exists.intro a <| by
+  rw [one_multiply]
+
+theorem divide_negative_one (a : ℤ) : (-1) ∣ a := Exists.intro (-a) <| by
+  rw [← negate_multiply_equal_multiply_negate, ← negate_multiply_equal_negate_multiply, negate_negate, one_multiply]
+
+def Unit (a : ℤ) : Prop := a ∣ 1
+
+theorem unit_one_or_negative_one {a : ℤ} : Unit a ↔ (a = 1 ∨ a = -1) := by
+  constructor
+  . intro ⟨q, hq⟩
+    if ha : (a = 1 ∨ a = -1) then
+      exact ha
+    else
+      have ha' := or_imply.mp ha
+      simp at ha'
+      if ha'' : a = 0 then
+        rw [ha'', zero_multiply] at hq
+        contradiction
+      else if hq' : q = 0 then
+        rw [hq', multiply_zero] at hq
+        contradiction
+      else
+        have h : 1 = |a| * |q| := by
+          rw [← @magnitude_equal_of_positive 1 (by decide), ← magnitude_multiply_equal_multiply_magnitude]
+          exact congrArg magnitude hq
+        have hn : 1 < |a| * |q| := by
+          have ham : 1 < |a| := by
+            apply less_than_of_less_equal_of_not_equal
+            . exact less_than_equivalent_add_one_less_equal.mp <| magnitude_positive ha''
+            . intro h
+              simp [magnitude, maximum] at h
+              if ha''' : a ≤ -a then
+                simp [ha'''] at h
+                have := congrArg (- .) h
+                simp at this
+                exact absurd this.symm ha'.right
+              else
+                simp [ha'''] at h
+                exact absurd h.symm ha'.left
+          have hqm := less_than_equivalent_add_one_less_equal.mp <| magnitude_positive hq'
+          rw [zero_add] at hqm
+          have := multiply_nonnegative_left_monotone (magnitude_nonnegative a) hqm
+          simp [multiply_one] at this
+          exact less_than_of_less_than_of_less_equal ham this
+        exact absurd h (not_equal_of_less_than hn)
+  . intro h
+    match h with
+    | Or.inl h => exact Exists.intro 1 <| by rw [h, one_multiply]
+    | Or.inr h => exact Exists.intro (-1) <| by
+      { rw [h, ← negate_multiply_equal_multiply_negate, ← negate_multiply_equal_negate_multiply, negate_negate, one_multiply] }
+    
+theorem negate_divide (a b : ℤ) : a ∣ b → -a ∣ b := by
+  intro ⟨q, hq⟩
+  apply Exists.intro (-q)
+  rw [← negate_multiply_equal_multiply_negate, ← negate_multiply_equal_negate_multiply, negate_negate]
+  exact hq
+
+theorem divide_negate (a b : ℤ) : a ∣ b → a ∣ -b := by
+  intro ⟨q, hq⟩
+  apply Exists.intro (-q)
+  rw [← negate_multiply_equal_multiply_negate]
+  exact congrArg (- .) hq
+
+-- TODO: Divides iff r = 0
+
+-- TODO: Formulate GreatestCommonDivisor property
+-- TODO: Understand why second component property works
+-- TODO: Define gcd (a b : ℤ) : Σ' d : ℤ, 0 ≤ d ∧ Gcd(a, b, d)
+-- TODO: Write gcd_unique
+-- TODO: Write Bezout's lemma
+-- TODO: Formujlate Coprime
+-- TODO: Write Proposition 7.1.29
+-- TODO: Write Proposition 7.1.32
+-- TODO: Formulate Definition 7.1.38
+-- TODO: Write Exercise 7.1.39
+-- TODO: Formulate Definition 7.1.40
+-- TODO: Write Exercise 7.1.41
+
+-- TODO: Formulate Definition 7.2.1
+-- TODO: Formulate Definition 7.2.6
+-- TODO: Proposition 7.2.7
+-- TODO: Proposition 7.2.9
+-- TODO: Proposition 7.2.10
+-- TODO: Proposition 7.2.11
+-- TODO: Proposition 7.2.12
+-- TODO: Definition 7.2.15
+
+-- TODO: Theorem 7.2.22
