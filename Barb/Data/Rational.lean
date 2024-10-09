@@ -1162,6 +1162,12 @@ theorem reciprocal_negative {x : ℚ} (hx : x < 0) :
   simp at h4
   exact h4
 
+/-
+theorem ofInteger_monotone : Monotone ofInteger := sorry
+
+theorem ofInteger_strict_monotone : StrictMonotone ofInteger := sorry
+-/
+
 abbrev NonNegativeRational := {x : ℚ // 0 ≤ x}
 abbrev PositiveRational := {x : ℚ // 0 < x}
 abbrev NegativeRational := {x : ℚ // x < 0}
@@ -1806,12 +1812,13 @@ theorem exponentiate'_negative_antitone {x y : ℚ} (a : ℤ) (ha : a < 0) (hx :
 
 -- TODO: Analogous lemmas for other ordering possibilities
 
+-- TODO: But rational equality is decidable! So we can use contradiction
 /- TODO:
 
 This one's especially difficult to prove without using contradiction?
 The only way I'm seeing to do it is to factor x^n - y^n = (x - y)*{sum}.
 
-See https://math.stackexchange.com/questions/117660/proving-xn-yn-x-yxn-1-xn-2-y-x-yn-2-yn-1.
+See https://math.stackexchange.com/questions/117660/proving-xn-yn-x-yxn-1-xn-2-y-x-yn-2-yn-1
 
 Then I think we can show that the sum is nonzero, and since x^n - y^n
 = 0, we have x - y = 0. But this will require a ton of sum lemmas that
@@ -1849,10 +1856,90 @@ theorem exponentiate'_magnitude (x : ℚ≠0) (a : ℤ) :
     congr
     simp [exponentiate_magnitude]
 
-
 -- TODO:
   -- Proposition 4.4.1 theorem exists_integer_between : ∀ x : ℚ, ∃! a : ℤ, ↑a ≤ x ∧ x ≤ ↑a + 1 := by
   -- Proposition 4.4.2
   -- Proposition 4.4.3
   -- Proposition 4.4.4
   -- Proposition 4.4.5
+  
+-- TODO: Might as well do a a ⟦a * b / c * d⟧ = ⟦a/c⟧ * ⟦b/c⟧ theorem too
+
+theorem lift_add (a b c : ℤ) (hc : c ≠ 0) : 
+    Quotient.mk instanceSetoidRationalEquivalent (a + b, ⟨c, hc⟩) = add ⟦(a, ⟨c, hc⟩)⟧ ⟦(b, ⟨c, hc⟩)⟧ := by
+  simp [add]
+  apply Quotient.sound
+  show (a + b) * (c * c) = (a * c + b * c) * c
+  rw [← Integer.multiply_associative, Integer.right_distributive]
+
+/-
+
+def mixed (x : ℚ) :
+    Σ' ar : ℤ × ℚ,
+    let (a, r) := ar
+    ↑a + r = x ∧ 0 ≤ r ∧ r < 1 :=
+  let mixed' 
+    | ⟨a, b, hb⟩ =>
+      let ⟨(q, r), hqr, hr1', hr2'⟩ := Integer.divideWithRemainder a b hb
+      have hx := by
+        rw [hqr, lift_add]
+        have hq : Quot.mk Setoid.r (q * b, (⟨b, hb⟩ : ℤ≠0)) = Quot.mk Setoid.r (q, ⟨1, by decide⟩) := by
+          apply Quotient.sound
+          show (q * b) * 1 = q * b
+          rw [Integer.multiply_one]
+        have hbr : Quot.mk Setoid.r (b
+        rw [hq, ← ofInteger, add_definition]
+      have hr1 := sorry
+      have hr2 := sorry
+      ⟨(q, ⟦(r, ⟨b, hb⟩)⟧), hx, hr1, hr2⟩
+  Quotient.recOn x mixed' <| by
+  sorry
+  
+def floor (x : ℚ) : ℤ := 
+  let ⟨(a, _), _⟩ := mixed x
+  a
+  
+theorem floor_less_equal (x : ℚ) : ↑(floor x) ≤ x := sorry
+
+theorem less_equal_floor_add_one (x : ℚ) : x < ↑(floor x) + 1 := sorry
+  
+theorem floor_greatest_less_equal (x : ℚ) : ∀ a : ℤ, ↑a ≤ x → a ≤ floor x := sorry
+
+def ceiling (x : ℚ) : ℤ :=
+  let xf := floor x
+  if x = ↑xf then
+    xf
+  else
+    xf + 1
+
+theorem ceiling_greater_equal (x : ℚ) : x ≤ ↑(ceiling x) := sorry
+
+theorem ceiling_least_greater_equal (x : ℚ) : ∀ a : ℤ, x ≤ ↑a → ceiling x ≤ a := sorry
+
+theorem ceiling_less_equal_floor_add_one (x : ℚ) : ceiling x ≤ (floor x) + 1 := sorry
+
+theorem exists_integer_between (x : ℚ) : ∃! a : ℤ, ↑a ≤ x ∧ x < ↑a + 1 := by
+  apply ExistsUnique.introduction (floor x)
+  . constructor
+    . exact floor_less_equal x
+    . exact less_equal_floor_add_one x
+  . intro a
+    if ha : a = floor x then
+      intro _
+      exact ha
+    else
+      suffices ∀ {a b : ℤ}, a < b → ¬(↑b ≤ x ∧ x < ↑a + 1) by
+      { intro h
+        match less_than_connected ha with 
+        | Or.inl ha =>
+          exact absurd (And.intro (floor_less_equal x) h.right) (this ha)
+        | Or.inr ha =>
+          exact absurd (And.intro h.left (less_equal_floor_add_one x)) (this ha) }
+      intro a b hab ⟨hl, hr⟩
+      have hl' := ofInteger_monotone <| Integer.less_than_equivalent_add_one_less_equal.mp hab
+      have hr' := less_than_of_less_equal_of_less_than hl hr
+      have h1 : 1 = ofInteger 1 := rfl
+      rw [h1, ← ofInteger_add] at hr'
+      have := less_than_of_less_than_of_less_equal hr' hl'
+      exact False.elim <| less_than_irreflexive _ <| this
+-/
