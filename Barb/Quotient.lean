@@ -1,4 +1,4 @@
-import Barb.Logic
+import Barb.Relation
 
 namespace Quot
 

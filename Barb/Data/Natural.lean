@@ -200,10 +200,10 @@ instance : LE Natural where
 
 @[simp] theorem less_equal_definition : (LessEqual n m) = (n ≤ m) := rfl
 
-@[simp] theorem LessEqual.reflexive : Relation.Reflexive LessEqual :=
+@[simp] theorem LessEqual.reflexive : Reflexive LessEqual :=
   λ n => Exists.intro 0 (add_zero n)
 
-theorem LessEqual.antisymmetric : Relation.AntiSymmetric LessEqual := by
+theorem LessEqual.antisymmetric : AntiSymmetric LessEqual := by
   intro n m ⟨a, (ha : n + a = m)⟩ ⟨b, (hb : m + b = n)⟩
   suffices a + b = 0 by 
   { have ⟨a_zero, _⟩ := equal_zero_of_add_equal_zero this
@@ -211,7 +211,7 @@ theorem LessEqual.antisymmetric : Relation.AntiSymmetric LessEqual := by
   apply add_left_cancel (n := n)
   rw [← add_associative, ha, hb, add_zero]
 
-theorem LessEqual.transitive : Relation.Transitive LessEqual := by
+theorem LessEqual.transitive : Transitive LessEqual := by
   intro n m k ⟨a, (ha : n + a = m)⟩ ⟨b, (hb : m + b = k)⟩
   apply Exists.intro (a + b)
   rw [← add_associative, ha, hb]
@@ -268,7 +268,7 @@ instance decideLessEqual (n m : ℕ) : Decidable (n ≤ m) :=
   else
     isFalse (mt boolean_less_equal_true_of_less_equal h)
 
-theorem LessEqual.strongly_connected : Relation.StronglyConnected LessEqual
+theorem LessEqual.strongly_connected : StronglyConnected LessEqual
   | zero, _ => Or.inl (zero_less_equal _)
   | successor _, zero => Or.inr (zero_less_equal _)
   | successor n, successor m =>

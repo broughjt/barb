@@ -11,12 +11,12 @@ open Natural (zero successor)
 def IntegerEquivalent : (ℕ × ℕ) → (ℕ × ℕ) → Prop
   | (n, m), (k, l) => n + l = k + m
 
-theorem IntegerEquivalent.reflexive : Relation.Reflexive IntegerEquivalent :=
+theorem IntegerEquivalent.reflexive : Reflexive IntegerEquivalent :=
   λ _ => rfl
 
-theorem IntegerEquivalent.symmetric : Relation.Symmetric IntegerEquivalent := Eq.symm
+theorem IntegerEquivalent.symmetric : Symmetric IntegerEquivalent := Eq.symm
 
-theorem IntegerEquivalent.transitive : Relation.Transitive IntegerEquivalent
+theorem IntegerEquivalent.transitive : Transitive IntegerEquivalent
   | (n, m), (k, l), (p, q), (h₁ : n + l = k + m), (h₂ : k + q = p + l) => by
     apply Natural.add_left_cancel (n := k + l)
     calc
@@ -419,10 +419,10 @@ instance : LE Integer where
 
 theorem less_equal_definition : (a ≤ b) = LessEqual a b := rfl
 
-theorem LessEqual.reflexive : Relation.Reflexive LessEqual :=
+theorem LessEqual.reflexive : Reflexive LessEqual :=
   λ _ => Exists.intro 0 (add_zero _)
 
-theorem LessEqual.antisymmetric : Relation.AntiSymmetric LessEqual := by
+theorem LessEqual.antisymmetric : AntiSymmetric LessEqual := by
   intro a b ⟨n, hn⟩ ⟨m, hm⟩
   suffices m = 0 ∧ n = 0
   by rw [← add_zero a, ← ofNatural_zero, ← this.right, hn]
@@ -431,7 +431,7 @@ theorem LessEqual.antisymmetric : Relation.AntiSymmetric LessEqual := by
   apply add_left_cancel (a := b)
   rw [ofNatural_add, ← add_associative, hm, hn, ofNatural_zero, add_zero]
 
-theorem LessEqual.transitive : Relation.Transitive LessEqual := by
+theorem LessEqual.transitive : Transitive LessEqual := by
   intro a b c ⟨n, (ha : a + ↑n = b)⟩ ⟨m, (hb : b + ↑m = c)⟩
   apply Exists.intro ↑(n + m)
   rw [ofNatural_add, ← add_associative, ha, hb]
@@ -474,7 +474,7 @@ instance decideLessEqual (a b : ℤ) : Decidable (a ≤ b) :=
   else
     isFalse (mt subtract_nonnegative_of_less_equal h)
 
-theorem LessEqual.strongly_connected : Relation.StronglyConnected LessEqual :=
+theorem LessEqual.strongly_connected : StronglyConnected LessEqual :=
   have lift_less_equal {n m k l : ℕ} : n + l ≤ k + m → LessEqual ⟦(n, m)⟧ ⟦(k, l)⟧ := by
   { intro ⟨a, (ha : (n + l) + a = k + m)⟩
     apply Exists.intro a
@@ -1256,14 +1256,6 @@ theorem divideWithRemainder'_unique {a b q r : ℤ} (_ : 0 ≤ a) (hb : 0 < b)
   rw [hb] at this
   exact this hr2
 
-def quotient (a b : ℤ) (hb : b ≠ 0) : ℤ :=
-  let ⟨(q, _), _⟩ := divideWithRemainder a b hb
-  q
-
-def remainder (a b : ℤ) (hb : b ≠ 0) : ℤ :=
-  let ⟨(_, r), _⟩ := divideWithRemainder a b hb
-  r
-
 def Divide (a b : ℤ) : Prop := ∃ q : ℤ, b = a * q
 
 instance : Dvd ℤ where
@@ -1338,7 +1330,29 @@ theorem divide_negate (a b : ℤ) : a ∣ b → a ∣ -b := by
   rw [← negate_multiply_equal_multiply_negate]
   exact congrArg (- .) hq
 
--- TODO: Divides iff r = 0
+theorem divide_equivalent_remainder_zero (a b : ℤ) (hb : b ≠ 0) : 
+    let ⟨(_, r), _⟩ := divideWithRemainder a b hb
+    b ∣ a ↔ r = 0 := by
+  let ⟨(q, r), ⟨h, hr1, hr2⟩⟩ := divideWithRemainder a b hb
+  constructor
+  . intro ⟨p, hp⟩
+    rw [← add_zero (b * p), multiply_commutative b p] at hp
+    have ⟨_, hr⟩ := divideWithRemainder_unique hb h hr1 hr2 p 0 hp (less_equal_reflexive 0) (magnitude_positive hb)
+    exact hr.symm
+  . intro hr
+    simp [hr, add_zero, multiply_commutative] at h
+    exact Exists.intro q h
+
+theorem divide_reflexive : Reflexive Divide := by
+  sorry
+
+theorem divide_antisymmetric : AntiSymmetric Divide := by
+  sorry
+
+theorem divide_transitive : Transitive Divide := by
+  sorry
+
+-- def GreatestCommonDivisor (a b d : ℤ)
 
 -- TODO: Formulate GreatestCommonDivisor property
 -- TODO: Understand why second component property works

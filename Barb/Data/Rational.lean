@@ -7,14 +7,14 @@ import Barb.Syntax
 def RationalEquivalent : (ℤ × ℤ≠0) → (ℤ × ℤ≠0) → Prop
   | (a, ⟨b, _⟩), (c, ⟨d, _⟩) => a * d = c * b
 
-theorem RationalEquivalent.reflexive : Relation.Reflexive RationalEquivalent :=
+theorem RationalEquivalent.reflexive : Reflexive RationalEquivalent :=
   λ _ => rfl
 
-theorem RationalEquivalent.symmetric : Relation.Symmetric RationalEquivalent := by
+theorem RationalEquivalent.symmetric : Symmetric RationalEquivalent := by
   intro (a, ⟨b, _⟩) (c, ⟨d, _⟩) (h_ab_cd : a * d = c * b)
   exact h_ab_cd.symm
 
-theorem RationalEquivalent.transitive : Relation.Transitive RationalEquivalent := by
+theorem RationalEquivalent.transitive : Transitive RationalEquivalent := by
   intro (a, ⟨b, b_nonzero⟩) (c, ⟨d, d_nonzero⟩) (e, ⟨f, _⟩)
   intro (h_ab_cd : a * d = c * b) (h_cd_ef : c * f = e * d)
   show a * f = e * b
@@ -597,7 +597,7 @@ instance : LE Rational where
 
 theorem less_equal_definition : (x ≤ y) = (LessEqual x y) := rfl
 
-theorem LessThan.irreflexive : Relation.Irreflexive LessThan := by
+theorem LessThan.irreflexive : Irreflexive LessThan := by
   intro x
   unfold LessThan
   simp
@@ -609,7 +609,7 @@ theorem LessThan.irreflexive : Relation.Irreflexive LessThan := by
 -- Readable proof of this and asymmetric property are in the last few pages of black notebook, we should turn them into latex. Gist for this one is just to plug in one equation into the other
 -- This proof is easy once you write out the equations in terms of fractions like c//d - a//b = p//q and solve.
 -- TODO: Is it possible to avoid the case split on c = 0? I think it's gotta be, the equations are the same at the end
-theorem LessThan.transitive : Relation.Transitive LessThan := by
+theorem LessThan.transitive : Transitive LessThan := by
   apply Quotient.ind₃
   intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩ ⟨e, f, f_nonzero⟩
   intro ⟨(⟨p, p_positive⟩, ⟨q, q_positive⟩), (hpq : (c*b + -a*d)*q = p*(d*b))⟩
@@ -654,8 +654,8 @@ theorem LessThan.transitive : Relation.Transitive LessThan := by
     let v : Integer.PositiveInteger := ⟨t * q, htq⟩
     exact Exists.intro (u, v) kick
 
-theorem LessThan.asymmetric : Relation.Asymmetric LessThan := by
-  unfold Relation.Asymmetric
+theorem LessThan.asymmetric : Asymmetric LessThan := by
+  unfold Asymmetric
   intro x y hxy hyx
   exact LessThan.irreflexive x (LessThan.transitive hxy hyx)
   
@@ -731,8 +731,8 @@ instance decideLessThan (x y : ℚ) : Decidable (x < y) :=
   else
     isFalse (mt subtract_positive_of_less_than h)
 
-theorem LessThan.connected : Relation.Connected LessThan := by
-  unfold Relation.Connected
+theorem LessThan.connected : Connected LessThan := by
+  unfold Connected
   apply Quotient.ind₂
   intro ⟨a, b, b_nonzero⟩ ⟨c, d, d_nonzero⟩
   intro h'
@@ -761,17 +761,17 @@ theorem LessThan.connected : Relation.Connected LessThan := by
     rw [← Integer.subtract_definition, Integer.negate_multiply_equal_negate_multiply] at this
     exact Or.inr (equal_positive_of_positive_or_negative (Or.inl (And.intro this hbd)))
 
-theorem LessEqual.reflexive : Relation.Reflexive LessEqual :=
+theorem LessEqual.reflexive : Reflexive LessEqual :=
   λ _ => Or.inr rfl
   
-theorem LessEqual.antisymmetric : Relation.AntiSymmetric LessEqual :=
+theorem LessEqual.antisymmetric : AntiSymmetric LessEqual :=
   λ hxy hyx =>
     match hxy, hyx with
     | Or.inl hxy, Or.inl hyx => False.elim (LessThan.asymmetric hxy hyx)
     | Or.inl _, Or.inr hyx => hyx.symm
     | Or.inr hxy, _ => hxy
   
-theorem LessEqual.transitive : Relation.Transitive LessEqual :=
+theorem LessEqual.transitive : Transitive LessEqual :=
   λ hxy hyz =>
     match hxy, hyz with
     | Or.inl hxy, Or.inl hyz => Or.inl (LessThan.transitive hxy hyz)
@@ -779,7 +779,7 @@ theorem LessEqual.transitive : Relation.Transitive LessEqual :=
     | Or.inr hxy, Or.inl hyz => Or.inl (hxy ▸ hyz)
     | Or.inr hxy, Or.inr hyz => Or.inr (hxy.trans hyz)
 
-theorem LessEqual.strongly_connected : Relation.StronglyConnected LessEqual :=
+theorem LessEqual.strongly_connected : StronglyConnected LessEqual :=
   λ a b =>
     if h_equal : a = b then
       Or.inl (Or.inr h_equal)
@@ -1340,7 +1340,7 @@ theorem distance_triangle (x z y : ℚ) : distance x z ≤ distance x y + distan
     negate_add_cancel_left] at this
   exact this
 
-theorem distance_less_equal_reflexive {ε : ℚ} (hε : 0 < ε) : Relation.Reflexive (distance . . ≤ ε) := by
+theorem distance_less_equal_reflexive {ε : ℚ} (hε : 0 < ε) : Reflexive (distance . . ≤ ε) := by
   intro x
   rw [distance_self x]
   exact less_equal_of_less_than hε
@@ -1374,7 +1374,7 @@ theorem equal_of_forall_distance_less_equal {x y : ℚ} : (∀ {ε}, 0 < ε → 
     simp only [one_multiply] at this
     exact not_less_equal_of_greater_than this
 
-theorem distance_less_equal_symmetric {ε : ℚ} (_ : 0 < ε) : Relation.Symmetric (distance . . ≤ ε) := by
+theorem distance_less_equal_symmetric {ε : ℚ} (_ : 0 < ε) : Symmetric (distance . . ≤ ε) := by
   intro x y h
   rw [distance_commutative] at h
   exact h

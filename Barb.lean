@@ -1,6 +1,7 @@
 import «Barb».Algebra
 import «Barb».Function
 import «Barb».Logic
+import «Barb».Relation
 import «Barb».Order
 import «Barb».Quotient
 import «Barb».Syntax

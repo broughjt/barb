@@ -1,39 +1,40 @@
 import Barb.Logic
+import Barb.Relation
 
 class Preorder (α : Type u) extends LE α, LT α where
-  less_equal_reflexive : Relation.Reflexive (. ≤ . : α → α → Prop)
-  less_equal_transitive : Relation.Transitive (. ≤ . : α → α → Prop)
+  less_equal_reflexive : Reflexive (. ≤ . : α → α → Prop)
+  less_equal_transitive : Transitive (. ≤ . : α → α → Prop)
   lt := λ a b => a ≤ b ∧ ¬b ≤ a
   less_than_equivalent_less_equal_not_less_equal : ∀ {a b : α},
     lt a b ↔ a ≤ b ∧ ¬b ≤ a := by intros; simp
 
 class PartialOrder (α : Type u) extends Preorder α where
-  less_equal_antisymmetric : Relation.AntiSymmetric (. ≤ . : α → α → Prop)
+  less_equal_antisymmetric : AntiSymmetric (. ≤ . : α → α → Prop)
 
 class StrictPartialOrder (α : Type u) extends LT α where
-  less_than_irreflexive : Relation.Irreflexive (. < . : α → α → Prop)
-  less_than_transitive : Relation.Transitive (. < . : α → α → Prop)
+  less_than_irreflexive : Irreflexive (. < . : α → α → Prop)
+  less_than_transitive : Transitive (. < . : α → α → Prop)
   -- Default proof: apply transitivity to a < b and b < a to get a < a, but this is a contradiction since ¬(a < a) for all a : α.
-  less_than_asymmetric : Relation.Asymmetric (. < . : α → α → Prop)
+  less_than_asymmetric : Asymmetric (. < . : α → α → Prop)
     := λ hab hba => less_than_irreflexive _ (less_than_transitive hab hba)
 
 def LessEqual [s : Preorder α] := s.le
 
 def LessThan [s : Preorder α] := s.lt
 
-theorem less_equal_reflexive [Preorder α] : Relation.Reflexive (. ≤ . : α → α → Prop) := Preorder.less_equal_reflexive
+theorem less_equal_reflexive [Preorder α] : Reflexive (. ≤ . : α → α → Prop) := Preorder.less_equal_reflexive
 
-theorem less_equal_transitive [Preorder α] : Relation.Transitive (. ≤ . : α → α → Prop) := Preorder.less_equal_transitive
+theorem less_equal_transitive [Preorder α] : Transitive (. ≤ . : α → α → Prop) := Preorder.less_equal_transitive
 
 theorem less_than_equivalent_less_equal_not_less_equal [Preorder α] : ∀ {a b : α}, a < b ↔ a ≤ b ∧ ¬b ≤ a := Preorder.less_than_equivalent_less_equal_not_less_equal
 
-theorem less_equal_antisymmetric [PartialOrder α] : Relation.AntiSymmetric (. ≤ . : α → α → Prop) := PartialOrder.less_equal_antisymmetric
+theorem less_equal_antisymmetric [PartialOrder α] : AntiSymmetric (. ≤ . : α → α → Prop) := PartialOrder.less_equal_antisymmetric
 
-theorem less_than_irreflexive [StrictPartialOrder α] : Relation.Irreflexive (. < . : α → α → Prop) := StrictPartialOrder.less_than_irreflexive
+theorem less_than_irreflexive [StrictPartialOrder α] : Irreflexive (. < . : α → α → Prop) := StrictPartialOrder.less_than_irreflexive
 
-theorem less_than_transitive [StrictPartialOrder α] : Relation.Transitive (. < . : α → α → Prop) := StrictPartialOrder.less_than_transitive
+theorem less_than_transitive [StrictPartialOrder α] : Transitive (. < . : α → α → Prop) := StrictPartialOrder.less_than_transitive
 
-theorem less_than_asymmetric [StrictPartialOrder α] : Relation.Asymmetric (. < . : α → α → Prop) := StrictPartialOrder.less_than_asymmetric
+theorem less_than_asymmetric [StrictPartialOrder α] : Asymmetric (. < . : α → α → Prop) := StrictPartialOrder.less_than_asymmetric
 
 instance strictPartialOrderOfPreorder [Preorder α] : StrictPartialOrder α where
   lt := LessThan
@@ -113,10 +114,10 @@ theorem less_equal_equivalent_less_than_or_equal [PartialOrder α] [DecidableRel
   ⟨less_than_or_equal_of_less_equal, less_equal_of_less_than_or_equal⟩
 
 class TotalOrder (α : Type u) extends PartialOrder α where
-  less_equal_strongly_connected : Relation.StronglyConnected (. ≤ . : α → α → Prop)
+  less_equal_strongly_connected : StronglyConnected (. ≤ . : α → α → Prop)
 
 class StrictTotalOrder (α : Type u) extends StrictPartialOrder α where
-  less_than_connected : Relation.Connected (. < . : α → α → Prop)
+  less_than_connected : Connected (. < . : α → α → Prop)
 
 class DecidableTotalOrder (α : Type u) extends TotalOrder α where
   decideLessEqual : DecidableRel (. ≤ . : α → α → Prop)
@@ -127,9 +128,9 @@ class DecidableStrictTotalOrder (α : Type u) extends StrictTotalOrder α where
   decideLessThan : DecidableRel (. < . : α → α → Prop)
   decideEqual : DecidableEq α
 
-theorem less_equal_strongly_connected [TotalOrder α] : Relation.StronglyConnected (. ≤ . : α → α → Prop) := TotalOrder.less_equal_strongly_connected
+theorem less_equal_strongly_connected [TotalOrder α] : StronglyConnected (. ≤ . : α → α → Prop) := TotalOrder.less_equal_strongly_connected
 
-theorem less_than_connected [StrictTotalOrder α] : Relation.Connected (. < . : α → α → Prop) := StrictTotalOrder.less_than_connected
+theorem less_than_connected [StrictTotalOrder α] : Connected (. < . : α → α → Prop) := StrictTotalOrder.less_than_connected
 
 instance [DecidableTotalOrder α] : DecidableRel (. ≤ . : α → α → Prop) := DecidableTotalOrder.decideLessEqual
 
