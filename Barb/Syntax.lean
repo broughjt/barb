@@ -24,3 +24,13 @@ class HeterogeneousInvert (α : Type u) (β : Type v) where
 
 postfix:max "⁻¹" => Invert.invert
 postfix:max "⁻¹" => HeterogeneousInvert.heterogeneous_invert
+
+class Infimum (α : Type u) where
+  infimum : α → α → α
+
+infixl:68 " ⊓ " => Infimum.infimum
+
+class Supremum (α : Type u) where
+  supremum : α → α → α
+
+infixl:68 " ⊔ " => Supremum.supremum

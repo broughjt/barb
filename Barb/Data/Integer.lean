@@ -260,7 +260,7 @@ theorem subtract_definition (a b : ℤ) : a + (-b) = a - b := rfl
 
 theorem negate_zero : (0 : ℤ) = (-0 : ℤ) := rfl
 
-theorem negate_involutive : Function.Involutive negate := by
+theorem negate_involutive : Involutive negate := by
   apply Quotient.ind
   intro (n, m)
   rfl
@@ -268,8 +268,8 @@ theorem negate_involutive : Function.Involutive negate := by
 @[simp]
 theorem negate_negate : ∀ a : ℤ, - -a = a := λ a => negate_involutive a
 
-theorem negate_injective : Function.Injective negate := by
-  unfold Function.Injective
+theorem negate_injective : Injective negate := by
+  unfold Injective
   intro x y h
   have := congrArg negate h
   simp at this
@@ -406,7 +406,7 @@ theorem ofNatural_multiply (n m : ℕ) : ofNatural (n * m) = ofNatural n * ofNat
   show (n * m) + (n * 0 + 0 * m) = (n * m + 0 * 0) + 0
   simp [Natural.add_zero, Natural.zero_add, Natural.multiply_zero, Natural.zero_multiply]
 
-theorem ofNatural_injective : Function.Injective ofNatural := by
+theorem ofNatural_injective : Injective ofNatural := by
   intro a b h
   rw [← Natural.add_zero a, Quotient.exact h, Natural.add_zero]
 
@@ -906,11 +906,11 @@ def toNatural : ℤ≥0 → ℕ
 def fromNatural (n : ℕ) : ℤ≥0 :=
   ⟨n, ofNatural_nonnegative n⟩
 
-theorem fromNatural_toNatural_left_inverse : Function.LeftInverse toNatural fromNatural := by
+theorem fromNatural_toNatural_left_inverse : LeftInverse toNatural fromNatural := by
   intro n
   simp [fromNatural, ofNatural, toNatural, toNatural', preToNatural', Natural.distance_zero_left]
   
-theorem fromNatural_toNatural_right_inverse : Function.RightInverse toNatural fromNatural := by
+theorem fromNatural_toNatural_right_inverse : RightInverse toNatural fromNatural := by
   intro ⟨a, b, h⟩
   rw [zero_add, ofNatural] at h
   subst h
@@ -954,10 +954,10 @@ def fromNatural (n : ℕ) : ℤ≤0 :=
   let ⟨a, ha⟩ := NonNegativeInteger.fromNatural n
   ⟨-a, negate_antitone ha⟩
   
-theorem fromNatural_toNatural_left_inverse : Function.LeftInverse toNatural fromNatural := 
+theorem fromNatural_toNatural_left_inverse : LeftInverse toNatural fromNatural := 
   NonNegativeInteger.fromNatural_toNatural_left_inverse
 
-theorem fromNatural_toNatural_right_inverse : Function.RightInverse toNatural fromNatural := by
+theorem fromNatural_toNatural_right_inverse : RightInverse toNatural fromNatural := by
   intro ⟨a, ha⟩
   unfold toNatural fromNatural
   have := NonNegativeInteger.fromNatural_toNatural_right_inverse ⟨-a, negate_antitone ha⟩
@@ -998,18 +998,21 @@ macro:max atomic("|" noWs) a:term noWs "|" : term => `(magnitude $a)
 
 theorem magnitude_negate (x : ℤ) : |-x| = |x| := by
   unfold magnitude 
-  rw [negate_negate, maximum_commutative]
+  simp [negate_negate, join_commutative]
 
 theorem magnitude_nonnegative (x : ℤ) : 0 ≤ |x| := by
   unfold magnitude
   match less_than_trichotomous 0 x with
   | Or.inl h => 
-    exact less_equal_maximum_left_of_less_equal (-x) (less_equal_of_less_than h)
+    exact less_equal_join_of_less_equal_left (-x) (less_equal_of_less_than h)
   | Or.inr (Or.inl h) =>
-    rw [← h, ← negate_zero, maximum_self]
-    exact less_equal_reflexive 0
+    have := less_equal_join_of_less_equal_left (0 : ℤ) (less_equal_reflexive 0)
+    simp [← h, ← negate_zero, this]
   | Or.inr (Or.inr h) =>
-    exact less_equal_maximum_right_of_less_equal x (negate_antitone (less_equal_of_less_than h))
+    have := negate_antitone (less_equal_of_less_than h)
+    simp [negate_definition, ← negate_zero] at this
+    rw [maximum_join, join_commutative]
+    exact less_equal_join_of_less_equal_left x this
 
 theorem magnitude_zero : |0| = 0 := rfl
 
@@ -1017,11 +1020,11 @@ theorem zero_of_magnitude_value_zero {x : ℤ} (h : |x| = 0) : x = 0 := by
   rw [magnitude] at h
   match Decidable.em (x ≤ -x) with
   | Or.inl hx => 
-    have := congrArg negate ((maximum_equal_right hx).symm.trans h)
+    have := congrArg negate ((join_equal_right.mpr hx).symm.trans h)
     simp at this
     exact this
   | Or.inr hx => 
-    exact (maximum_equal_left (greater_equal_of_not_less_equal hx)).symm.trans h
+    exact (join_equal_left.mpr (greater_equal_of_not_less_equal hx)).symm.trans h
 
 theorem magnitude_positive {x : ℤ} (h : x ≠ 0) : 0 < |x| :=
   match less_than_or_equal_of_less_equal (magnitude_nonnegative x) with
@@ -1029,10 +1032,10 @@ theorem magnitude_positive {x : ℤ} (h : x ≠ 0) : 0 < |x| :=
   | Or.inr hx => absurd hx.symm (mt zero_of_magnitude_value_zero h)
 
 theorem magnitude_equal_of_nonnegative {x : ℤ} (h : 0 ≤ x) : |x| = x :=
-  maximum_equal_left (less_equal_transitive (negate_antitone h) h)
+  join_equal_left.mpr (less_equal_transitive (negate_antitone h) h)
 
 theorem magnitude_equal_negate_of_nonpositive {x : ℤ} (h : x ≤ 0) : |x| = -x :=
-  maximum_equal_right (less_equal_transitive h (negate_antitone h))
+  join_equal_right.mpr (less_equal_transitive h (negate_antitone h))
   
 theorem magnitude_equal_of_positive {x : ℤ} : 0 < x → |x| = x :=
   magnitude_equal_of_nonnegative ∘ less_equal_of_less_than
@@ -1041,7 +1044,7 @@ theorem magnitude_equal_negate_of_negative {x : ℤ} : x < 0 → |x| = -x :=
   magnitude_equal_negate_of_nonpositive ∘ less_equal_of_less_than
 
 theorem less_equal_magnitude (x : ℤ) : x ≤ |x| :=
-  less_equal_maximum_left x (-x)
+  less_equal_join_left x (-x)
 
 theorem negate_magnitude_less_equal (x : ℤ) : -|x| ≤ x := by
   have := negate_antitone (less_equal_magnitude (-x))
@@ -1055,12 +1058,13 @@ theorem magnitude_less_equal_equivalent_negate_less_equal_self {x y : ℤ} :
     rw [magnitude]
     have := negate_antitone h.left
     simp at this
-    exact maximum_less_equal h.right this
+    exact join_less_equal_equivalent.mpr (And.intro h.right this)
   . intro h
-    rw [magnitude] at h
-    have := negate_antitone (less_equal_right_of_maximum_less_equal h)
-    simp at this
-    exact And.intro this (less_equal_left_of_maximum_less_equal h)
+    simp [magnitude] at h
+    have ⟨hl, hr⟩ := join_less_equal_equivalent.mp h
+    have hr' := negate_antitone hr
+    simp [negate_negate] at hr'
+    exact ⟨hr', hl⟩
 
 theorem magnitude_less_equal_of_negate_less_equal {x y : ℤ} : -y ≤ x → x ≤ y → |x| ≤ y :=
   λ hyx hxy =>
@@ -1330,6 +1334,25 @@ theorem divide_negate (a b : ℤ) : a ∣ b → a ∣ -b := by
   rw [← negate_multiply_equal_multiply_negate]
   exact congrArg (- .) hq
 
+theorem divide_antisymmetric_up_to_sign {a b : ℤ} : a ∣ b → b ∣ a → |a| = |b| := by
+  intro ⟨p, hp⟩ ⟨q, hq⟩
+  if hb' : b = 0 then
+    simp [hb', zero_multiply] at hq
+    simp [hb', hq]
+  else
+    rw [hq, multiply_associative] at hp
+    rw (config := {occs := .pos [1]}) [← multiply_one b] at hp
+    have hq' : q ∣ 1 := Exists.intro p (multiply_left_cancel hp hb')
+    match unit_one_or_negative_one.mp hq' with
+    | Or.inl hq' =>
+      rw [hq', multiply_one] at hq
+      exact congrArg magnitude hq
+    | Or.inr hq' =>
+      rw [hq', ← negate_multiply_equal_multiply_negate, multiply_one] at hq
+      have := congrArg magnitude hq
+      rw [magnitude_negate] at this
+      exact this
+
 theorem divide_equivalent_remainder_zero (a b : ℤ) (hb : b ≠ 0) : 
     let ⟨(_, r), _⟩ := divideWithRemainder a b hb
     b ∣ a ↔ r = 0 := by
@@ -1343,20 +1366,73 @@ theorem divide_equivalent_remainder_zero (a b : ℤ) (hb : b ≠ 0) :
     simp [hr, add_zero, multiply_commutative] at h
     exact Exists.intro q h
 
-theorem divide_reflexive : Reflexive Divide := by
-  sorry
+def DivideNonnegative (a b : ℤ≥0) : Prop := Divide a.val b.val
 
-theorem divide_antisymmetric : AntiSymmetric Divide := by
-  sorry
+instance : Dvd ℤ≥0 where
+  dvd := DivideNonnegative
+
+theorem divide_reflexive : Reflexive Divide := by
+  intro a
+  apply Exists.intro 1
+  rw [multiply_one]
+
+theorem divide_antisymmetric : AntiSymmetric DivideNonnegative := by
+  intro ⟨a, ha⟩ ⟨b, hb⟩ hab hba
+  have := divide_antisymmetric_up_to_sign hab hba
+  simp [magnitude_equal_of_nonnegative, ha, hb] at this
+  simp [this]
 
 theorem divide_transitive : Transitive Divide := by
-  sorry
+  intro a b c ⟨p, hp⟩ ⟨q, hq⟩
+  apply Exists.intro (p * q)
+  rw [hp, multiply_associative] at hq
+  exact hq
 
--- def GreatestCommonDivisor (a b d : ℤ)
+instance instanceDividePreorder : Preorder ℤ where
+  le := Divide
+  less_equal_reflexive := divide_reflexive
+  less_equal_transitive := divide_transitive
+  lt a b := Divide a b ∧ ¬Divide b a
 
--- TODO: Formulate GreatestCommonDivisor property
--- TODO: Understand why second component property works
--- TODO: Define gcd (a b : ℤ) : Σ' d : ℤ, 0 ≤ d ∧ Gcd(a, b, d)
+instance instanceDivideNonnegativePartialOrder : PartialOrder ℤ≥0 where
+  le := DivideNonnegative
+  less_equal_reflexive a := divide_reflexive a
+  less_equal_transitive hab hbc := divide_transitive hab hbc
+  less_equal_antisymmetric := divide_antisymmetric
+
+def GreatestCommonDivisor (a b d : ℤ) := @Meet ℤ instanceDividePreorder a b d
+
+def LeastCommonMultiple (a b m : ℤ) := @Join ℤ instanceDividePreorder a b m
+
+theorem gcd_unique_up_to_sign {a b c d : ℤ} : GreatestCommonDivisor a b c → GreatestCommonDivisor a b d → |c| = |d| := by
+  intro ⟨hca, hcb, hc⟩ ⟨hda, hdb, hd⟩
+  exact divide_antisymmetric_up_to_sign (hd hca hcb) (hc hda hdb)
+
+theorem foo {a b q r c d : ℤ} : a = q*b + r → 
+    0 ≤ c → GreatestCommonDivisor a b c → 
+    0 ≤ d → GreatestCommonDivisor b r d → 
+    c = d := by
+  intro hab hc ⟨⟨s, hs⟩, ⟨t, ht⟩, hc'⟩ hd ⟨hda, hdb, hd'⟩
+  -- show c is a greatest common divisor of b and r
+  have c_divide_b : c ∣ b := ⟨t, ht⟩
+  have c_divide_r : c ∣ r := by
+    have := congrArg (. - q*b) hab
+    simp at this
+    conv at this => rhs; rw [← subtract_definition, add_right_commutative, add_inverse, zero_add]
+    rw [hs, ht, ← subtract_definition, negate_multiply_equal_negate_multiply, multiply_left_commutative, ← left_distributive] at this
+    exact Exists.intro (s + -q * t) this.symm
+  have := gcd_unique_up_to_sign (Meet.mk hda hdb hd') (Meet.mk c_divide_b c_divide_r sorry)
+  simp [magnitude_equal_of_nonnegative, hc, hd] at this
+  exact this.symm
+
+def gcd (a b : ℤ) : Σ' d : ℤ, PProd (0 ≤ d) (GreatestCommonDivisor a b d) := sorry
+
+def gcd' (a b : ℤ) : ℤ := (gcd a b).fst
+
+-- TODO: Show that Divides is a preorder and DividesNonnegative is a partial order
+-- TODO: Formulate Meet/Join Lattice and lemmas and then GreatestCommonDivisor doesn't need to exist, just say gcd(a, b) forms a meet lattice w.r.t `divides` on ℤ≥0
+
+-- TODO: Define gcd (a b : ℤ) : Σ' d : ℤ, 0 ≤ d ∧ @Meet Divide a b d
 -- TODO: Write gcd_unique
 -- TODO: Write Bezout's lemma
 -- TODO: Formujlate Coprime

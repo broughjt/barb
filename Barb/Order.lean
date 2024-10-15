@@ -1,5 +1,7 @@
+import Barb.Function
 import Barb.Logic
 import Barb.Relation
+import Barb.Syntax
 
 class Preorder (α : Type u) extends LE α, LT α where
   less_equal_reflexive : Reflexive (. ≤ . : α → α → Prop)
@@ -176,6 +178,217 @@ theorem less_than_or_less_equal [DecidableTotalOrder α] (a b : α) : a < b ∨ 
 theorem less_equal_or_less_than [DecidableTotalOrder α] (a b : α) : a ≤ b ∨ b < a :=
   Or.symmetric (less_than_or_less_equal b a)
 
+theorem equal_of_forall_less_equal_equivalent [PartialOrder α] {a b : α} (h : ∀ c, a ≤ c ↔ b ≤ c) : a = b :=
+  less_equal_antisymmetric
+    ((h b).mpr <| less_equal_reflexive b)
+    ((h a).mp <| less_equal_reflexive a)
+
+def OrderDual (α : Type u) : Type u := α
+
+notation:max α "ᵒᵈ" => OrderDual α
+
+namespace OrderDual
+
+instance (α : Type u) [LE α] : LE αᵒᵈ where
+  le (a b : α) := b ≤ a
+
+instance (α : Type u) [LT α] : LT αᵒᵈ where
+  lt (a b : α) := b < a
+
+instance instancePreorder (α : Type u) [Preorder α] : Preorder αᵒᵈ where
+  less_equal_reflexive := λ _ => @less_equal_reflexive α _ _
+  less_equal_transitive := λ hab hbc => @less_equal_transitive α _ _ _ _ hbc hab
+  less_than_equivalent_less_equal_not_less_equal := less_than_equivalent_less_equal_not_less_equal
+
+instance instancePartialOrder (α : Type u) [PartialOrder α] : PartialOrder αᵒᵈ where
+  less_equal_antisymmetric := λ hab hba => @less_equal_antisymmetric α _ _ _ hba hab 
+
+instance instanceTotalOrder (α : Type u) [TotalOrder α] : TotalOrder αᵒᵈ where
+  less_equal_strongly_connected := λ _ _ => @less_equal_strongly_connected α _ _ _
+
+instance instanceDecidableTotalOrder (α : Type u) [DecidableTotalOrder α] : DecidableTotalOrder αᵒᵈ where
+  decideLessEqual a b := @DecidableTotalOrder.decideLessEqual α _ b a
+
+end OrderDual
+
+structure Join [Preorder α] (a b j : α) : Prop where
+  less_equal_join_left : a ≤ j
+  less_equal_join_right : b ≤ j
+  join_least_upper_bound : ∀ {c : α}, a ≤ c → b ≤ c → j ≤ c
+
+class SemilatticeJoin (α : Type u) extends Supremum α, PartialOrder α where
+  join : ∀ a b : α, Join a b (a ⊔ b)
+
+theorem less_equal_join_left [SemilatticeJoin α] (a b : α) : a ≤ a ⊔ b :=
+  (SemilatticeJoin.join a b).less_equal_join_left
+
+theorem less_equal_join_right [SemilatticeJoin α] (a b : α) : b ≤ a ⊔ b :=
+  (SemilatticeJoin.join a b).less_equal_join_right
+
+theorem join_least_upper_bound [SemilatticeJoin α] {a b c : α} : a ≤ c → b ≤ c → a ⊔ b ≤ c :=
+  (SemilatticeJoin.join a b).join_least_upper_bound
+
+theorem less_equal_join_of_less_equal_left [SemilatticeJoin α] {a b : α} (c : α) (h : a ≤ b) : a ≤ b ⊔ c :=
+  less_equal_transitive h (less_equal_join_left b c)
+
+theorem less_equal_join_of_less_equal_right [SemilatticeJoin α] {a b : α} (c : α) (h : c ≤ b) : c ≤ a ⊔ b :=
+  less_equal_transitive h (less_equal_join_right a b)
+
+theorem join_less_equal_equivalent [SemilatticeJoin α] {a b c : α} : a ⊔ b ≤ c ↔ a ≤ c ∧ b ≤ c := by
+  constructor
+  . intro h
+    constructor
+    . exact less_equal_transitive (less_equal_join_left a b) h
+    . exact less_equal_transitive (less_equal_join_right a b) h
+  . intro ⟨hac, hbc⟩; exact join_least_upper_bound hac hbc
+
+theorem join_equal_left [SemilatticeJoin α] {a b : α} : a ⊔ b = a ↔ b ≤ a := by
+  apply less_equal_antisymmetric_equivalent_equal.trans
+  simp [join_less_equal_equivalent, less_equal_reflexive a, less_equal_join_left]
+
+theorem join_equal_right [SemilatticeJoin α] {a b : α} : a ⊔ b = b ↔ a ≤ b := by
+  apply less_equal_antisymmetric_equivalent_equal.trans
+  simp [join_less_equal_equivalent, less_equal_reflexive b, less_equal_join_right]
+
+theorem join_idempotent [SemilatticeJoin α] {a : α} : a ⊔ a = a := by
+  exact join_equal_left.mpr (less_equal_reflexive a)
+
+theorem join_commutative [SemilatticeJoin α] {a b : α} : a ⊔ b = b ⊔ a := by
+  apply less_equal_antisymmetric
+  . exact join_less_equal_equivalent.mpr ⟨less_equal_join_right b a, less_equal_join_left b a⟩
+  . exact join_less_equal_equivalent.mpr ⟨less_equal_join_right a b, less_equal_join_left a b⟩
+
+theorem join_associative [SemilatticeJoin α] {a b c : α} : (a ⊔ b) ⊔ c = a ⊔ (b ⊔ c) := by
+  apply equal_of_forall_less_equal_equivalent
+  intro d
+  simp [join_less_equal_equivalent, And.associative]
+
+theorem join_unique [PartialOrder α] {a b j k : α} : Join a b j → Join a b k → j = k := by
+  intro ⟨haj, hbj, hj⟩ ⟨hak, hbk, hk⟩
+  have hjk := hj hak hbk
+  have hkj := hk haj hbj
+  exact less_equal_antisymmetric hjk hkj
+
+-- Don't have the patience right now
+-- Type classes in a functional programming language are seriously a joke, aren't you guys supposed to be the ones
+-- that understand that global mutable state is bad?
+/-
+instance fromAlgebraic {α : Type u} [Supremum α]
+    {join_commutative : ∀ a b : α, a ⊔ b = b ⊔ a}
+    {join_associative : ∀ a b c : α, (a ⊔ b) ⊔ c = a ⊔ (b ⊔ c)}
+    {join_idempotent : ∀ a : α, a ⊔ a = a}
+    : PartialOrder α where
+  le a b := a ⊔ b = b
+  less_equal_reflexive := join_idempotent
+  less_equal_antisymmetric := by
+    intro a b hab hba
+    rw [← hba]; rw (config := {occs := .pos [2]}) [← hab]
+    rw [join_commutative]
+  less_equal_transitive := by
+    unfold Transitive
+    intro a b c hab hbc
+    simp at hab; simp at hbc; simp
+    rw [← hbc]; rw (config := {occs := .pos [2]}) [← hab]
+    rw [join_associative]
+
+def SemilatticeJoin.from_algebraic {α : Type u} [Supremum α]
+    (join_commutative : ∀ a b : α, a ⊔ b = b ⊔ a)
+    (join_associative : ∀ a b c : α, (a ⊔ b) ⊔ c = a ⊔ (b ⊔ c))
+    (join_idempotent : ∀ a : α, a ⊔ a = a) :
+    SemilatticeJoin α where
+  join a b :=
+    let less_equal_join_left := by 
+      sorry
+    let less_equal_join_right := by sorry
+      -- intro a b
+      -- simp
+      -- rw [join_commutative, join_associative, join_idempotent]
+    let join_least_upper_bound := by sorry
+      -- let intro a b c hac hbc
+      -- let simp at hac; simp at hbc; simp
+      -- let rw [join_associative, hbc]
+      -- let exact hac
+    @Join.mk sorry 
+      less_equal_join_left less_equal_join_right join_least_upper_bound
+-/
+
+structure Meet [Preorder α] (a b m : α) where
+  meet_less_equal_left : m ≤ a
+  meet_less_equal_right : m ≤ b
+  meet_greatest_lower_bound : ∀ {c : α}, c ≤ a → c ≤ b → c ≤ m
+
+class SemilatticeMeet (α : Type u) extends Infimum α, PartialOrder α where
+  meet : ∀ a b : α, Meet a b (a ⊓ b)
+
+theorem meet_less_equal_left [SemilatticeMeet α] (a b : α) : a ⊓ b ≤ a :=
+  (SemilatticeMeet.meet a b).meet_less_equal_left
+
+theorem meet_less_equal_right [SemilatticeMeet α] (a b : α) : a ⊓ b ≤ b :=
+  (SemilatticeMeet.meet a b).meet_less_equal_right
+
+theorem meet_greatest_lower_bound [SemilatticeMeet α] {a b c : α} : c ≤ a → c ≤ b → c ≤ a ⊓ b :=
+  (SemilatticeMeet.meet a b).meet_greatest_lower_bound
+
+instance OrderDual.instanceSupremum (α : Type u) [Infimum α] : Supremum αᵒᵈ where
+  supremum := (Infimum.infimum : α → α → α)
+
+instance OrderDual.instanceInfimum (α : Type u) [Supremum α] : Infimum αᵒᵈ where
+  infimum := (Supremum.supremum : α → α → α)
+
+instance OrderDual.instanceSemilatticeJoin [SemilatticeMeet α] : SemilatticeJoin αᵒᵈ where
+  join _ _ := 
+    let less_equal_join_left := @meet_less_equal_left α _ _ _
+    let less_equal_join_right := @meet_less_equal_right α _ _ _
+    Join.mk less_equal_join_left less_equal_join_right meet_greatest_lower_bound
+
+instance OrderDual.instanceSemilatticeMeet [SemilatticeJoin α] : SemilatticeMeet αᵒᵈ where
+  meet _ _ := 
+    let meet_less_equal_left := @less_equal_join_left α _ _ _
+    let meet_less_equal_right := @less_equal_join_right α _ _ _
+    Meet.mk meet_less_equal_left meet_less_equal_right join_least_upper_bound
+
+theorem meet_less_equal_of_left_less_equal [SemilatticeMeet α] {a b c : α} (h : a ≤ c) : a ⊓ b ≤ c :=
+  less_equal_transitive (meet_less_equal_left a b) h
+
+theorem meet_less_equal_of_right_less_equal [SemilatticeMeet α] {a b c : α} (h : b ≤ c) : a ⊓ b ≤ c :=
+  less_equal_transitive (meet_less_equal_right a b) h
+
+theorem less_equal_meet_equivalent [SemilatticeMeet α] {a b c : α} : a ≤ b ⊓ c ↔ a ≤ b ∧ a ≤ c :=
+  @join_less_equal_equivalent αᵒᵈ _ _ _ _
+
+theorem meet_equal_left [SemilatticeMeet α] {a b : α} : a ⊓ b = a ↔ a ≤ b := by
+  apply less_equal_antisymmetric_equivalent_equal.trans
+  simp [less_equal_meet_equivalent, less_equal_reflexive a, meet_less_equal_left]
+
+theorem meet_equal_right [SemilatticeMeet α] {a b : α} : a ⊓ b = b ↔ b ≤ a := by
+  apply less_equal_antisymmetric_equivalent_equal.trans
+  simp [less_equal_meet_equivalent, less_equal_reflexive b, meet_less_equal_right]
+
+theorem meet_idempotent [SemilatticeMeet α] {a : α} : a ⊓ a = a := @join_idempotent αᵒᵈ _ _
+
+theorem meet_commutative [SemilatticeMeet α] {a b : α} : a ⊓ b = b ⊓ a := @join_commutative αᵒᵈ _ _ _
+
+theorem meet_associative [SemilatticeMeet α] {a b c : α} : (a ⊓ b) ⊓ c = a ⊓ (b ⊓ c) := @join_associative αᵒᵈ _ _ _ _
+
+theorem meet_unique [PartialOrder α] {a b j k : α} : Meet a b j → Meet a b k → j = k := by
+  intro ⟨haj, hbj, hj⟩ ⟨hak, hbk, hk⟩
+  have hjk := hj hak hbk
+  have hkj := hk haj hbj
+  exact less_equal_antisymmetric hkj hjk 
+
+class Lattice (α : Type u) extends SemilatticeJoin α, SemilatticeMeet α
+
+instance OrderDual.instanceLattice (α) [Lattice α] : Lattice αᵒᵈ where
+  meet := OrderDual.instanceSemilatticeMeet.meet
+  join := OrderDual.instanceSemilatticeJoin.join
+
+theorem meet_less_equal_join [Lattice α] (a b : α) : a ⊓ b ≤ a ⊔ b :=
+  less_equal_transitive (meet_less_equal_left a b) (less_equal_join_left a b)
+
+theorem join_less_equal_meet_equivalent_equal [Lattice α] {a b : α} : a ⊔ b ≤ a ⊓ b ↔ a = b := by
+  simp [less_equal_antisymmetric_equivalent_equal, less_equal_meet_equivalent, join_less_equal_equivalent, 
+    And.associative, less_equal_reflexive a, less_equal_reflexive b, And.commutative]
+
 def minimum [DecidableTotalOrder α] (a b : α) := if a ≤ b then a else b
 
 def minimum_definition [DecidableTotalOrder α] (a b : α) : 
@@ -188,156 +401,59 @@ def maximum_definition [DecidableTotalOrder α] (a b : α) :
     maximum a b = if a ≤ b then b else a :=
   rfl
 
-theorem minimum_less_equal_left [DecidableTotalOrder α] (a b : α) : minimum a b ≤ a :=
-  if h : a ≤ b
-  then by rw [minimum_definition, if_pos h]; exact less_equal_reflexive a
-  else by rw [minimum_definition, if_neg h]; exact less_equal_of_not_greater_equal h
+instance instanceMaximumSemilatticeJoin [DecidableTotalOrder α] : SemilatticeJoin α where
+  supremum := maximum
+  join a b := 
+    let less_equal_join_left := by
+      if h : a ≤ b then
+        simp [maximum_definition, h]
+      else
+        simp [maximum_definition, h, less_equal_reflexive a]
+    let less_equal_join_right := by
+      if h : a ≤ b then
+        simp [maximum_definition, h, less_equal_reflexive b]
+      else
+        simp [maximum_definition, h, less_equal_of_not_greater_equal h]
+    let join_least_upper_bound := by
+      intro c hac hbc
+      simp [maximum_definition]
+      if h : a ≤ b then
+        simp [h, hbc]
+      else
+        simp [h, hac]
+    Join.mk less_equal_join_left less_equal_join_right join_least_upper_bound
 
-theorem minimum_less_equal_right [DecidableTotalOrder α] (a b : α) : minimum a b ≤ b :=
-  if h : a ≤ b
-  then by rw [minimum_definition, if_pos h]; exact h
-  else by rw [minimum_definition, if_neg h]; exact less_equal_reflexive b
+instance instanceMinimumSemilatticeMeet [DecidableTotalOrder α] : SemilatticeMeet α where
+  infimum := minimum
+  meet a b := 
+    let meet_less_equal_left := by
+      if h : a ≤ b then
+        simp [minimum_definition, h, less_equal_reflexive a]
+      else
+        simp [minimum_definition, h, less_equal_of_not_greater_equal h]
+    let meet_less_equal_right := by
+      if h : a ≤ b then
+        simp [minimum_definition, h]
+      else
+        simp [minimum_definition, h, less_equal_reflexive b]
+    let meet_greatest_lower_bound := by
+      intro c hca hbc
+      simp [minimum_definition]
+      if hab : a ≤ b then
+        simp [hab, hca]
+      else
+        simp [hab, hbc]
+    Meet.mk meet_less_equal_left meet_less_equal_right meet_greatest_lower_bound
 
-theorem less_equal_left_of_less_equal_minimum [DecidableTotalOrder α] {a b c : α} (h : a ≤ minimum b c) : a ≤ b :=
-  less_equal_transitive h (minimum_less_equal_left b c)
+instance instanceMinimumMaximumLattice [DecidableTotalOrder α] : Lattice α where
+  meet := instanceMinimumSemilatticeMeet.meet
+  join := instanceMaximumSemilatticeJoin.join
 
-theorem less_equal_right_of_less_equal_minimum [DecidableTotalOrder α] {a b c : α} (h : a ≤ minimum b c) : a ≤ c :=
-  less_equal_transitive h (minimum_less_equal_right b c)
+@[simp]
+def maximum_join [DecidableTotalOrder α] (a b : α) : maximum a b = a ⊔ b := rfl
 
-theorem minimum_left_less_equal_of_less_equal [DecidableTotalOrder α] {a c : α} (b : α) : a ≤ c → minimum a b ≤ c :=
-  less_equal_transitive (minimum_less_equal_left a b)
-
-theorem minimum_right_less_equal_of_less_equal [DecidableTotalOrder α] {b c : α} (a : α) : b ≤ c → minimum a b ≤ c :=
-  less_equal_transitive (minimum_less_equal_right a b)
-
-theorem less_equal_minimum [DecidableTotalOrder α] {a b c : α} (hab : a ≤ b) (hac : a ≤ c) : a ≤ minimum b c :=
-  if h : b ≤ c
-  then by rw [minimum_definition, if_pos h]; exact hab
-  else by rw [minimum_definition, if_neg h]; exact hac
-
-theorem less_equal_maximum_left [DecidableTotalOrder α] (a b : α) : a ≤ maximum a b :=
-  if h : a ≤ b
-  then by rw [maximum_definition, if_pos h]; exact h
-  else by rw [maximum_definition, if_neg h]; exact less_equal_reflexive a
-
-theorem less_equal_maximum_right [DecidableTotalOrder α] (a b : α) : b ≤ maximum a b :=
-  if h : a ≤ b
-  then by rw [maximum_definition, if_pos h]; exact less_equal_reflexive b
-  else by rw [maximum_definition, if_neg h]; exact less_equal_of_not_greater_equal h
-
-theorem less_equal_left_of_maximum_less_equal [DecidableTotalOrder α] {a b c : α} : maximum a b ≤ c → a ≤ c :=
-  less_equal_transitive (less_equal_maximum_left a b)
-
-theorem less_equal_right_of_maximum_less_equal [DecidableTotalOrder α] {a b c : α} : maximum a b ≤ c → b ≤ c :=
-  less_equal_transitive (less_equal_maximum_right a b)
-
-theorem less_equal_maximum_left_of_less_equal [DecidableTotalOrder α] {a b : α} (c : α) (h : a ≤ b) : a ≤ maximum b c :=
-  less_equal_transitive h (less_equal_maximum_left b c)
-
-theorem less_equal_maximum_right_of_less_equal [DecidableTotalOrder α] {a b : α} (c : α) (h : a ≤ b) : a ≤ maximum c b :=
-  less_equal_transitive h (less_equal_maximum_right c b)
-
-theorem maximum_less_equal [DecidableTotalOrder α] {a b c : α} (hac : a ≤ c) (hbc : b ≤ c) : maximum a b ≤ c :=
-  if h : a ≤ b
-  then by rw [maximum_definition, if_pos h]; exact hbc
-  else by rw [maximum_definition, if_neg h]; exact hac
-
-theorem equal_minimum [DecidableTotalOrder α] {b c d : α} (hab : b ≤ c) (hac : b ≤ d)
-    (hd : ∀ {a}, a ≤ c → a ≤ d → a ≤ b) : b = minimum c d :=
-  less_equal_antisymmetric
-  (less_equal_minimum hab hac)
-  (hd (minimum_less_equal_left c d) (minimum_less_equal_right c d))
-
-theorem minimum_commutative [DecidableTotalOrder α] (a b : α) : minimum a b = minimum b a :=
-  equal_minimum 
-  (minimum_less_equal_right a b) 
-  (minimum_less_equal_left a b)
-  (λ hcb hca => less_equal_minimum hca hcb)
-
-theorem minimum_associative [DecidableTotalOrder α] (a b c : α) :
-    minimum (minimum a b) c = minimum a (minimum b c) := by
-  apply equal_minimum
-  . apply less_equal_transitive
-    apply minimum_less_equal_left; apply minimum_less_equal_left
-  . apply less_equal_minimum
-    apply less_equal_transitive; apply minimum_less_equal_left; apply minimum_less_equal_right
-    apply minimum_less_equal_right
-  . intro d hda hdbc
-    apply less_equal_minimum; apply less_equal_minimum hda; apply less_equal_transitive hdbc
-    apply minimum_less_equal_left; apply less_equal_transitive hdbc; apply minimum_less_equal_right
-
-@[simp] theorem minimum_self [DecidableTotalOrder α] (a : α) : minimum a a = a := by simp [minimum_definition]
-
-theorem minimum_equal_left [DecidableTotalOrder α] {a b : α} (h : a ≤ b) : minimum a b = a := by
-  apply Eq.symm
-  apply equal_minimum (less_equal_reflexive a) h
-  intro c ha _; exact ha
-
-theorem minimum_equal_right [DecidableTotalOrder α] {a b : α} (h : b ≤ a) : minimum a b = b := by
-  apply Eq.symm
-  apply equal_minimum h (less_equal_reflexive b)
-  intro c _ hb; exact hb
-
-theorem equal_maximum [DecidableTotalOrder α] {a b c : α} (hac : a ≤ c) (hbc : b ≤ c)
-    (hd : ∀ {d}, a ≤ d → b ≤ d → c ≤ d) : c = maximum a b :=
-  less_equal_antisymmetric
-  (hd (less_equal_maximum_left a b) (less_equal_maximum_right a b))
-  (maximum_less_equal hac hbc)
-
-theorem maximum_commutative [DecidableTotalOrder α] (a b : α) : maximum a b = maximum b a :=
-  equal_maximum
-  (less_equal_maximum_right a b)
-  (less_equal_maximum_left a b)
-  (λ hb ha => maximum_less_equal ha hb)
-
-theorem maximum_associative [DecidableTotalOrder α] (a b c : α) :
-    maximum (maximum a b) c = maximum a (maximum b c) := by
-    apply equal_maximum
-    . apply less_equal_transitive
-      apply less_equal_maximum_left a b; apply less_equal_maximum_left
-    . apply maximum_less_equal
-      apply less_equal_transitive; apply less_equal_maximum_right a b; apply less_equal_maximum_left;
-      apply less_equal_maximum_right
-    . intro d had hbcd
-      apply maximum_less_equal
-      apply maximum_less_equal had; apply less_equal_transitive (less_equal_maximum_left _ _) hbcd
-      apply less_equal_transitive (less_equal_maximum_right _ _) hbcd
-
-@[simp] theorem maximum_self [DecidableTotalOrder α] (a : α) : maximum a a = a := by simp [maximum_definition]
-
-theorem maximum_equal_left [DecidableTotalOrder α] {a b : α} (h : b ≤ a) : maximum a b = a := by
-  apply Eq.symm
-  apply equal_maximum (less_equal_reflexive a) h
-  intro c ha _; exact ha
-
-theorem maximum_equal_right [DecidableTotalOrder α] {a b : α} (h : a ≤ b) : maximum a b = b := by
-  apply Eq.symm
-  apply equal_maximum h (less_equal_reflexive b)
-  intro c _ hb; exact hb
-
-theorem minimum_equal_left_of_less_than [DecidableTotalOrder α] {a b : α} : a < b → minimum a b = a :=
-  minimum_equal_left ∘ less_equal_of_less_than
-
-theorem minimum_equal_right_of_less_than [DecidableTotalOrder α] {a b : α} : b < a → minimum a b = b :=
-  minimum_equal_right ∘ less_equal_of_less_than
-
-theorem maximum_equal_left_of_less_than [DecidableTotalOrder α] {a b : α} : b < a → maximum a b = a :=
-  maximum_equal_left ∘ less_equal_of_less_than
-
-theorem maximum_equal_right_of_less_than [DecidableTotalOrder α] {a b : α} : a < b → maximum a b = b :=
-  maximum_equal_right ∘ less_equal_of_less_than
-
-theorem less_than_minimum [DecidableTotalOrder α] {a b c : α} 
-    (hab : a < b) (hac : a < c) : a < minimum b c :=
-  Or.elim (less_equal_or_less_than b c)
-    (λ h => (minimum_equal_left h).symm ▸ hab)
-    (λ h => (minimum_equal_right_of_less_than h).symm ▸ hac)
-
-theorem maximum_less_than [DecidableTotalOrder α] {a b c : α} 
-    (hac : a < c) (hbc : b < c) : maximum a b < c :=
-  Or.elim (less_equal_or_less_than a b)
-    (λ h => (maximum_equal_right h).symm ▸ hbc)
-    (λ h => (maximum_equal_left_of_less_than h).symm ▸ hac)
+@[simp]
+def minimum_meet [DecidableTotalOrder α] (a b : α) : minimum a b = a ⊓ b := rfl
 
 def Monotone [Preorder α] [Preorder β] (f : α → β) := ∀ {a b : α}, a ≤ b → f a ≤ f b
 

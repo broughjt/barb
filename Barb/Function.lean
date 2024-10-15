@@ -1,5 +1,3 @@
-namespace Function
-
 def Injective (f : α → β) := ∀ {x y}, f x = f y → x = y
 
 def Surjective (f : α → β) := ∀ y, ∃ x, f x = y
@@ -32,5 +30,3 @@ theorem curry_uncurry_left_inverse : LeftInverse (curry : (α × β → φ) → 
 @[simp]
 theorem uncurry_curry_left_inverse : LeftInverse (uncurry : (α → β → φ) → α × β → φ) (curry : (α × β → φ) → α → β → φ) :=
   λ _ => funext λ _ => rfl
-
-end Function

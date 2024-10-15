@@ -34,7 +34,7 @@ theorem zero_definition : zero = 0 := rfl
 theorem successor_not_equal_zero (n : ℕ) : successor n ≠ 0 :=
   Natural.noConfusion
 
-theorem successor_injective : Function.Injective successor :=
+theorem successor_injective : Injective successor :=
   λ h => (Natural.noConfusion h) id
 
 theorem successor_not_equal_self (n : ℕ) : successor n ≠ n := by

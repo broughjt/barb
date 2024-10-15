@@ -319,7 +319,7 @@ theorem subtract_definition (x y : ℚ) : x + (-y) = x - y := rfl
 
 def divide (x : ℚ) (y : ℚ≠0) : ℚ := x * (reciprocal y).val
 
-theorem negate_involutive : Function.Involutive negate := by
+theorem negate_involutive : Involutive negate := by
   apply Quotient.ind
   intro (a, ⟨b, b_nonzero⟩)
   apply Quotient.sound
@@ -329,8 +329,8 @@ theorem negate_involutive : Function.Involutive negate := by
 @[simp]
 theorem negate_negate : ∀ x : ℚ, - -x = x := λ x => negate_involutive x
 
-theorem negate_injective : Function.Injective negate := by
-  unfold Function.Injective
+theorem negate_injective : Injective negate := by
+  unfold Injective
   intro x y h
   have := congrArg negate h
   simp at this
@@ -548,7 +548,7 @@ theorem ofInteger_multiply (a b : ℤ) : ofInteger (a * b) = ofInteger a * ofInt
   apply Quotient.sound
   rfl
 
-theorem ofInteger_injective : Function.Injective ofInteger := by
+theorem ofInteger_injective : Injective ofInteger := by
   intro a b h
   have : a * 1 = b * 1 := Quotient.exact h
   simp [Integer.multiply_one, Integer.one_multiply] at this
@@ -565,7 +565,7 @@ theorem ofNatural_multiply (n m : ℕ) : ofNatural (n * m) = ofNatural n * ofNat
   simp [Integer.multiply_one]
   exact Integer.ofNatural_multiply n m
 
-theorem ofNatural_injective : Function.Injective ofNatural := by
+theorem ofNatural_injective : Injective ofNatural := by
   intro n m h
   have : Integer.ofNatural n * 1 = Integer.ofNatural m * 1 := Quotient.exact h
   simp [Integer.multiply_one] at this
@@ -1184,18 +1184,21 @@ macro:max atomic("|" noWs) a:term noWs "|" : term => `(magnitude $a)
 
 theorem magnitude_negate (x : ℚ) : |-x| = |x| := by
   unfold magnitude 
-  rw [negate_negate, maximum_commutative]
+  simp [negate_negate, join_commutative]
 
 theorem magnitude_nonnegative (x : ℚ) : 0 ≤ |x| := by
   unfold magnitude
   match less_than_trichotomous 0 x with
   | Or.inl h => 
-    exact less_equal_maximum_left_of_less_equal (-x) (less_equal_of_less_than h)
+    exact less_equal_join_of_less_equal_left (-x) (less_equal_of_less_than h)
   | Or.inr (Or.inl h) =>
-    rw [← h, ← negate_zero, maximum_self]
+    simp [← h, ← negate_zero, join_idempotent]
     exact less_equal_reflexive 0
   | Or.inr (Or.inr h) =>
-    exact less_equal_maximum_right_of_less_equal x (negate_antitone (less_equal_of_less_than h))
+    have := negate_antitone (less_equal_of_less_than h)
+    simp [negate_definition, ← negate_zero] at this
+    rw [maximum_join, join_commutative]
+    exact less_equal_join_of_less_equal_left x this
   
 theorem magnitude_zero : |(0 : ℚ)| = 0 := rfl
 
@@ -1203,11 +1206,11 @@ theorem zero_of_magnitude_zero {x : ℚ} (h : |x| = 0) : x = 0 := by
   rw [magnitude] at h
   match Decidable.em (x ≤ -x) with
   | Or.inl hx => 
-    have := congrArg negate ((maximum_equal_right hx).symm.trans h)
+    have := congrArg negate ((join_equal_right.mpr hx).symm.trans h)
     simp at this
     exact this
   | Or.inr hx => 
-    exact (maximum_equal_left (greater_equal_of_not_less_equal hx)).symm.trans h
+    exact (join_equal_left.mpr (greater_equal_of_not_less_equal hx)).symm.trans h
 
 theorem magnitude_positive {x : ℚ} (h : x ≠ 0) : 0 < |x| :=
   match less_than_or_equal_of_less_equal (magnitude_nonnegative x) with
@@ -1215,10 +1218,10 @@ theorem magnitude_positive {x : ℚ} (h : x ≠ 0) : 0 < |x| :=
   | Or.inr hx => absurd hx.symm (mt zero_of_magnitude_zero h)
 
 theorem magnitude_equal_of_nonnegative {x : ℚ} (h : 0 ≤ x) : |x| = x :=
-  maximum_equal_left (less_equal_transitive (negate_antitone h) h)
+  join_equal_left.mpr (less_equal_transitive (negate_antitone h) h)
 
 theorem magnitude_equal_negate_of_nonpositive {x : ℚ} (h : x ≤ 0) : |x| = -x :=
-  maximum_equal_right (less_equal_transitive h (negate_antitone h))
+  join_equal_right.mpr (less_equal_transitive h (negate_antitone h))
   
 theorem magnitude_equal_of_positive (x : ℚ) : 0 < x → |x| = x :=
   magnitude_equal_of_nonnegative ∘ less_equal_of_less_than
@@ -1227,7 +1230,7 @@ theorem magnitude_equal_negate_of_negative (x : ℚ) : x < 0 → |x| = -x :=
   magnitude_equal_negate_of_nonpositive ∘ less_equal_of_less_than
 
 theorem less_equal_magnitude (x : ℚ) : x ≤ |x| :=
-  less_equal_maximum_left x (-x)
+  less_equal_join_left x (-x)
 
 theorem negate_magnitude_less_equal (x : ℚ) : -|x| ≤ x := by
   have := negate_antitone (less_equal_magnitude (-x))
@@ -1241,12 +1244,13 @@ theorem magnitude_less_equal_equivalent_negate_less_equal_self {x y : ℚ} :
     rw [magnitude]
     have := negate_antitone h.left
     simp at this
-    exact maximum_less_equal h.right this
+    exact join_less_equal_equivalent.mpr (And.intro h.right this)
   . intro h
-    rw [magnitude] at h
-    have := negate_antitone (less_equal_right_of_maximum_less_equal h)
-    simp at this
-    exact And.intro this (less_equal_left_of_maximum_less_equal h)
+    simp [magnitude] at h
+    have ⟨hl, hr⟩ := join_less_equal_equivalent.mp h
+    have hr' := negate_antitone hr
+    simp [negate_negate] at hr'
+    exact ⟨hr', hl⟩
   
 theorem magnitude_less_equal_of_negate_less_equal {x y : ℚ} : -y ≤ x → x ≤ y → |x| ≤ y :=
   λ hyx hxy =>
@@ -1313,11 +1317,11 @@ theorem distance_zero_equivalent_equal {x y : ℚ} : distance x y = 0 ↔ x = y 
     unfold distance magnitude at h
     match less_equal_strongly_connected (x - y) (-(x - y)) with
     | Or.inl hxy =>
-      have := (maximum_equal_right hxy).symm.trans h
+      have := (join_equal_right.mpr hxy).symm.trans h
       simp [negate_subtract] at this
       exact (equal_of_subtract_equal_zero this).symm
     | Or.inr hxy =>
-      have := (maximum_equal_left hxy).symm.trans h
+      have := (join_equal_left.mpr hxy).symm.trans h
       exact equal_of_subtract_equal_zero this
   . intro h
     subst h
