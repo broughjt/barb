@@ -9,6 +9,7 @@ import Base.Function.Core
 import Base.Function.Negation
 import Base.Universe
 
+import Data.Coproduct.Core
 import Data.Empty
 import Data.Natural.Core
 import Data.Natural.Definitions
