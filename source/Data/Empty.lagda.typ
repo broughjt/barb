@@ -5,7 +5,7 @@
 ```agda
 module Data.Empty where
 
-open import Foundation.Universe
+open import Base.Universe
 ```
 
 = Empty type <note:9d7cf197-7f2a-4633-aa63-1c9df1429a13>
@@ -32,7 +32,7 @@ induction : {i : Level} {P : 𝟎 → Type i} →
 induction ()
 
 recursion : {i : Level} {P : Type i} → (𝟎 → P)
-recursion ()
+recursion {P = P} = induction
 ```
 
 #link("note://ae121b5e-c986-4f89-a3eb-ecac84255fa9")[This note] offers

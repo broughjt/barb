@@ -3,7 +3,7 @@
 #show: template
 
 ```agda
-module Foundation.Universe where
+module Base.Universe where
 ```
 
 = Agda universe level <note:f91454f0-eb29-4087-8099-8f428cb6a11e>

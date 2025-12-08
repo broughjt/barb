@@ -5,8 +5,8 @@
 ```agda
 module Data.Natural.Definitions where
 
+open import Base.Universe hiding (zero; successor)
 open import Data.Natural.Core
-open import Foundation.Universe hiding (zero; successor)
 ```
 
 = Natural number addition <note:1be8278b-eb3c-4fc7-8ee4-2e4c9fa92662>

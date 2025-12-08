@@ -3,11 +3,11 @@
 #show: template
 
 ```agda
-module Foundation.Function.Negation where
+module Base.Function.Negation where
 
 open import Data.Empty as 𝟎
-open import Foundation.Function.Definitions
-open import Foundation.Universe
+open import Base.Function.Core
+open import Base.Universe
 ```
 
 = Negation of a type <note:16ffba35-7712-4eb7-8902-0812e529aa16>

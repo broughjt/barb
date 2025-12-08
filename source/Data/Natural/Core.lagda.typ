@@ -5,7 +5,7 @@
 ```agda
 module Data.Natural.Core where
 
-open import Foundation.Universe hiding (zero; successor)
+open import Base.Universe hiding (zero; successor)
 ```
 
 = Type of natural numbers <note:600e8ce4-83d2-4a92-9295-ccb0aef05689>
@@ -34,14 +34,18 @@ are satisfied @rijke2025. Zero is definitely a natural number. People that think
 the natural numbers start at one have no class.
 
 ```agda
-data ℕ : Type Foundation.Universe.zero where
+data ℕ : Type Base.Universe.zero where
   zero : ℕ
   successor : ℕ → ℕ
 
 {-# BUILTIN NATURAL ℕ #-}
 
-induction : {i : Level} → {P : ℕ → Type i} →
+induction : {i : Level} {P : ℕ → Type i} →
             P zero → ((n : ℕ) → P n → P (successor n)) → ((n : ℕ) → P n)
 induction z s zero = z
 induction z s (successor n) = s n (induction z s n)
+
+recursion : {i : Level} {A : Type i} →
+            A → (ℕ → A → A) → (ℕ → A)
+recursion = induction
 ```

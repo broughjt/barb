@@ -3,9 +3,9 @@
 #show: template
 
 ```agda
-module Foundation.Function.Definitions where
+module Base.Function.Core where
 
-open import Foundation.Universe
+open import Base.Universe
 ```
 
 = Identity function <note:efea6413-096d-4249-8ef0-a4de74fcee13>

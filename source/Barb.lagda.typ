@@ -5,9 +5,9 @@
 ```agda
 module Barb where
 
-import Foundation.Universe
-import Foundation.Function.Definitions
-import Foundation.Function.Negation
+import Base.Function.Core
+import Base.Function.Negation
+import Base.Universe
 
 import Data.Empty
 import Data.Natural.Core

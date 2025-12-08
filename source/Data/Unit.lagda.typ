@@ -5,7 +5,7 @@
 ```agda
 module Data.Unit where
 
-open import Foundation.Universe
+open import Base.Universe
 ```
 
 = Unit type <note:fe0ba530-46e9-4031-83bb-330db4d12b4e>
@@ -37,4 +37,8 @@ data 𝟏 : Type zero where
 induction : {i : Level} {P : 𝟏 → Type i} →
             P ⋆ → ((x : 𝟏) → P x)
 induction p ⋆ = p
+
+recursion : {i : Level} {A : Type i} →
+            A → (𝟏 → A)
+recursion {A = A} = induction
 ```
