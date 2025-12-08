@@ -6,6 +6,7 @@
 module Foundation.Function.Negation where
 
 open import Data.Empty as 𝟎
+open import Foundation.Function.Definitions
 open import Foundation.Universe
 ```
 
@@ -39,4 +40,28 @@ infix 3 ¬_
 absurd : {i j : Level} {A : Type i} {B : Type j} →
          A → ¬ A → B
 absurd x f = 𝟎.induction (f x)
+```
+
+= Implications imply their contrapositives <note:b2b44f1f-5678-4125-a6e5-263a5fa645cf>
+
+#lemma(supplement: cite_link(<rijke2025>, [Rijke 2025, Prop. 4.3.4]))[
+    For any two types $P$ and $Q$, $P -> Q$ implies $not Q -> not P$.
+
+    In other words, there is a function
+    $
+        (P -> Q) -> (not Q -> not P).
+    $
+]
+#proof[
+    If we have $f ofType P -> Q$ and $g ofType Q -> emptyType$ then their
+    composition gives $g compose f ofType P -> emptyType$.
+]
+
+See #link("note://1da6e034-c251-45d1-a83f-513aa5eefeeb")[Contrapositive of an
+impliciation].
+
+```agda
+contrapositive : {i j : Level} {A : Type i} {B : Type j} →
+                 (A → B) → (¬ B → ¬ A)
+contrapositive f g = g ∘ f
 ```
