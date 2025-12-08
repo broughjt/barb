@@ -13,8 +13,10 @@ open import Foundation.Universe
 The *empty type*, denoted $emptyType$, is the type without any
 #link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[constructors] which
 satisfies the #link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[induction
-principle] that for any #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] $P(x)$ indexed by $x ofType emptyType$,
-there is a #link("note://516e852c-8a6d-4c43-8b5a-a64c3c603926")[section]
+principle] that for any
+#link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] $P(x)$ indexed
+by $x ofType emptyType$, there is a
+#link("note://516e852c-8a6d-4c43-8b5a-a64c3c603926")[section]
 
 $
     induction0 : piType(x, emptyType) P(x)

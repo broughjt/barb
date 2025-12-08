@@ -33,4 +33,10 @@ numbers] is defined recursively as repeated addition @rijke2025[exer. 3.1(a)].
 
 ```agda
 _·_ : ℕ → ℕ → ℕ
+zero · m = zero
+successor n · m = (n · m) + m
+
+{-# BUILTIN NATTIMES _·_ #-}
+
+infixl 7 _·_
 ```
