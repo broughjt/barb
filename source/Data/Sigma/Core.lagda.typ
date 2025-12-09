@@ -74,3 +74,21 @@ project₂ : {i j : Level} {A : Type i} {B : A → Type j} →
            (u : Σ A B) → B $ project₁ u
 project₂ (pair _ y) = y
 ```
+
+= (Cartesian) Product type <note:23a01b78-e433-4a66-8915-bfda82ee149a>
+ 
+Given types $A$ and $B$, the *product type* $A times B$ of $A$ and $B$ is
+defined by
+$
+    A times B := sigmaType(x, A) B.
+$
+
+The product type is a special case of a
+#link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[$Sigma$-type], where the
+#link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] $B(x)$ is
+constant over $A$.
+
+```agda
+_×_ : {i j : Level} (A : Type i) (B : Type j) → Type (i ⊔ j)
+A × B = Σ A (constant B)
+```
