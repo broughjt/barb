@@ -57,3 +57,45 @@ _∘_ : {i j k : Level}
 
 infixr 9 _∘_
 ```
+
+= Flip function <note:c13b9cdf-5f6c-4496-85b4-5dc64e342097>
+ 
+The *flip* function takes a (curried) two-input function and flips the order of
+its arguments @rijke2025[exer.~2.4(a)].
+
+```agda
+flip : {i j k : Level} {A : Type i} {B : Type j} {C : A → B → Type k} →
+       ((x : A) (y : B) → C x y) → ((y : B) (x : A) → C x y)
+flip f y x = f x y
+```
+
+The output type may depend on the two input arguments, but since their order is
+swapped, the two input types $A$ and $B$ do not depend on each other.
+
+= Function application syntax sugar <note:58a05cac-0621-4582-86ed-7c34a52ddcdf>
+ 
+Haskell as a right-associative infix application operator `$` for avoiding the
+use of parentheses which we duplicate here.
+
+```agda
+_$_ : {i j : Level} {A : Type i} {B : A → Type j} →
+      ((x : A) → B x) → (x : A) → B x
+f $ x = f x
+
+infixr -1 _$_
+```
+
+= Flipped function application syntax sugar (pipe-forward)
+
+Haskell has a pipe forward application infix operator which takes an element
+first and a function second and applies the function to the element. We define
+it here as the flipped version of the `$`
+#link("note://c13b9cdf-5f6c-4496-85b4-5dc64e342097")[application operator].
+
+```agda
+_|>_ : {i j : Level} {A : Type i} {B : A → Type j} →
+       (x : A) → ((x : A) → B x) → B x
+_|>_ = flip _$_
+
+infixl 0 _|>_
+```
