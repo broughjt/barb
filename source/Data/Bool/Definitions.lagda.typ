@@ -1,0 +1,39 @@
+#import("../../../../../library/template.typ"): *
+
+#show: template
+
+```agda
+module Data.Bool.Definitions where
+
+open import Base.Universe
+```
+
+= Boolean operations <note:84ca1018-8448-4ecf-beb0-9bc92b18c914>
+ 
+We define *negation*, *conjunction*, *disjunction*, and the conditional
+*if-then-else* construct on booleans following #cite(<rijke2025>, form: "prose",
+supplement: "exer. 4.2").
+
+```agda
+!_ : 𝟐 → 𝟐
+! true = false
+! false = true
+
+infix 3 !_
+
+_&&_ : 𝟐 → 𝟐 → 𝟐
+true && x = x
+false && _ = false
+
+infixr 7 _&&_
+
+_||_ : 𝟐 → 𝟐 → 𝟐
+true || _ = true
+false || x = x
+
+infixr 6 _||_
+
+if_then_else_ : {i : Level} {A : Type i} → 𝟐 → A → A → A
+if true then x else _ = x
+if false then _ else y = y
+```

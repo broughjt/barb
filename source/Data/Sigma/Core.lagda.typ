@@ -11,20 +11,25 @@ open import Base.Universe
 
 = Sigma type <note:ae098784-7572-4d29-b548-a2db9b6d004a>
  
-Given a type family $B$ over $A$, the *dependent pair type* (or *$Sigma$-type*),
-written $sigmaType(x, A) B(x)$, is an inductive type equipped with a *pairing*
-constructor
+Given a #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] $B$
+over $A$, the *dependent pair type* (or *$Sigma$-type*), written $sigmaType(x,
+A) B(x)$, is an #link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[inductive
+type] equipped with a *pairing*
+#link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[constructor]
 $
     pair ofType piType(x, A) ( B(x) -> sigmaType(y, A) B(y) )
 $
-@rijke2025[def. 4.6.1].  The induction principle for $Sigma$-types asserts for
-any type family $P(u)$ indexed by $u ofType sigmaType(x, A) B(x)$, there is a
-function
+@rijke2025[def. 4.6.1].  The
+#link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[induction principle] for
+$Sigma$-types asserts for any
+#link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] $P(u)$ indexed
+by $u ofType sigmaType(x, A) B(x)$, there is a function
 $
     induction_(Sigma) ofType ( piType(x, A) piType(y, B(x)) P(pair(x, y)) ) ->
     ( piType(u, sigmaType(x, A) B(x)) P(u) )
 $
-such that the computation rule
+such that the #link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[computation
+rule]
 $
     induction_(Sigma)(f, pair(x, y)) dot(eq) f(x, y)
 $
