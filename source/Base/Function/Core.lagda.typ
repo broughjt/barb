@@ -53,7 +53,7 @@ _∘_ : {i j k : Level}
       {A : Type i} {B : A → Type j} {C : {x : A} → B x → Type k} →
       ({x : A} → (y : B x) → C y) → (f : (x : A) → B x) →
       ((x : A) → C (f x))
-(g ∘ f) x = g (f x)
+      (g ∘ f) x = g (f x)
 
 infixr 9 _∘_
 ```
@@ -85,12 +85,13 @@ f $ x = f x
 infixr -1 _$_
 ```
 
-= Flipped function application syntax sugar (pipe-forward)
+= Flipped function application syntax sugar (pipe-forward) <note:ac0a22e1-3510-4129-ab02-d0f95da4a48c>
 
 Haskell has a pipe forward application infix operator which takes an element
 first and a function second and applies the function to the element. We define
-it here as the flipped version of the `$`
-#link("note://c13b9cdf-5f6c-4496-85b4-5dc64e342097")[application operator].
+it here as the #link("note://c13b9cdf-5f6c-4496-85b4-5dc64e342097")[flipped]
+version of the `$`
+#link("note://58a05cac-0621-4582-86ed-7c34a52ddcdf")[application operator].
 
 ```agda
 _|>_ : {i j : Level} {A : Type i} {B : A → Type j} →
