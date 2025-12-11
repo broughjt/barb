@@ -80,4 +80,38 @@ infixl 7 _∙_
 ```agda
 _⁻¹ : {i : Level} {A : Type i} {x y : A} → x ＝ y → y ＝ x
 reflexive ⁻¹ = reflexive
+
+infixr 8 _⁻¹
+```
+
+= Action on paths <note:7caf7ee0-9e2a-4761-bee9-25cd52820039>
+
+Every function $f ofType A -> B$ induces an action on
+#link("note://261490cb-2887-4247-9a83-7f674e3c9651")[paths], which sends each path
+$x attach(eq, br: A) y$ in $A$ to a path $f(x) attach(eq, br: B) f(y)$ in $B$
+@rijke2025[sec. 5.3]. This corresponds to the property that in type theory, all
+functions respect equality @univalentfoundationsprogram2013[71].
+
+#lemma(
+    supplement: [Action on paths; #cite_link(<rijke2025>, "Rijke 2025, def. 5.3.1")\; #cite_link(<univalentfoundationsprogram2013>, "The Univalent Foundations Program 2013, lem. 2.2.1")]
+)[
+    Suppose that $f ofType A -> B$ is function. Then for each $x, y ofType A$,
+    there is an operation
+    $
+        ap_(f) ofType (x attach(eq, br: A) y) -> (f(x) attach(eq, br: B) f(y)).
+    $
+    We refer to $ap_(f)$ as the *action on paths* of $f$.
+]
+#proof[
+    To define $ap_(f)(p)$ for all $p ofType x = y$, it suffices by
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path induction] to
+    define it at $refl_(x) ofType x = x$. Accordingly, let $ap_(f)(refl_(x)) :=
+    refl_(f(x)) ofType f(x) = f(x)$.
+]
+
+```agda
+pathAction : {i j : Level} {A : Type i} {B : Type j}
+             (f : A → B) {x y : A} →
+             x ＝ y → f x ＝ f y
+pathAction f reflexive = reflexive
 ```
