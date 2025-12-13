@@ -5,6 +5,7 @@
 ```agda
 module Base.Identity.Properties where
 
+open import Base.Function.Core
 open import Base.Identity.Core
 open import Base.Identity.Definitions
 open import Base.Universe
@@ -139,4 +140,170 @@ open import Base.Universe
               (p : x ＝ y) →
               p ∙ p ⁻¹ ＝ reflexive
 ⁻¹-inverseʳ reflexive = reflexive
+```
+
+= Action on paths respects the identity function <note:e796dbf6-5752-449b-b2b7-420bc93d9679>
+ 
+#lemma(supplement: cite_link(<rijke2025>, [Rijke 2025, def. 5.3.2]))[
+    For all elements $x, y ofType A$ and
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[paths] $p ofType x =
+    y$, we have
+    $
+        ap_(id_(A))(p) = p.
+    $
+]
+#proof[
+    By #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path induction], it
+    suffices to consider the case $ap_(id_(A))(refl_(x)) = refl_(x)$, which
+    holds #link("note://a0baf580-5da2-4328-bfbd-202bedf37747")[judgementally].
+]
+
+See #link("note://7caf7ee0-9e2a-4761-bee9-25cd52820039")[Action on paths].
+
+```agda
+pathActionIdentity : {i : Level} {A : Type i} {x y : A}
+                     (p : x ＝ y) → p ＝ pathAction identity p
+pathActionIdentity reflexive = reflexive
+```
+
+= Action on paths respects function composition <note:cc4b4cb3-7590-42ae-b468-1a590c448d79>
+ 
+We can identify the #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path]
+under the successive
+#link("note://7caf7ee0-9e2a-4761-bee9-25cd52820039")[actions] of two functions
+with the path under the action of their
+#link("note://bc9568f6-830b-4b4e-9aab-1808b1127cb0")[composition].
+
+#lemma(supplement: cite_link(<rijke2025>, [Rijke 2025, def. 5.3.1]))[
+    Let $x, y ofType A$ be elements of a type $A$. For all paths $p ofType x =
+    y$ and maps $f ofType A -> B$, $g ofType B -> C$, we have
+    $
+        ap_(g)(ap_(f)(p)) = ap_(g compose f)(p).
+    $
+]
+#proof[
+    Applying #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path
+    induction], we only need to consider the case
+    $
+        ap_(g)(ap_(f)(refl_(x))) = ap_(g compose f)(refl_(x)).
+    $
+    This holds
+    #link("note://a0baf580-5da2-4328-bfbd-202bedf37747")[judgementally], since
+    we have
+    $
+        ap_(g)(ap_(f)(refl)) dot(eq) ap_(g)(refl_(f(x))) dot(eq)
+        refl_(g(f(x))) dot(eq) ap_(g compose f)(refl_(x)).
+    $
+]
+
+```agda
+pathAction-∘ : {i j k : Level} {A : Type i} {B : Type j} {C : Type k}
+                    (f : A → B) (g : B → C) →
+                    {x y : A} (p : x ＝ y) →
+                    pathAction g (pathAction f p) ＝ pathAction (g ∘ f) p
+pathAction-∘ f g reflexive = reflexive
+```
+
+= Action on path respects the reflexivity constructor <note:20c0b51f-5bc4-48c5-80be-cab77bcc18c9>
+
+#lemma(supplement: cite_link(<rijke2025>, [Rijke 2025, def. 5.3.2]))[
+    For any function $f ofType A -> B$, there is a
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path]
+    $
+        ap_(f)(refl_(x)) = refl_(f(x)).
+    $
+]
+#proof[
+    Observe that $ap_(f)(refl_(x)) dot(eq) refl_(f(x))$
+    #link("note://7caf7ee0-9e2a-4761-bee9-25cd52820039")[by definition], then
+    take $refl_(refl_(f(x))) ofType refl_(f(x)) = refl_(f(x))$.
+]
+
+See #link("note://7caf7ee0-9e2a-4761-bee9-25cd52820039")[Action on paths].
+
+```agda
+pathActionReflexive :
+  {i j : Level} {A : Type i} {B : Type j}
+  (f : A → B) {x : A} →
+  pathAction f (reflexive {_} {_} {x}) ＝ reflexive {_} {_} {f x}
+pathActionReflexive f = reflexive
+```
+
+= Action on paths respects inverse operation on paths <note:810bd01f-04f6-47a4-9de4-d07ee6443bd9>
+
+The #link("note://7caf7ee0-9e2a-4761-bee9-25cd52820039")[action on paths]
+respects the #link("note://95e3c813-ae44-4341-ac56-286cda078568")[inverse
+operation on paths].
+
+#lemma(supplement: cite_link(<rijke2025>, [Rijke 2025, def. 5.3.2]))[
+    Suppose that $f ofType A -> B$ is a function, let $x, y ofType A$, and let
+    $p ofType x = y$. Then
+    $
+        ap_(f)(p^(-1)) = ap_(f)(p)^(-1).
+    $
+]
+#proof[
+    By #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path induction], we
+    only need to consider the case
+    $
+        ap_(f)(refl_(x)^(-1)) = ap_(f)(refl_(x))^(-1).
+    $
+    Since
+    $
+        ap_(f)(refl_(x)^(-1)) dot(eq) ap_(f)(refl_(x)) dot(eq) refl_(f(x))
+    $
+    and
+    $
+        ap_(f)(refl_(x))^(-1) dot(eq) refl_(f(x))^(-1) dot(eq) refl_(f(x)),
+    $
+    we can take $refl_(f(x))$ to complete the construction.
+]
+
+```agda
+pathAction-⁻¹ : {i j : Level} {A : Type i} {B : Type j}
+                (f : A → B) {x y : A} (p : x ＝ y) →
+                pathAction f (p ⁻¹) ＝ (pathAction f p) ⁻¹
+pathAction-⁻¹ f reflexive = reflexive
+```
+
+= Action on paths respects concatenation operation on paths <note:e9001b3b-05d3-4703-9f37-ecba27832641>
+ 
+The #link("note://7caf7ee0-9e2a-4761-bee9-25cd52820039")[action on paths]
+respects the #link("note://984d4510-34b9-492f-a792-95a19117193e")[concatenation
+operation on paths].
+
+#lemma(supplement: cite_link(<rijke2025>, [Rijke 2025, def. 5.3.2]))[
+    Suppse that $f ofType A -> B$ is a function, let $x, y, z ofType A$ be
+    elements, and let $p ofType x = y$ and $q ofType y = z$ be
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[paths]. Then
+    $
+        ap_(f)(p dot.op q) = ap_(f)(p) dot.op ap_(f)(q).
+    $
+]
+#proof[
+    Apply #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path induction]
+    so that we only need to consider the case
+    $
+        ap_(f)(refl_(x) dot.op q) = ap_(f)(refl_(x)) dot.op ap_(f)(q).
+    $
+    This holds
+    #link("note://a0baf580-5da2-4328-bfbd-202bedf37747")[judgementally], because
+    we have
+    $
+        ap_(f)(refl_(x) dot.op q) dot(eq) ap_(f)(q)
+    $
+    and
+    $
+        ap_(f)(refl_(x)) dot.op ap_(f)(q) dot(eq) refl_(f(x)) dot.op ap_(f)(q)
+        dot(eq) ap_(f)(q).
+    $
+    Consequently, we can take $refl_(ap_(f)(q)) ofType ap_(f)(q) = ap_(f)(q)$ to
+    complete the construction.
+]
+
+```agda
+pathAction-∙ : {i j : Level} {A : Type i} {B : Type j}
+               (f : A → B) {x y z : A} (p : x ＝ y) (q : y ＝ z) →
+               pathAction f (p ∙ q) ＝ (pathAction f p) ∙ (pathAction f q)
+pathAction-∙ f reflexive q = reflexive
 ```
