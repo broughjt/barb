@@ -5,6 +5,7 @@
 ```agda
 module Base.Identity.Definitions where
 
+open import Base.Function.Core
 open import Base.Function.Negation
 open import Base.Identity.Core
 open import Base.Universe
@@ -114,4 +115,77 @@ pathAction : {i j : Level} {A : Type i} {B : Type j}
              (f : A → B) {x y : A} →
              x ＝ y → f x ＝ f y
 pathAction f reflexive = reflexive
+```
+
+= Transport along a path <note:1229c654-047b-4517-9f4c-df4c03224d02>
+ 
+Given a #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] $B$
+over a type $A$ and a #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path]
+$p ofType x attach(eq, br: A) y$, we can *transport* an element $u ofType B(x)$
+*along the path* $p$ to obtain an element of the
+#link("note://85839d30-6530-4e54-a8ba-efd1c8709928")[fiber] $B(y)$.
+
+#lemma(supplement: cite_link(<rijke2025>, [Transport; Rijke 2025, def. 5.4.1]))[
+    Let $B$ be a type family over a type $A$. There is a *transport* operation
+    $
+        tr_(B) ofType piType(x, y, A) (x = y) -> B(x) -> B(y).
+    $
+]
+#proof[
+    Applying #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path
+    induction], it suffices to consider the case where $y$ is $x$ and $p$ is
+    $refl_(x)$. Then we can take
+    $
+        tr_(B)(refl_(x)) := id_(B(x)) ofType B(x) -> B(x).
+    $
+]
+
+```agda
+transport : {i j : Level} {A : Type i} (B : A → Type j) {x y : A} →
+            x ＝ y → B x → B y
+transport B reflexive = identity
+```
+
+Also see #link("note://f9a068e7-025f-497e-b081-8987ea80527a")[The problem that
+transport and the dependent action on paths solve], which motivates the
+transport operation as the key to formulating the
+#link("note://22c64702-9383-4850-93bc-8984228fa26c")[dependent action on
+paths]---the principle that dependent functions respect
+equality. Propositionally, transport can also be
+#link("note://64c75ba4-84cc-494f-a53b-4cd19bd78212")[understood as a
+substitution principle].
+
+= Dependent action on paths <note:22c64702-9383-4850-93bc-8984228fa26c>
+
+The dependent action on paths allows us to phrase the statement that dependent
+functions respect equaltiy. This is more challenging than the non-dependent
+case, which is handled by the (non-dependent)
+#link("note://7caf7ee0-9e2a-4761-bee9-25cd52820039")[action on paths]. The note
+#link("note://f9a068e7-025f-497e-b081-8987ea80527a")[The problem that transport
+and the dependent action on paths solve] gives a more detailed discussion.
+
+#lemma(supplement: cite_link(<rijke2025>, [Dependent action on paths; Rijke 2025, def. 5.4.2]))[
+    Suppose $f ofType piType(x, A) B(x)$ is a dependent function. Then there is
+    an operation
+    $
+        piType(x, y, A) piType(p, x = y) tr_(B)(p, f(x)) = f(y),
+    $
+    which we refer to as the *dependent action on paths*.
+]
+#proof[
+    By #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path induction], it
+    suffices to consider the case where $y$ is $x$ and $p$ is $refl_(x)$. But
+    then the desired equation is
+    $
+        tr_(B)(refl_(x), f(x)) = f(x),
+    $
+    which holds
+    #link("note://a0baf580-5da2-4328-bfbd-202bedf37747")[judgementally].
+]
+
+```agda
+pathAction' : {i j : Level} {A : Type i} {B : A → Type j}
+              (f : (x : A) → B x) {x y : A} (p : x ＝ y) →
+              transport B p (f x) ＝ f y
+pathAction' f reflexive = reflexive
 ```
