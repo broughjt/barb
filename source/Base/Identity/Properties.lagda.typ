@@ -9,6 +9,7 @@ open import Base.Function.Core
 open import Base.Identity.Core
 open import Base.Identity.Definitions
 open import Base.Universe
+open import Data.Sigma.Core
 ```
 
 = Concatenation on paths is associative <note:f2110298-afe0-4b63-9ef8-923f003cd631>
@@ -306,4 +307,55 @@ pathAction-∙ : {i j : Level} {A : Type i} {B : Type j}
                (f : A → B) {x y z : A} (p : x ＝ y) (q : y ＝ z) →
                pathAction f (p ∙ q) ＝ (pathAction f p) ∙ (pathAction f q)
 pathAction-∙ f reflexive q = reflexive
+```
+
+= Endpoint-path pairs are unique <note:536f383d-a59f-4ad3-8c15-82f0a7b9822d>
+
+The following lemma---which shows that endpoint-path
+#link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[pairs] are unique---seems
+to be the best we can do in terms of stating the sense in which the reflexivity
+constructor for the
+#link("note://261490cb-2887-4247-9a83-7f674e3c9651")[identity type] is
+unique. See #link("note://f74e753e-7683-40ca-bc1d-ce3771645b28")[Best current
+attempt at reasoning why only endpoint-path pairs are unique] for discussion.
+
+#lemma(label: "1", supplement: cite_link(<rijke2025>, [Rijke 2025, prop. 5.5.1]))[
+    Let $A$ be a type and let $a ofType A$. For all endpoint-path pairs $u
+    ofType sigmaType(x, A) a = x$, there is a
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path]
+    $
+        (a, refl_(a)) = u.
+    $
+]
+
+#proof[
+    Formally, we are trying to construct a function
+    $
+        piType(u, sigmaType(x, A) a = x) (a, refl_(a)) = u.
+    $
+    By #link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[$Sigma$-induction],
+    it suffices to construct a function
+    $
+        piType(x, A) piType(p, a = x) (a, refl_(a)) = (x, p).
+    $
+    In turn, by #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path
+    induction] it suffices provide an identification
+    $
+        (a, refl_(a)) = (a, refl_(a)),
+    $
+    so we can take $refl_((a, refl_(a)))$ to complete the proof.
+]
+
+Since this is unintuitive to me, I was a bit more explicit in my proof writing
+than normal. Specifically, I made the type (logical formula) of the statement
+we're proving explicit---something
+#link("note://4c786ae8-77b0-4c19-a282-23a8f508b660")[I learned to lean away
+from] after reading Newstead's guide on proof writing #cite_link(<newstead2022>,
+"(2022, appx. A)").
+
+```agda
+endpointPathPairsUnique : {i : Level} {A : Type i} {a : A}
+                          (u : Σ A (λ x → a ＝ x)) →
+                          pair a reflexive ＝ u
+endpointPathPairsUnique (pair x reflexive) = reflexive
 ```
