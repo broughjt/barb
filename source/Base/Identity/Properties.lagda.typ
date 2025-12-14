@@ -8,12 +8,13 @@ module Base.Identity.Properties where
 open import Base.Function.Core
 open import Base.Identity.Core
 open import Base.Identity.Definitions
+open import Base.Identity.Syntax
 open import Base.Universe
 open import Data.Sigma.Core
 ```
 
 = Concatenation on paths is associative <note:f2110298-afe0-4b63-9ef8-923f003cd631>
- 
+
 #lemma(supplement: cite_link(<rijke2025>, [Rijke 2025, def. 5.2.3]))[
     The #link("note://984d4510-34b9-492f-a792-95a19117193e")[concatenation
     operation] on #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[paths] is
@@ -57,7 +58,7 @@ open import Data.Sigma.Core
 ```
 
 = Concatenation on paths satisfies the left and right unit laws with respect to reflexivity <note:50f1bf11-5d39-455c-a39e-0d560ac5cee5>
- 
+
 #lemma(supplement: cite_link(<rijke2025>, [Rijke 2025, def. 5.2.4]))[
     The #link("note://984d4510-34b9-492f-a792-95a19117193e")[concatenation
     operation] on #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[paths]
@@ -144,7 +145,7 @@ open import Data.Sigma.Core
 ```
 
 = Action on paths respects the identity function <note:e796dbf6-5752-449b-b2b7-420bc93d9679>
- 
+
 #lemma(supplement: cite_link(<rijke2025>, [Rijke 2025, def. 5.3.2]))[
     For all elements $x, y ofType A$ and
     #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[paths] $p ofType x =
@@ -168,7 +169,7 @@ pathActionIdentity reflexive = reflexive
 ```
 
 = Action on paths respects function composition <note:cc4b4cb3-7590-42ae-b468-1a590c448d79>
- 
+
 We can identify the #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path]
 under the successive
 #link("note://7caf7ee0-9e2a-4761-bee9-25cd52820039")[actions] of two functions
@@ -358,4 +359,105 @@ endpointPathPairsUnique : {i : Level} {A : Type i} {a : A}
                           (u : Σ A (λ x → a ＝ x)) →
                           pair a reflexive ＝ u
 endpointPathPairsUnique (pair x reflexive) = reflexive
+```
+
+= Inverse operation on paths distributes over concatenation operation <note:a7028346-345c-49bc-99fe-2bf152286aa5>
+
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 5.1"))[
+    For all #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[paths] $p
+    ofType x = y$ and $q ofType y = z$, there is path
+    $
+        (p dot.op q)^(-1) = q^(-1) p^(-1).
+    $
+]
+#proof[
+    By #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path induction] on
+    $p$, it suffices to construct a path
+    $
+        (refl_(x) dot.op q)^(-1) = q^(-1) dot.op refl_(x).
+    $
+    Since $refl_(x) dot.op q dot(eq) q$
+    #link("note://984d4510-34b9-492f-a792-95a19117193e")[by definition], we can
+    take the #link("note://95e3c813-ae44-4341-ac56-286cda078568")[inverse] of
+    the #link("note://50f1bf11-5d39-455c-a39e-0d560ac5cee5")[right unit law for
+    paths] to complete the construction.
+]
+
+See #link("note://95e3c813-ae44-4341-ac56-286cda078568")[Inverse operation on
+paths] and #link("note://984d4510-34b9-492f-a792-95a19117193e")[Concatenation
+operation on paths].
+
+This pattern where the elements reverse when taking an inverse of a composition
+shows up in group theory. For example, the inverse $(A B)^(-1)$ of the product
+of two invertible matrices is $B^(-1) A^(-1)$.
+
+```agda
+⁻¹-distributesOver-∙ : {i : Level} {A : Type i} {x y z : A}
+                       (p : x ＝ y) (q : y ＝ z) →
+                       (p ∙ q)⁻¹ ＝ q ⁻¹ ∙ p ⁻¹
+⁻¹-distributesOver-∙ reflexive q = ∙-unitʳ (q ⁻¹) ⁻¹
+```
+
+= Inverse concatenate and concatenate inverse on paths <note:ce7da014-650b-4bad-a1ed-ef56774b1f25>
+
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 5.2"))[
+    For #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[paths] $p ofType x
+    = y$, $q ofType y = z$, and $r ofType x = z$, if $p dot.op q = r$ then
+    $
+        q = p^(-1) dot.op r quad "and" quad p = r dot.op q^(-1).
+    $
+]
+#proof[
+    First, apply #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path
+    induction] to $p$. Then our goal becomes
+    $
+        refl_(x) dot.op q = r -> q = (refl_(x))^(-1) dot.op r.
+    $
+    Since $refl_(x) dot.op q dot(eq) q$ and $(refl_(x))^(-1) dot.op r
+    dot(eq) r$ by definition of the
+    #link("note://984d4510-34b9-492f-a792-95a19117193e")[concatenation] and
+    #link("note://95e3c813-ae44-4341-ac56-286cda078568")[inverse] operations,
+    this reduces to the implication
+    $
+        q = r -> q = r,
+    $
+    so we can take the
+    #link("note://efea6413-096d-4249-8ef0-a4de74fcee13")[identity map].
+
+    Next, apply path induction to $q$. Now our goal is
+    $
+        p dot.op refl_(y) = r -> p = r dot.op (refl_(y))^(-1).
+    $
+    Let $alpha ofType p dot.op refl_(y) = r$. Then
+    $
+        p & = p dot.op refl_(y) && "by the inverse of the right unit law" \
+            & = r && "using " med alpha \
+            & = r dot.op refl_(y) && "by the inverse of the right unit law" \
+            & = r dot.op (refl_(y))^(-1) && "by definition."
+    $
+    (See the #link("note://50f1bf11-5d39-455c-a39e-0d560ac5cee5")[unit laws for
+    path concatenation].) This completes the construction.
+]
+
+See #link("note://95e3c813-ae44-4341-ac56-286cda078568")[inverse] and
+#link("note://984d4510-34b9-492f-a792-95a19117193e")[concatenation] operations
+on paths.
+
+```agda
+⁻¹∙ : {i : Level} {A : Type i} {x y z : A}
+      {p : x ＝ y} {q : y ＝ z} {r : x ＝ z} →
+      p ∙ q ＝ r → q ＝ p ⁻¹ ∙ r
+⁻¹∙ {p = reflexive} {q = q} {r = r} = identity
+
+∙⁻¹ : {i : Level} {A : Type i} {x y z : A}
+      {p : x ＝ y} {q : y ＝ z} {r : x ＝ z} →
+      p ∙ q ＝ r → p ＝ r ∙ q ⁻¹
+∙⁻¹ {p = p} {q = reflexive} {r = r} α =
+  p
+    ＝[ ∙-unitʳ p ⁻¹ ]
+  p ∙ reflexive
+    ＝[ α ]
+  r
+    ＝[ ∙-unitʳ r ⁻¹ ]
+  r ∙ reflexive ∎
 ```

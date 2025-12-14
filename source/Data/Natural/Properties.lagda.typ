@@ -14,7 +14,7 @@ open import Data.Natural.Definitions
 ```
 
 = Natural number addition satifies the unit laws <note:551473be-e940-44e8-abf4-0b85434926ef>
- 
+
 #lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, prop. 5.6.1"))[
     For all $n ofType NN$, we have $0 + n = n = n + 0$.
 ]
@@ -46,7 +46,7 @@ open import Data.Natural.Definitions
 ```
 
 = Natural number addition successor laws <note:ab2f9c2f-4ee1-4846-a907-e2ac1f1dfbe5>
- 
+
 #lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, prop. 5.6.2"))[
     For all $n, m ofType NN$, we have $s(n) + m = s(n + m) = n + s(m)$.
 ]
@@ -78,7 +78,7 @@ successor-+ n m = reflexive
 ```
 
 = Natural number addition is associative <note:34dd370b-4d36-4da0-bcb6-045977183e1f>
- 
+
 #lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, prop. 5.6.3"))[
     #link("note://1be8278b-eb3c-4fc7-8ee4-2e4c9fa92662")[Addition] on
     #link("note://600e8ce4-83d2-4a92-9295-ccb0aef05689")[natural numbers] is
@@ -108,7 +108,7 @@ successor-+ n m = reflexive
 ```
 
 = Natural number addition is commutative <note:8e89ef5f-82e8-4304-adc0-61f2cd63c6af>
- 
+
 #lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, prop. 5.6.4"))[
     #link("note://1be8278b-eb3c-4fc7-8ee4-2e4c9fa92662")[Addition] on the
     #link("note://600e8ce4-83d2-4a92-9295-ccb0aef05689")[natural numbers] is
