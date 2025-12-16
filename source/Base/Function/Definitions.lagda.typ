@@ -58,6 +58,12 @@ infix 3 _∼_
     . refl_(f(x)) ofType f ~ f$.
 ]
 
+```agda
+reflexiveHomotopy : {i j : Level} {A : Type i} {B : A → Type j} →
+                    ((f : (x : A) → B x) → f ∼ f)
+reflexiveHomotopy f x = reflexive
+```
+
 = Inverse of a homotopy <note:926fa23f-6495-407a-a492-9aec9e451930>
  
 #lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, def. 9.1.5"))[
@@ -80,6 +86,8 @@ _⁻¹ : {i j : Level} {A : Type i} {B : A → Type j} →
       {f g : (x : A) → B x} →
       f ∼ g → g ∼ f
 H ⁻¹ = λ x → (H x) ⁻¹'
+
+infixr 8 _⁻¹
 ```
 
 = Homotopy concatenation <note:a3eaa21d-b0a4-4aed-80fd-ed5aeb914aab>
@@ -99,3 +107,27 @@ H ⁻¹ = λ x → (H x) ⁻¹'
     #link("note://984d4510-34b9-492f-a792-95a19117193e")[Concatenation operation
     on paths]).
 ]
+
+```agda
+_∙_ : {i j : Level} {A : Type i} {B : A → Type j}
+      {f g h : (x : A) → B x} →
+      f ∼ g → g ∼ h → f ∼ h
+H ∙ K = λ x → (H x) ∙' (K x)
+
+infixl 7 _∙_
+```
+
+= Whiskering operations on homotopies <note:7805061a-565d-4412-9ca4-acb998e89555>
+ 
+The *whiskering* operations on homotopies define a notion of composition between
+functions and homotopies. Suppose we have $H ofType f ~ g$ between functions $f,
+g ofType A -> B$, and let $h ofType B -> C$ be another function. We define
+$
+    h dot.op H := lambda x . ap_(h)(H(x)) ofType h compose f ~ h compose g.
+$
+Similarly, let $f ofType A -> B$ and suppose we have $H ofType g ~ h$ between
+two functions $g, h ofType B -> C$. We define
+$
+    H dot.op f := lambda x . H(f(x)) ofType g compose f ~ h compose f
+$
+@rijke2025[def. 9.1.7].
