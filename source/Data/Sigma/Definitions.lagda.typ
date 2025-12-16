@@ -47,3 +47,14 @@ uncurry {C = C} = induction {P = λ u → C (project₁ u) (project₂ u)}
 ```
 
 Compare #cite(<rijke2025>, form: "prose", supplement: "rem. 4.6.3").
+
+= Product swap <note:ee77073e-2222-4957-9ed3-f8a120d8588d>
+ 
+We define a #link("note://23a01b78-e433-4a66-8915-bfda82ee149a")[product] swap
+function $A times B -> B times A$.
+
+```agda
+swap : {i j : Level} {A : Type i} {B : Type j} →
+       A × B → B × A
+swap (pair x y) = pair y x
+```

@@ -6,6 +6,7 @@
 module Data.Bool.Definitions where
 
 open import Base.Universe
+open import Data.Bool.Core
 ```
 
 = Boolean operations <note:84ca1018-8448-4ecf-beb0-9bc92b18c914>
