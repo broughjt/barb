@@ -6,7 +6,7 @@
 module Data.Bool.Definitions where
 
 open import Base.Universe
-open import Data.Bool.Core
+open import Data.Bool.Core as Bool
 ```
 
 = Boolean operations <note:84ca1018-8448-4ecf-beb0-9bc92b18c914>
@@ -33,8 +33,4 @@ true || _ = true
 false || x = x
 
 infixr 6 _||_
-
-if_then_else_ : {i : Level} {A : Type i} → 𝟐 → A → A → A
-if true then x else _ = x
-if false then _ else y = y
 ```

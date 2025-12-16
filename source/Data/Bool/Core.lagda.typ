@@ -26,8 +26,10 @@ $
     induction_(Bool)(p, q, bfalse) & dot(eq) q.
 $
 In other words, the induction principle for booleans asserts that to construct a
-section of an arbitrary type family over the booleans, it suffices to provide
-values for $btrue$ and $bfalse$.
+#link("note://516e852c-8a6d-4c43-8b5a-a64c3c603926")[section] of an arbitrary
+type family over the booleans, it suffices to provide values for $btrue$ and
+$bfalse$. Note that the traditional `if b then x else y` construct is just nice
+syntax sugar for the recursion principle for booleans.
 
 ```agda
 data 𝟐 : Type zero where
@@ -41,4 +43,10 @@ induction _ q true = q
 recursion : {i : Level} {A : Type i} →
             A → A → (𝟐 → A)
 recursion = induction
+
+if_then_else_ : {i : Level} {A : Type i} →
+                𝟐 → A → A → A
+if_then_else_ b x y = recursion x y b
+
+infix 0 if_then_else_
 ```
