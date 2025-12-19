@@ -42,7 +42,7 @@ swapInverse = pair H H
   H (pair x y) = reflexive
 ```
 
-= Left and right product associate functions are inverses <note:52df8c7d-2587-4ddf-bfef-29de5ab739d1>
+= Left and right sigma associate functions are inverses <note:52df8c7d-2587-4ddf-bfef-29de5ab739d1>
 
 #lemma(label: "10")[
     The left and right
@@ -79,5 +79,19 @@ swapInverse = pair H H
   H (pair (pair x y) z) = reflexive
 
   K : associateˡ' ∘ associateʳ' ∼ (identity {_} {A × (B × C)})
+  K (pair x (pair y z)) = reflexive
+
+Σ-associateCurriedInverse :
+  {i j k : Level}
+  {A : Type i} {B : A → Type j} {C : (Σ A B) → Type k} →
+  Inverse (associateCurriedˡ {A = A} {B = B} {C = C})
+          (associateCurriedʳ {A = A} {B = B} {C = C})
+Σ-associateCurriedInverse {A = A} {B = B} {C = C} = pair H K
+  where
+  H : associateCurriedʳ ∘ associateCurriedˡ ∼ (identity {_} {Σ (Σ A B) C})
+  H (pair (pair x y) z) = reflexive
+
+  K : associateCurriedˡ ∘ associateCurriedʳ ∼
+      (identity {_} {Σ A (λ x → Σ (B x) (curry C x))})
   K (pair x (pair y z)) = reflexive
 ```

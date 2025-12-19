@@ -305,3 +305,221 @@ type].
   K (inject₁ (pair x z)) = reflexive
   K (inject₂ (pair y z)) = reflexive
 ```
+
+= Sigma types are annihilative up to equivalence with respect to the empty type <note:04566554-5ac9-4f1f-85b9-50256d1fe220>
+
+The #link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[$Sigma$-type] is
+annihilative up to
+#link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence] with respect
+to the #link("note://9d7cf197-7f2a-4633-aa63-1c9df1429a13")[empty type].
+ 
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, ex. 9.2.10"))[
+    For any #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family]
+    $B$ over $emptyType$, there is an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]
+    $
+        sigmaType(x, emptyType) B(x) tilde.eq emptyType.
+    $
+    Similarly, for any type $A$, there is an equivalence
+    $
+        sigmaType(x, A) emptyType tilde.eq emptyType.
+    $
+]
+#proof[
+    Use the recursion principle for the
+    #link("note://9d7cf197-7f2a-4633-aa63-1c9df1429a13")[empty type].
+]
+
+```agda
+Σ-annihilativeˡ : {i : Level} (B : 𝟎 → Type i) →
+                  (Σ 𝟎 B) ≃ 𝟎
+Σ-annihilativeˡ B = inverse→≃ project₁ Empty.recursion (pair H K)
+  where
+  H : Empty.recursion ∘ project₁ ∼ identity {_} {Σ 𝟎 B}
+  H (pair x y) = Empty.recursion x
+
+  K : project₁ ∘ Empty.recursion ∼ identity {_} {𝟎}
+  K ()
+
+Σ-annihilativeʳ : {i : Level} (A : Type i) →
+                  (Σ A (constant 𝟎)) ≃ 𝟎
+Σ-annihilativeʳ A = inverse→≃ project₂ Empty.recursion (pair H K)
+  where
+  H : Empty.recursion ∘ project₂ ∼ identity {_} {Σ A (constant 𝟎)}
+  H (pair x y) = Empty.recursion y
+
+  K : project₂ ∘ Empty.recursion ∼ identity {_} {𝟎}
+  K ()
+```
+
+= Sigma types satisfy the unit laws up to equivalence with respect to the unit type <note:95454f1f-3586-4c87-b04f-3e3d1dbb2598>
+
+The #link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[$Sigma$-type] satisfies
+the unit laws up to
+#link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence] with respect
+to the #link("note://fe0ba530-46e9-4031-83bb-330db4d12b4e")[unit type].
+
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, ex. 9.2.10"))[
+    For any type family $B$ over $unitType$, there is an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]
+    $
+        sigmaType(x, unitType) B(x) tilde.eq B(star).
+    $
+    Similarly, for any type $A$, there is an equivalence
+    $
+        sigmaType(x, A) unitType tilde.eq A.
+    $
+]
+#proof[
+    Use the natural maps back and forth. The
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[required homotopies]
+    hold by definition.
+]
+
+```agda
+Σ-unitˡ : {i : Level} (B : 𝟏 → Type i) →
+          (Σ 𝟏 B) ≃ (B ⋆)
+Σ-unitˡ B = inverse→≃ f (pair ⋆) (pair H K)
+  where
+  f : Σ 𝟏 B → B ⋆
+  f (pair ⋆ y) = y
+
+  H : (pair ⋆) ∘ f ∼ (identity {_} {Σ 𝟏 B})
+  H (pair ⋆ y) = reflexive
+
+  K : f ∘ (pair ⋆) ∼ (identity {_} {B ⋆})
+  K x = reflexive
+
+Σ-unitʳ : {i : Level} (A : Type i) →
+          (Σ A (constant 𝟏)) ≃ A
+Σ-unitʳ A = inverse→≃ project₁ (flip pair ⋆) (pair H K)
+  where
+  H : (flip pair ⋆) ∘ project₁ ∼ (identity {_} {Σ A (constant 𝟏)})
+  H (pair x ⋆) = reflexive
+
+  K : project₁ ∘ (flip pair ⋆) ∼ (identity {_} {A})
+  K x = reflexive
+```
+
+= Sigma types are associative up to equivalence <note:ccf17e09-7e2d-4a7c-91f7-0a5d5b4f4b31>
+
+The #link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[$Sigma$-type] is
+#link("note://9affcc46-5cf0-4627-b909-80ec3cba8a2d")[associative] up to
+#link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence].
+
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, ex. 9.2.10"))[
+    Let $B$ be a #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type
+    family] over a type $A$. If $C(x, y)$ is a type family indexed by $x ofType
+    A$ and $y ofType B(x)$, then there is an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]
+    $
+        sigmaType(u, sigmaType(x, A) B(x)) C(project1(u), project2(u)) tilde.eq
+        sigmaType(x, A) sigmaType(y, B(x)) C(x, y).
+    $
+
+    Similarly, if $C(u)$ is a type family indexed by $u ofType sigmaType(x, A)
+    B(x)$, then there is an equivalence
+    $
+        sigmaType(u, sigmaType(x, A) B(x)) C(u) tilde.eq
+        sigmaType(x, A) sigmaType(y, B(x)) C(pair(x, y)).
+    $
+]
+#proof[
+    By #link("note://52df8c7d-2587-4ddf-bfef-29de5ab739d1")[Lemma 10].
+]
+
+```agda
+Σ-associative :
+  {i j k : Level}
+  (A : Type i) (B : A → Type j) (C : (x : A) → B x → Type k) →
+  (Σ (Σ A B) (uncurry C)) ≃ (Σ A (λ x → Σ (B x) (C x)))
+Σ-associative A B C =
+  inverse→≃ Sigma.associateˡ
+            Sigma.associateʳ
+            Sigma.Σ-associateInverse
+
+Σ-associativeCurried :
+  {i j k : Level}
+  (A : Type i) (B : A → Type j) (C : (Σ A B) → Type k) →
+  (Σ (Σ A B) C) ≃ (Σ A (λ x → Σ (B x) (curry C x)))
+Σ-associativeCurried A B C =
+  inverse→≃ Sigma.associateCurriedˡ
+            Sigma.associateCurriedʳ
+            Sigma.Σ-associateCurriedInverse
+```
+
+= Sigma types distribute over coproducts up to equivalence <note:53dc7355-99c1-4b15-a9b3-dbe0023a02e6>
+
+The #link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[$Sigma$-type]
+#link("note://950bc0dc-2afc-4bd1-beab-ad2895783cc5")[distributes over]
+#link("note://001d31c7-7fb6-4878-883a-ff464bb9c0a8")[coproducts] up to
+#link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence].
+ 
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, ex. 9.2.10"))[
+    Let $B$ be a #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type
+    family] over a type $A$. If $C(x)$ is a type family indexed by $x ofType A$,
+    then there is an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]
+    $
+        sigmaType(x, A) B(x) + C(x) tilde.eq
+        (sigmaType(x, A) B(x)) + (sigmaType(x, A) C(x)).
+    $
+    Similarly, if $C(u)$ is a family indexed by $u ofType A + B$, then there is
+    an equivalence
+    $
+        sigmaType(u, A + B) C(u) tilde.eq
+        (sigmaType(x, A) C(inject1(x))) + (sigmaType(y, B) C(inject2(y))).
+    $
+]
+#proof[
+    Take the natural maps back and forth. The
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[required homotopies]
+    hold by definition.
+]
+
+```agda
+Σ-distributesOverˡ-＋ :
+  {i j k : Level}
+  (A : Type i) (B : A → Type j) (C : A → Type k) →
+  (Σ A (λ x → B x ＋ C x)) ≃ ((Σ A B) ＋ (Σ A C))
+Σ-distributesOverˡ-＋ A B C = inverse→≃ f g (pair H K)
+  where
+  f : (Σ A (λ x → B x ＋ C x)) → ((Σ A B) ＋ (Σ A C))
+  f (pair x (inject₁ y)) = inject₁ (pair x y)
+  f (pair x (inject₂ z)) = inject₂ (pair x z)
+
+  g : ((Σ A B) ＋ (Σ A C)) → (Σ A (λ x → B x ＋ C x))
+  g (inject₁ (pair x y)) = pair x (inject₁ y)
+  g (inject₂ (pair x z)) = pair x (inject₂ z)
+
+  H : g ∘ f ∼ (identity {_} {Σ A (λ x → B x ＋ C x)})
+  H (pair x (inject₁ y)) = reflexive
+  H (pair x (inject₂ z)) = reflexive
+
+  K : f ∘ g ∼ (identity {_} {Σ A B ＋ Σ A C})
+  K (inject₁ (pair x y)) = reflexive
+  K (inject₂ (pair x z)) = reflexive
+
+
+Σ-distributesOverʳ-＋ :
+  {i j k : Level}
+  (A : Type i) (B : Type j) (C : (A ＋ B) → Type k) →
+  (Σ (A ＋ B) C) ≃ ((Σ A (C ∘ inject₁)) ＋ (Σ B (C ∘ inject₂)))
+Σ-distributesOverʳ-＋ A B C = inverse→≃ f g (pair H K)
+  where
+  f : (Σ (A ＋ B) C) → ((Σ A (C ∘ inject₁)) ＋ (Σ B (C ∘ inject₂)))
+  f (pair (inject₁ x) z) = inject₁ (pair x z)
+  f (pair (inject₂ y) z) = inject₂ (pair y z)
+
+  g : ((Σ A (C ∘ inject₁)) ＋ (Σ B (C ∘ inject₂))) → (Σ (A ＋ B) C)
+  g (inject₁ (pair x z)) = pair (inject₁ x) z
+  g (inject₂ (pair y z)) = pair (inject₂ y) z
+
+  H : g ∘ f ∼ (identity {_} {Σ (A ＋ B) C})
+  H (pair (inject₁ x) z) = reflexive
+  H (pair (inject₂ y) z) = reflexive
+
+  K : f ∘ g ∼ (identity {_} {Σ A (C ∘ inject₁) ＋ Σ B (C ∘ inject₂)})
+  K (inject₁ (pair x z)) = reflexive
+  K (inject₂ (pair y z)) = reflexive
+```

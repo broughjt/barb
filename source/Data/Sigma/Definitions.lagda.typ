@@ -82,4 +82,14 @@ associateˡ' (pair (pair x y) z) = pair x (pair y z)
 associateʳ' : {i j k : Level} {A : Type i} {B : Type j} {C : Type k} →
               A × (B × C) → (A × B) × C
 associateʳ' (pair x (pair y z)) = pair (pair x y) z
+
+associateCurriedˡ : {i j k : Level}
+                    {A : Type i} {B : A → Type j} {C : (Σ A B) → Type k} →
+                    (Σ (Σ A B) C) → (Σ A (λ x → Σ (B x) (curry C x)))
+associateCurriedˡ (pair (pair x y) z) = pair x (pair y z)
+
+associateCurriedʳ : {i j k : Level}
+                    {A : Type i} {B : A → Type j} {C : (Σ A B) → Type k} →
+                    (Σ A (λ x → Σ (B x) (curry C x))) → (Σ (Σ A B) C)
+associateCurriedʳ (pair x (pair y z)) = pair (pair x y) z
 ```
