@@ -14,7 +14,7 @@ open import Base.Universe
 open import Data.Coproduct.Core
 open import Data.Coproduct.Definitions as Coproduct
 open import Data.Sigma.Core
-open import Data.Sigma.Definitions
+open import Data.Sigma.Definitions as Sigma
 ```
 
 = Logically equivalent and decidable implies decidable <note:d70b37f9-d122-414e-98b2-19ac5af7a159>
@@ -55,7 +55,7 @@ open import Data.Sigma.Definitions
 
 ↔→decide↔decide : {i j : Level} {A : Type i} {B : Type j} →
                   (A ↔ B) → (Decision A ↔ Decision B)
-↔→decide↔decide p = pair (↔-decide→decide p) (↔-decide→decide $ swap p)
+↔→decide↔decide p = pair (↔-decide→decide p) (↔-decide→decide $ Sigma.swap p)
 ```
 
 = Decision for decision type implies decision <note:24d59546-08a1-430c-9e27-60a29f26ab06>

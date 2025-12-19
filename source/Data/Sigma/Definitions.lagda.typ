@@ -6,6 +6,8 @@
 module Data.Sigma.Definitions where
 
 open import Base.Function.Core
+open import Base.Identity.Core hiding (induction)
+open import Base.Identity.Definitions
 open import Base.Universe
 open import Data.Sigma.Core
 ```
@@ -92,4 +94,37 @@ associateCurriedʳ : {i j k : Level}
                     {A : Type i} {B : A → Type j} {C : (Σ A B) → Type k} →
                     (Σ A (λ x → Σ (B x) (curry C x))) → (Σ (Σ A B) C)
 associateCurriedʳ (pair x (pair y z)) = pair (pair x y) z
+```
+
+= Characterization of the identity types of sigma types <note:f7ad6df3-6479-4772-b911-5702cd9e6202>
+
+We follow #cite(<rijke2025>, form: "prose", supplement: "def. 9.3.1") in both
+the definition given below and the preceeding motivation.
+
+Consider two #link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[pairs]
+$
+    (x, y), (x', y') ofType sigmaType(x, A) B(x).
+$
+We cannot directly compare $y ofType B(x)$ and $y' ofType B(x)$, since they are
+of different types. However, if there is a
+#link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path] $alpha ofType x =
+x'$, then we can #link("note://1229c654-047b-4517-9f4c-df4c03224d02")[transport]
+$y ofType B(x)$ along $alpha$ and then compare $tr_(B)(alpha, y) ofType B(x')$
+with $y' ofType B(x')$ by considering paths of type
+$
+    tr_(B)(alpha, y) = y'.
+$
+Therefore the pairs $(x, y)$ and $(x', y')$ should be identical when there are
+individual identifications $alpha ofType x = x'$ and $beta ofType tr_(B)(alpha,
+y) = y'$. Consequently, we define the following
+#link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] for
+characterizing the identity types of
+#link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[$Sigma$-types].
+
+```agda
+Equal : {i j : Level} {A : Type i} {B : A → Type j} →
+        (Σ A B) → (Σ A B) → Type (i ⊔ j)
+Equal {B = B} u v =
+  Σ (project₁ u ＝ project₁ v)
+    (λ α → transport B α (project₂ u) ＝ project₂ v)
 ```

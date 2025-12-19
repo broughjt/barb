@@ -48,7 +48,7 @@ recursion = induction
 
 if_then_else_ : {i : Level} {A : Type i} →
                 𝟐 → A → A → A
-if_then_else_ b x y = recursion x y b
+if_then_else_ b x y = recursion y x b
 
 infix 0 if_then_else_
 ```
