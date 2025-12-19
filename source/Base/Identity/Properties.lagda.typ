@@ -6,6 +6,8 @@
 module Base.Identity.Properties where
 
 open import Base.Function.Core
+open import Base.Function.Definitions as Function hiding (_⁻¹; _∙_)
+open import Base.Function.Properties.Equivalence
 open import Base.Identity.Core
 open import Base.Identity.Definitions
 open import Base.Identity.Syntax
@@ -460,4 +462,187 @@ on paths.
   r
     ＝[ ∙-unitʳ r ⁻¹ ]
   r ∙ reflexive ∎
+```
+
+= Inverse operation on paths is its own inverse <note:502e4b53-5266-4e05-9a62-48caa2a3d3e1>
+
+The #link("note://95e3c813-ae44-4341-ac56-286cda078568")[inverse operation] on
+#link("note://261490cb-2887-4247-9a83-7f674e3c9651")[paths] is its own
+#link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[inverse].
+
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.1"))[
+    Let $A$ be any type. For every $x, y ofType A$, the the
+    #link("note://95e3c813-ae44-4341-ac56-286cda078568")[inverse operations]
+    $-^(-1) ofType x = y -> y = x$ and $-^(-1) ofType y = x -> x = y$ are
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[inverses].
+]
+#proof[
+    The #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[required
+    homotopies] hold #link("note://95e3c813-ae44-4341-ac56-286cda078568")[by
+    definition of the inverse operation on paths].
+]
+
+```agda
+⁻¹⁻¹-inverse : {i : Level} {A : Type i} {x y : A} →
+               Inverse (_⁻¹ {x = x} {y = y}) (_⁻¹ {x = y} {y = x})
+⁻¹⁻¹-inverse {x = x} {y = y} = pair H K
+  where
+  H : _⁻¹ ∘ _⁻¹ ∼ (identity {_} {x ＝ y})
+  H reflexive = reflexive
+
+  K : _⁻¹ ∘ _⁻¹ ∼ (identity {_} {y ＝ x})
+  K reflexive = reflexive
+```
+
+= Path concatenation inverses <note:a0b593a9-3e6c-47b8-8160-d8ab79c4dd9b>
+
+#link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[Inverses] for the
+#link("note://984d4510-34b9-492f-a792-95a19117193e")[concatenation operation on
+paths] in both arguments (also see
+#link("note://95e3c813-ae44-4341-ac56-286cda078568")[Inverse operation on
+paths]).
+ 
+#lemma(
+    label: "13",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.1.")
+)[
+    Fix a #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path] $p ofType x
+    = y$. The functions
+    $
+        concat(p) & ofType y = z → x = z, \
+        concat(p^(-1)) & ofType x = z → y = z
+    $
+    are #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[inverses].
+
+]
+#proof[
+    We #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[need] to construct
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopies]
+    $
+        H ofType concat(p^(-1)) dot.op concat(p) ~ & id_(y = z), \
+        K ofType concat(p) dot.op concat(p^(-1)) ~ & id_(x = z).
+    $
+    For $H$, fix $q ofType y = z$. Then take the path given by
+    $
+        p^(-1) dot.op (p dot.op q)
+            & = (p^(-1) dot.op p) dot.op q && "by associativity" \
+            & = refl_(y) dot.op q && "by the left inverse law" \
+            & = q && "by the left unit law"
+    $
+    (see #link("note://f2110298-afe0-4b63-9ef8-923f003cd631")[Concatenation on
+    paths is associative],
+    #link("note://ac149ae0-bd8c-4206-a7bf-eb6e7fa1575e")[Inverse operation on
+    paths satisfies inverse laws], and
+    #link("note://50f1bf11-5d39-455c-a39e-0d560ac5cee5")[Concatenation on paths
+    satisfies the left and right unit laws with respect to reflexivity]).
+
+    Similarly, for $K$, fix $r ofType x = z$ and take the path given by
+    $
+        p dot.op (p^(-1) dot.op r) = (p dot.op p^(-1)) dot.op r
+        = refl_(x) dot.op r = r.
+    $
+]
+
+```agda
+∙-inverse : {i : Level} {A : Type i} {x y z : A}
+            (p : x ＝ y) →
+            Inverse (_∙_ {z = z} p) (_∙_ (p ⁻¹))
+∙-inverse {_} {A} {x} {y} {z} p = pair H K
+  where
+  H : (_∙_ (p ⁻¹)) ∘ (_∙_ p) ∼ (identity {_} {y ＝ z})
+  H q = (p ⁻¹ ∙ (p ∙ q))
+          ＝[ ∙-associative (p ⁻¹) p q ⁻¹ ]
+        (p ⁻¹ ∙ p) ∙ q
+          ＝[ pathAction (flip _∙_ q) (⁻¹-inverseˡ p) ]
+        reflexive ∙ q
+          ＝[ ∙-unitˡ q ]
+        q ∎
+
+  K : (_∙_ p) ∘ (_∙_ (p ⁻¹)) ∼ (identity {_} {x ＝ z})
+  K r = (p ∙ (p ⁻¹ ∙ r))
+          ＝[ ∙-associative p (p ⁻¹) r ⁻¹ ]
+        (p ∙ p ⁻¹) ∙ r
+          ＝[ pathAction (flip _∙_ r) (⁻¹-inverseʳ p) ]
+        reflexive ∙ r
+          ＝[ ∙-unitˡ r ]
+        r ∎
+```
+
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.1"))[
+    Fix a #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path] $q ofType y
+    = z$. The functions
+    $
+        concat(-, q) ofType & x = y -> x = z, \
+        concat(-, q^(-1)) ofType & x = z -> x = y
+    $
+    are #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[inverses].
+]
+#proof[
+    Analogous to #link("note://a0b593a9-3e6c-47b8-8160-d8ab79c4dd9b")[Lemma 13].
+]
+
+```agda
+∙-inverse' : {i : Level} {A : Type i} {x y z : A}
+             (q : y ＝ z) →
+             Inverse (flip (_∙_ {x = x}) q) (flip _∙_ (q ⁻¹))
+∙-inverse' {_} {A} {x} {y} {z} q = pair H K
+  where
+  H : (flip _∙_ (q ⁻¹)) ∘ (flip _∙_ q) ∼ (identity {_} {x ＝ y})
+  H p = (p ∙ q) ∙ q ⁻¹
+          ＝[ ∙-associative p q (q ⁻¹) ]
+        p ∙ (q ∙ q ⁻¹)
+          ＝[ pathAction (_∙_ p) (⁻¹-inverseʳ q) ]
+        p ∙ reflexive
+          ＝[ ∙-unitʳ p ]
+        p ∎
+
+  K : (flip _∙_ q) ∘ (flip _∙_ (q ⁻¹)) ∼ (identity {_} {x ＝ z})
+  K p = (p ∙ q ⁻¹) ∙ q
+          ＝[ ∙-associative p (q ⁻¹) q ]
+        p ∙ (q ⁻¹ ∙ q)
+          ＝[ pathAction (_∙_ p) (⁻¹-inverseˡ q) ]
+        p ∙ reflexive
+          ＝[ ∙-unitʳ p ]
+        p ∎
+```
+
+= Transport along a path is inverse to transport along the inverse path <note:985f36e7-d07e-4742-ac8c-b7c0dfe1def8>
+
+#link("note://1229c654-047b-4517-9f4c-df4c03224d02")[Transporting] along a
+#link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path] and transporting
+along the #link("note://95e3c813-ae44-4341-ac56-286cda078568")[inverse] of the
+path are #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[inverse
+functions].
+ 
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.1"))[
+    Let $B$ be a #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type
+    family] over a type $A$ and let $p ofType x = y$ be a
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path] between elements
+    $x, y ofType A$. Then the functions
+    $
+        tr_(B)(p) ofType & B(x) -> B(y), \
+        tr_(B)(p^(-1)) ofType & B(y) -> B(x).
+    $
+    are #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[inverses].
+]
+#proof[
+    By #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path induction], it
+    suffices to assume $p$ is $refl_(x)$. In this case, both
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[required homotopies]
+    hold #link("note://1229c654-047b-4517-9f4c-df4c03224d02")[by definition].
+]
+
+```agda
+transportInverse : {i j : Level} {A : Type i} {B : A → Type j} {x y : A} →
+                   (p : x ＝ y) →
+                   Inverse (transport B p) (transport B (p ⁻¹))
+transportInverse {_} {_} {A} {B} {x} {y} reflexive = pair H K
+  where
+  H : (transport B (reflexive ⁻¹)) ∘ (transport B reflexive) ∼
+      (identity {_} {B x})
+  H z = reflexive
+
+  K : (transport B reflexive) ∘ (transport B (reflexive ⁻¹)) ∼
+      (identity {_} {B y})
+  K w = reflexive
 ```
