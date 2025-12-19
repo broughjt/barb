@@ -155,6 +155,23 @@ hasInverse↔isEquivalence : {i j : Level} {A : Type i} {B : Type j}
                            HasInverse f ↔ IsEquivalence f
 hasInverse↔isEquivalence =
   pair hasInverse→isEquivalence isEquivalence→hasInverse
+
+-- Getters
+
+inverse→hasInverse : {i j : Level} {A : Type i} {B : Type j}
+                     (f : A → B) (g : B → A) →
+                     Inverse f g → HasInverse f
+inverse→hasInverse f g p = pair g p
+
+inverse→isEquivalence : {i j : Level} {A : Type i} {B : Type j}
+                        (f : A → B) (g : B → A) →
+                        Inverse f g → IsEquivalence f
+inverse→isEquivalence f g p = hasInverse→isEquivalence (pair g p)
+
+inverse→≃ : {i j : Level} {A : Type i} {B : Type j}
+            (f : A → B) (g : B → A) →
+            Inverse f g → A ≃ B
+inverse→≃ f g p = pair f (inverse→isEquivalence f g p)
 ```
 
 = Inverse inverse <note:b46b5dcc-963a-471f-9088-8872ed6a88c2>
@@ -172,9 +189,9 @@ hasInverse↔isEquivalence =
 
 ```agda
 inverseInverse : {i j : Level} {A : Type i} {B : Type j}
-                 {f : A → B} {g : B → A} →
+                 (f : A → B) (g : B → A) →
                  Inverse f g → Inverse g f
-inverseInverse = Sigma.swap
+inverseInverse f g = Sigma.swap
 ```
 
 = Inverse of an equivalence <note:b659d823-d985-4d50-bd63-416ecd1a107b>
@@ -201,6 +218,5 @@ inverses, and equivalences].
 ≃-inverse : {i j : Level} {A : Type i} {B : Type j} →
             A ≃ B → B ≃ A
 ≃-inverse (pair f p) with isEquivalence→hasInverse p
-... | (pair g q) =
-  pair g (hasInverse→isEquivalence (pair f (inverseInverse {f = f} {g = g} q))) 
+... | (pair g q) = inverse→≃ g f (inverseInverse f g q)
 ```

@@ -48,7 +48,7 @@ uncurry {C = C} = induction {P = λ u → C (project₁ u) (project₂ u)}
 
 Compare #cite(<rijke2025>, form: "prose", supplement: "rem. 4.6.3").
 
-= Product swap <note:ee77073e-2222-4957-9ed3-f8a120d8588d>
+= Product swap function <note:ee77073e-2222-4957-9ed3-f8a120d8588d>
  
 We define a #link("note://23a01b78-e433-4a66-8915-bfda82ee149a")[product] swap
 function $A times B -> B times A$.
@@ -57,4 +57,29 @@ function $A times B -> B times A$.
 swap : {i j : Level} {A : Type i} {B : Type j} →
        A × B → B × A
 swap (pair x y) = pair y x
+```
+
+= Sigma associate functions <note:27424231-9e91-44a9-8311-360d17718901>
+
+We define associate functions for
+#link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[$Sigma$-types].
+
+```agda
+associateˡ : {i j k : Level}
+             {A : Type i} {B : A → Type j} {C : (x : A) → B x → Type k} →
+             Σ (Σ A B) (uncurry C) → Σ A (λ x → Σ (B x) (C x))
+associateˡ (pair (pair x y) z) = pair x (pair y z)
+
+associateʳ : {i j k : Level}
+             {A : Type i} {B : A → Type j} {C : (x : A) → B x → Type k} →
+             Σ A (λ x → Σ (B x) (C x)) → Σ (Σ A B) (uncurry C)
+associateʳ (pair x (pair y z)) = pair (pair x y) z
+
+associateˡ' : {i j k : Level} {A : Type i} {B : Type j} {C : Type k} →
+              (A × B) × C → A × (B × C)
+associateˡ' (pair (pair x y) z) = pair x (pair y z)
+
+associateʳ' : {i j k : Level} {A : Type i} {B : Type j} {C : Type k} →
+              A × (B × C) → (A × B) × C
+associateʳ' (pair x (pair y z)) = pair (pair x y) z
 ```

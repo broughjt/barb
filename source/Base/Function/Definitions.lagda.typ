@@ -208,3 +208,14 @@ A ≃ B = Σ (A → B) IsEquivalence
 
 infix 3 _≃_
 ```
+
+= Involutive <note:47767cc9-0064-45d3-8735-203b3236976d>
+ 
+A function $f ofType A -> A$ from a type to itself is *involutive* if it serves
+as its own #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[inverse].
+
+```agda
+Involutive : {i : Level} {A : Type i} →
+             (A → A) → Type i
+Involutive f = Inverse f f
+```
