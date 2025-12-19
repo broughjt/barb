@@ -11,17 +11,17 @@ open import Base.Universe
 
 = Sigma type <note:ae098784-7572-4d29-b548-a2db9b6d004a>
  
-Given a #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] $B$
-over $A$, the *dependent pair type* (or *$Sigma$-type*), written $sigmaType(x,
-A) B(x)$, is an #link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[inductive
-type] equipped with a *pairing*
+Following #cite(<rijke2025>, form: "prose", supplement: "def. 4.6.1"), given a
+#link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] $B$ over $A$,
+the *dependent pair type* (or *$Sigma$-type*), written $sigmaType(x, A) B(x)$,
+is an #link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[inductive type]
+equipped with a *pairing*
 #link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[constructor]
 $
-    pair ofType piType(x, A) ( B(x) -> sigmaType(y, A) B(y) )
+    pair ofType piType(x, A) ( B(x) -> sigmaType(y, A) B(y) ).
 $
-@rijke2025[def. 4.6.1].  The
-#link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[induction principle] for
-$Sigma$-types asserts for any
+The #link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[induction principle]
+for $Sigma$-types asserts for any
 #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] $P(u)$ indexed
 by $u ofType sigmaType(x, A) B(x)$, there is a function
 $
@@ -82,14 +82,13 @@ project₂ (pair _ y) = y
 
 = (Cartesian) Product type <note:23a01b78-e433-4a66-8915-bfda82ee149a>
  
-Given types $A$ and $B$, the *product type* $A times B$ of $A$ and $B$ is
-defined by
+Following #cite(<rijke2025>, form: "prose", supplement: "def. 4.6.4"), given
+types $A$ and $B$, the *product type* $A times B$ of $A$ and $B$ is defined by
 $
     A times B := sigmaType(x, A) B.
 $
-
 The product type is a special case of a
-#link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[$Sigma$-type], where the
+#link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[$Sigma$-type] where the
 #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] $B(x)$ is
 constant over $A$.
 

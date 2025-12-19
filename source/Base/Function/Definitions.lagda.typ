@@ -5,6 +5,7 @@
 ```agda
 module Base.Function.Definitions where
 
+open import Base.Function.Core
 open import Base.Identity.Core
 open import Base.Identity.Definitions renaming (_⁻¹ to _⁻¹'; _∙_ to _∙'_)
 open import Base.Universe
@@ -119,8 +120,9 @@ infixl 7 _∙_
 
 = Whiskering operations on homotopies <note:7805061a-565d-4412-9ca4-acb998e89555>
  
-The *whiskering* operations on homotopies define a notion of composition between
-functions and homotopies. Suppose we have $H ofType f ~ g$ between functions $f,
+#cite(<rijke2025>, form: "prose") defines the *whiskering* operations on
+homotopies as a notion of composition between functions and homotopies
+(def. 9.1.7). Suppose we have $H ofType f ~ g$ between functions $f,
 g ofType A -> B$, and let $h ofType B -> C$ be another function. We define
 $
     h dot.op H := lambda x . ap_(h)(H(x)) ofType h compose f ~ h compose g.
@@ -128,6 +130,81 @@ $
 Similarly, let $f ofType A -> B$ and suppose we have $H ofType g ~ h$ between
 two functions $g, h ofType B -> C$. We define
 $
-    H dot.op f := lambda x . H(f(x)) ofType g compose f ~ h compose f
+    H dot.op f := lambda x . H(f(x)) ofType g compose f ~ h compose f.
 $
-@rijke2025[def. 9.1.7].
+
+```agda
+_∙ₗ_ : {i j k : Level} {A : Type i} {B : Type j} {C : Type k}
+       {f g : A → B}
+       (h : B → C) (H : f ∼ g) → h ∘ f ∼ h ∘ g
+h ∙ₗ H = (pathAction h) ∘ H
+
+_∙ᵣ_ : {i j k : Level} {A : Type i} {B : Type j} {C : Type k}
+       {g h : B → C} →
+       (H : g ∼ h) (f : A → B) → g ∘ f ∼ h ∘ f
+H ∙ᵣ f = H ∘ f
+```
+
+= Sections, retractions, inverses, and equivalences <note:32c2ca55-63ba-411b-9052-676a51fd16a1>
+ 
+For each of the following definitions, we follow #cite(<rijke2025>, form:
+"prose", supplement: "def. 1.1.7").
+
+A *section* of a map $f ofType A -> B$ is a map $g ofType B -> A$ equipped with
+a #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopy] $f compose g ~
+id_(B)$ witnessing that $g$ is a right inverse of $f$.
+
+```agda
+RightInverse : {i j : Level} {A : Type i} {B : Type j} →
+               (A → B) → (B → A) → Type j
+RightInverse {B = B} f g = f ∘ g ∼ (identity {_} {B})
+
+Section : {i j : Level} {A : Type i} {B : Type j} →
+          (A → B) → Type (i ⊔ j)
+Section {A = A} {B = B} f = Σ (B → A) (RightInverse f)
+```
+
+A *retraction* of $f ofType A -> B$ is a map $g ofType B -> A$ equipped with a
+homotopy $g compose f ~ id_(A)$ witnessing that $g$ is a left inverse of $f$.
+
+```agda
+LeftInverse : {i j : Level} {A : Type i} {B : Type j} →
+              (A → B) → (B → A) → Type i
+LeftInverse {A = A} f g = g ∘ f ∼ (identity {_} {A})
+
+Retraction : {i j : Level} {A : Type i} {B : Type j} →
+             (A → B) → Type (i ⊔ j)
+Retraction {A = A} {B = B} f = Σ (B → A) (LeftInverse f)
+```
+
+A function $g ofType B -> A$ is an *inverse* of a function $f ofType A -> B$ if
+$g$ is both a section and a retraction of $f$, that is, if it is both a left and
+right invese inverse of $f$.
+
+```agda
+Inverse : {i j : Level} {A : Type i} {B : Type j} →
+          (A → B) → (B → A) → Type (i ⊔ j)
+Inverse f g = LeftInverse f g × RightInverse f g
+
+HasInverse : {i j : Level} {A : Type i} {B : Type j} →
+             (A → B) → Type (i ⊔ j)
+HasInverse {A = A} {B = B} f = Σ (B → A) (Inverse f)
+```
+
+A function $f ofType A -> B$ is an *equivalence* if it has both a section and a retraction.
+
+```agda
+IsEquivalence : {i j : Level} {A : Type i} {B : Type j} →
+                (A → B) → Type (i ⊔ j)
+IsEquivalence f = Section f × Retraction f
+```
+
+We write $A tilde.eq B$ for the type of all equivalences from a type $A$ to a
+type $B$.
+
+```agda
+_≃_ : {i j : Level} → Type i → Type j → Type (i ⊔ j)
+A ≃ B = Σ (A → B) IsEquivalence
+
+infix 3 _≃_
+```

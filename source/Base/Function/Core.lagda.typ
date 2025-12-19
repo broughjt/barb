@@ -37,7 +37,7 @@ Let $A$ be a type, let $B$ be a
 $C$ be a family indexed by $x ofType A$ and $y ofType B(x)$. Given functions
 
 $
-    f ofType piType(x, A) B(x) "and" g ofType piType(y, B(x)) C(x, y),
+    f ofType piType(x, A) B(x) quad "and" quad g ofType piType(y, B(x)) C(x, y),
 $
 
 the *composition* of $g$ after $f$ is a new function $g compose f ofType
@@ -48,7 +48,7 @@ $
 $
 
 which applies $f$ to $x ofType A$ and then applies $g$ to the result to get
-$g(f(x)) ofType C(x, f(x))$ @rijke2025[def. 2.2.5] @aluffi2009[10].
+$g(f(x)) ofType C(x, f(x))$ @rijke2025[def. 2.2.5].
 
 ```agda
 _∘_ : {i j k : Level}

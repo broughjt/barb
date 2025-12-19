@@ -13,8 +13,7 @@ open import Data.Coproduct.Core
 = Decision for a type <note:36f1a370-ca8c-4053-8ee6-d284b50b90e5>
 
 A *decision* for a type $A$ is an element of the
-#link("note://001d31c7-7fb6-4878-883a-ff464bb9c0a8")[coproduct] $A + not A$
-(cf. #cite_link(<rijke2025>, "Rijke 2025, def. 8.1.1")).
+#link("note://001d31c7-7fb6-4878-883a-ff464bb9c0a8")[coproduct] $A + not A$.
 A *decision procedure* for a
 #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] $P ofType A ->
 cal(U)$ is a dependent function
@@ -26,12 +25,12 @@ which assigns to each $x ofType A$ a decision for the
 #link("note://85839d30-6530-4e54-a8ba-efd1c8709928")[fiber] $P(x)$.
 
 If the type of decisions $A + not A$ for a type $A$ is inhabited, we say the
-type $A$ is *decidable*. However, I find this terminology a bit misleading,
-since "decidable" sounds like a predicate which applies to arbitrary types $A$,
-but in general the type $A + not A$ need not be a proposition. I will use the
-"decidable" language when it is clear that the types being dealt with are
-propositions, but when this is not the case I will try to use the more explicit
-"decision" language.
+type $A$ is *decidable* #cite(<rijke2025>, form: "prose", supplement: "def 8.1.1").
+However, I find this terminology a bit misleading, since "decidable" sounds like
+a predicate which applies to arbitrary types $A$, but in general the type $A +
+not A$ need not be a proposition. I will use the "decidable" language when it is
+clear that the types being dealt with are propositions, but when this is not the
+case I will try to use the more explicit "decision" language.
 
 ```agda
 Decision : {i : Level} → Type i → Type i

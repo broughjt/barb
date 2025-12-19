@@ -10,7 +10,8 @@ open import Base.Universe hiding (zero; successor)
 
 = Type of natural numbers <note:600e8ce4-83d2-4a92-9295-ccb0aef05689>
 
-The type of *natural numbers*, written $NN$, has two
+Following #cite(<rijke2025>, form: "prose", supplement: "sec. 3.1"), the type of
+*natural numbers*, written $NN$, has two
 #link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[constructors] $0 ofType NN$
 and $s ofType NN -> NN$. Given a
 #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] $P$ over $NN$,
@@ -30,14 +31,19 @@ $
     inductionNN(p_0, p_s, s(n)) & dot(eq) p_(s)(n, inductionNN(p_0, p_s, n))
 $
 
-are satisfied @rijke2025. Zero is definitely a natural number. People that think
-the natural numbers start at one have no class.
+are satisfied.
+
+By the way, zero is definitely a natural number. People that think the natural
+numbers start at one have no class.
 
 ```agda
 data ℕ : Type Base.Universe.zero where
   zero : ℕ
   successor : ℕ → ℕ
 
+-- Compiler magic which swaps out these unary natural numbers for Haskell
+-- integers in compiled code. This makes things not horribly slow. We also get
+-- syntax sugar for writing natural numbers as decimal literals.
 {-# BUILTIN NATURAL ℕ #-}
 
 induction : {i : Level} {P : ℕ → Type i} →

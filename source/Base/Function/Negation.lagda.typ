@@ -69,7 +69,7 @@ contrapositive f g = g ∘ f
 
 = Negation resolution <note:4af48c11-22e0-4aae-89eb-fad6d4320836>
  
-#lemma(supplement: cite_link(<rijke2025>, [Rijke 2025, Prop 4.4.3]))[
+#lemma(label: "5", supplement: cite_link(<rijke2025>, [Rijke 2025, Prop 4.4.3]))[
     Let $A$ and $B$ be types. If $B$ is empty, then $A + B$ implies
     $A$. Similarly, if $A$ is empty, then $A + B$ implies $B$. In other words,
     there are functions

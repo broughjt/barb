@@ -116,7 +116,7 @@ A type $A$ has *decidable equality* if it comes equipped with a
 $
     piType(x, y, A) x attach(eq, br: A) y.
 $
-This is the same as saying that there is always a
+@rijke2025[def. 8.1.5]. This is the same as saying that there is always a
 #link("note://36f1a370-ca8c-4053-8ee6-d284b50b90e5")[decision] for the
 #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[identity type] $x
 attach(eq, br: A) y$ between arbitrary elements $x, y$ of $A$.

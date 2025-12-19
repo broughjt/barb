@@ -10,7 +10,8 @@ open import Base.Universe
 
 = Unit type <note:fe0ba530-46e9-4031-83bb-330db4d12b4e>
  
-The *unit type*, denoted $unitType$, is the type equipped with a single
+Following #cite(<rijke2025>, form: "prose", supplement: "def. 4.2.1"), the *unit
+type*, denoted $unitType$, is the type equipped with a single
 #link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[constructor] $star ofType
 unitType$, satisfying the
 #link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[induction principle] that
@@ -21,14 +22,14 @@ $
     induction1 ofType P(star) -> piType(x, unitType) P(x)
 $
 
-satisfying the #link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[computation
+such that the #link("note://367095ff-9cce-417f-a059-9c0290d0ca99")[computation
 rule]
 
 $
     induction1(p, star) dot(eq) p
 $
 
-for any $p ofType P(star)$ @rijke2025[def. 4.2.1].
+holds for any $p ofType P(star)$.
 
 ```agda
 data 𝟏 : Type zero where

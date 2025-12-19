@@ -11,9 +11,9 @@ open import Data.Bool.Core as Bool
 
 = Boolean operations <note:84ca1018-8448-4ecf-beb0-9bc92b18c914>
  
-We define *negation*, *conjunction*, *disjunction*, and the conditional
-*if-then-else* construct on booleans following #cite(<rijke2025>, form: "prose",
-supplement: "exer. 4.2").
+We define *negation*, *conjunction*, and *disjunction* on
+#link("note://78e3004d-88e7-45e5-8d4d-da76962195f3")[booleans] following
+#cite(<rijke2025>, form: "prose", supplement: "exer. 4.2").
 
 ```agda
 !_ : 𝟐 → 𝟐
