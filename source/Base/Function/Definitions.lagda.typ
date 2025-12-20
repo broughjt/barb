@@ -143,6 +143,9 @@ _∙ᵣ_ : {i j k : Level} {A : Type i} {B : Type j} {C : Type k}
        {g h : B → C} →
        (H : g ∼ h) (f : A → B) → g ∘ f ∼ h ∘ f
 H ∙ᵣ f = H ∘ f
+
+infixl 7 _∙ₗ_
+infixl 7 _∙ᵣ_
 ```
 
 = Sections, retractions, inverses, and equivalences <note:32c2ca55-63ba-411b-9052-676a51fd16a1>
