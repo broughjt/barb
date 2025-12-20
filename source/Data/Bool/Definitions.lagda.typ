@@ -7,6 +7,8 @@ module Data.Bool.Definitions where
 
 open import Base.Universe
 open import Data.Bool.Core as Bool
+open import Data.Empty
+open import Data.Unit
 ```
 
 = Boolean operations <note:84ca1018-8448-4ecf-beb0-9bc92b18c914>
@@ -33,4 +35,19 @@ true || _ = true
 false || x = x
 
 infixr 6 _||_
+```
+
+= Observational equality on booleans <note:3a2749a4-1b34-4bd5-8821-271a987b029a>
+
+Following #cite(<rijke2025>, form: "prose", supplement: "exer. 6.2(a)"), we
+define *observational equality on booleans*, which is a dedicated notion of
+equality for booleans, used to characterize the boolean identity types and show
+that booleans have decidable equality.
+
+```agda
+Equal : 𝟐 → 𝟐 → Type zero
+Equal false false = 𝟏
+Equal false true = 𝟎
+Equal true false = 𝟎
+Equal true true = 𝟏
 ```

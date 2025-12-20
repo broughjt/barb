@@ -19,7 +19,10 @@ open import Data.Sigma.Definitions as Sigma
 
 = Logically equivalent and decidable implies decidable <note:d70b37f9-d122-414e-98b2-19ac5af7a159>
 
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, lem. 8.1.6"))[
+#lemma(
+    label: "17",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, lem. 8.1.6")
+)[
     If types $A$ and $B$ are
     #link("note://27061ddb-2091-46c1-8752-21db2ab57f44")[logically equivalent],
     then there is a

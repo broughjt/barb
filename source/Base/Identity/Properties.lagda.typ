@@ -8,6 +8,8 @@ module Base.Identity.Properties where
 open import Base.Function.Core
 open import Base.Function.Definitions as Function hiding (_⁻¹; _∙_)
 open import Base.Function.Properties.Equivalence
+open import Base.Function.Negation
+open import Base.Family.Definitions
 open import Base.Identity.Core
 open import Base.Identity.Definitions
 open import Base.Identity.Syntax
@@ -645,4 +647,51 @@ transportInverse {_} {_} {A} {B} {x} {y} reflexive = pair H K
   K : (transport B reflexive) ∘ (transport B (reflexive ⁻¹)) ∼
       (identity {_} {B y})
   K w = reflexive
+```
+
+= Family of identity types is reflexive <note:66b650cf-b748-49bd-8a08-edf38950bb2e>
+ 
+#lemma[
+    The #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[family of identity
+    types] is #link("note://7e7a1c6f-6051-4526-83e9-01d030717ea5")[reflexive].
+]
+#proof[
+    Let $A$ be any type. For each $x ofType A$, take $refl_(x) ofType x = x$.
+]
+
+= Disequality is irreflexive <note:179cce1e-612e-4f8c-b176-a825693f9b87>
+
+#lemma[
+    #link("note://3cb5f252-202d-45a6-a77f-c7db57262632")[Disequality] is
+    #link("note://088c9e40-5313-4e02-96df-58368e796ebe")[irreflexive].
+]
+#proof[
+    Let $A$ be any type and let $x ofType A$. If we had $f ofType x != x$,
+    we could apply $f$ to $refl_(x) ofType x = x$ and obtain a contradiction.
+]
+
+```agda
+≠-irreflexive : {i : Level} {A : Type i} →
+                Irreflexive {A = A} _≠_
+≠-irreflexive x = absurd reflexive
+```
+ 
+= Disequality is symmetric <note:addb74f1-e36c-4c79-bbb7-3d2b251e5a88>
+
+#lemma[
+    #link("note://3cb5f252-202d-45a6-a77f-c7db57262632")[Disequality] is
+    #link("note://ef9aa02f-8f36-46f5-ab3b-829123f2a139")[symmetric].
+]
+#proof[
+    Let $x, y ofType A$ for any type $A$. Suppose $f ofType x != y$. Then if
+    there was a #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path] $p
+    ofType y = x$, we could
+    #link("note://95e3c813-ae44-4341-ac56-286cda078568")[invert] it to get
+    $p^(-1) ofType x = y$, and then obtain a contradiction by applying $f$.
+]
+ 
+```agda
+≠-symmetric : {i : Level} {A : Type i} →
+              Symmetric {A = A} _≠_
+≠-symmetric p = p ∘ _⁻¹
 ```
