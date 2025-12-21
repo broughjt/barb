@@ -39,9 +39,9 @@ open import Data.Sigma.Definitions as Sigma
 ]
 
 ```agda
-identityEquivalence : {i : Level} {A : Type i} →
+identityIsEquivalence : {i : Level} {A : Type i} →
                       IsEquivalence (identity {_} {A})
-identityEquivalence = let p = pair identity λ x → reflexive in pair p p
+identityIsEquivalence = let p = pair identity λ x → reflexive in pair p p
 ```
 
 = If a function has both a section and a retraction then the section and retraction are homotopic <note:1eff33a2-4cba-48c0-8d40-19bf2c5d08ca>
@@ -354,11 +354,11 @@ inverseCompose g g' f f' (pair G G') (pair F F') = pair
 ]
 
 ```agda
-equivalenceCompose :
+isEquivalenceCompose :
   {i j k : Level} {A : Type i} {B : Type j} {C : Type k}
   (g : B → C) (f : A → B) →
   IsEquivalence g → IsEquivalence f → IsEquivalence (g ∘ f)
-equivalenceCompose g f p q
+isEquivalenceCompose g f p q
   with isEquivalence→hasInverse p | isEquivalence→hasInverse q
 ... | pair g' p' | pair f' q' =
   inverse→isEquivalence (g ∘ f) (f' ∘ g') (inverseCompose g g' f f' p' q')
@@ -366,7 +366,7 @@ equivalenceCompose g f p q
 ≃-compose : {i j k : Level} {A : Type i} {B : Type j} {C : Type k} →
             (B ≃ C) → (A ≃ B) → (A ≃ C)
 ≃-compose (pair g p) (pair f q) =
-  pair (g ∘ f) (equivalenceCompose g f p q)
+  pair (g ∘ f) (isEquivalenceCompose g f p q)
 ```
 
 = Section and homotopic implies section <note:09a34157-9846-4e5c-bd5f-bb3b00926cd9>
@@ -449,7 +449,7 @@ retraction→homotopy→retractionʳ {f = f} G H = ((H ⁻¹) ∙ᵣ f) ∙ G
 
 = Inverse and homotopic implies inverse <note:52746242-840c-49cd-b924-5d5889004220>
  
-#lemma[
+#lemma(label: "25")[
     Let $g ofType B -> A$ be an
     #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[inverse] to a function
     $f ofType A -> B$. If there is another function $f' ofType A -> B$ with a
@@ -501,22 +501,22 @@ inverse→homotopy→inverseʳ {f = f} {g = g} {g' = g'} (pair G H) K = pair
 ]
 
 ```agda
-equivalence→homotopy→equivalence :
+isEquivalence→homotopy→isEquivalence :
   {i j : Level} {A : Type i} {B : Type j}
   {f f' : A → B} →
   IsEquivalence f → f ∼ f' → IsEquivalence f'
-equivalence→homotopy→equivalence (pair (pair g G) (pair h H)) L = pair
+isEquivalence→homotopy→isEquivalence (pair (pair g G) (pair h H)) L = pair
   (pair g (section→homotopy→sectionˡ G L))
   (pair h (retraction→homotopy→retractionˡ {g = h} H L))
 
-homotopy→equivalence↔equivalence :
+homotopy→isEquivalence↔isEquivalence :
   {i j : Level} {A : Type i} {B : Type j}
   {f f' : A → B} →
   f ∼ f' → 
   IsEquivalence f ↔ IsEquivalence f'
-homotopy→equivalence↔equivalence H =
-  pair (flip equivalence→homotopy→equivalence H)
-       (flip equivalence→homotopy→equivalence (H ⁻¹))
+homotopy→isEquivalence↔isEquivalence H =
+  pair (flip isEquivalence→homotopy→isEquivalence H)
+       (flip isEquivalence→homotopy→isEquivalence (H ⁻¹))
 ```
 
 = Equivalent implies logically equivalent <note:c03e918e-a39a-46c0-8c2b-84e2f1bbb97c>
@@ -536,4 +536,294 @@ homotopy→equivalence↔equivalence H =
 ≃→↔ : {i j : Level} {A : Type i} {B : Type j} →
       (A ≃ B) → (A ↔ B)
 ≃→↔ (pair f (pair (pair g _) _)) = pair f g
+```
+
+= Commutative triangle with section lemma <note:b92b0253-66cd-46ff-aaab-8c33541cfd45>
+ 
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.4(a)"))[
+    Consider a commuting triangle
+    #figure(
+        diagram($
+            A edge("rr", h, ->) edge("dr", f, ->, label-side: #right) & & B edge("dl", g, ->, label-side: #left) \
+                & C
+        $)
+    )
+    with $H ofType f ~ g compose h$. If $h$ has a
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[section] $s ofType B ->
+    A$, then the triangle
+    #figure(
+        diagram($
+            B edge("rr", s, ->) edge("dr", g, ->, label-side: #right) & & A edge("dl", f, ->, label-side: #left) \
+                & C
+        $)
+    )
+    commutes, and $f$ has a section if and only if $g$ has a section.
+]
+#proof[
+    *Step 1 (Commutativity).* Suppose $h ofType A -> B$ has a section $s ofType
+    B -> A$ equipped with a homotopy $K ofType h compose s ~ id_(B)$. To show
+    the triangle commutes, we need to construct a
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopy] $S ofType g ~
+    f compose
+    s$. #link("note://7805061a-565d-4412-9ca4-acb998e89555")[Whiskering] on $H$
+    the right by $s$ gives
+    $
+        H dot.op s ofType & f compose s ~ (g compose h) compose s
+    $
+    and whiskering $K$ on the left by $g$ gives
+    $
+        (g compose h) compose s ~ g.
+    $
+    Thus, we can obtain $S$ by
+    #link("note://a3eaa21d-b0a4-4aed-80fd-ed5aeb914aab")[concatenating] these
+    two and then taking their
+    #link("note://926fa23f-6495-407a-a492-9aec9e451930")[inverse].
+
+    *Step 2 ($==>$).* Next, suppose $f ofType A -> X$ has a section $t ofType X
+    -> A$ equipped with $T ofType f compose t ~ id_(X)$. Then we can obtain a
+    homotopy $U ofType g compose (h compose t) ~ id_(X)$ by right whiskering $H$
+    with $t$
+    $
+        H dot.op t ofType f compose t ~ (g compose h) compose t,
+    $
+    taking the inverse
+    $
+        (H dot.op t)^(-1) ofType (g compose h) compose t ~ f compose t,
+    $
+    and concatenating with $T$
+    $
+        (H dot.op t)^(-1) dot.op T ofType g compose (h compose t) ~ id_(X).
+    $
+    Therefore $h compose t$ is a section of $g$.
+
+    *Step 3 ($<==$).* Finally, suppose $g ofType B -> X$ has a section $u ofType
+    X -> B$ equipped with $U ofType g compose u ~ id_(X)$. First, we can obtain
+    a homotopy $S^(-1) ofType f compose s ~ g$ by inverting the homotopy $S$
+    from Step 1. Whiskering on $S$ on the right by $u$ gives
+    $
+        S^(-1) dot.op u ofType f compose s compose u ~ g compose u.
+    $
+    Therefore by concatenating on the right by $U$ we obtain
+    $
+        (S^(-1) dot.op u) dot.op U ofType f compose s compose u ~ id_(X),
+    $
+    and hence $s compose u$ is a section of $f$.
+]
+
+```agda
+sectionTriangle :
+  {i j k : Level} {A : Type i} {B : Type j} {X : Type k}
+  (f : A → X) (g : B → X) (h : A → B) (s : B → A) →
+  f ∼ g ∘ h → RightInverse h s → g ∼ f ∘ s
+sectionTriangle f g h s H K = (L ∙ M) ⁻¹
+  where
+  L : f ∘ s ∼ (g ∘ h) ∘ s
+  L = H ∙ᵣ s
+
+  M : (g ∘ h) ∘ s ∼ g
+  M = g ∙ₗ K
+
+sectionTop→left→right :
+  {i j k : Level} {A : Type i} {B : Type j} {X : Type k}
+  (f : A → X) (g : B → X) (h : A → B) →
+  f ∼ g ∘ h → Section h → Section f → Section g
+sectionTop→left→right {X = X} f g h H (pair s S) (pair t T) =
+  pair (h ∘ t) U
+  where
+  U : g ∘ (h ∘ t) ∼ identity {_} {X}
+  U = (H ∙ᵣ t) ⁻¹ ∙ T
+
+sectionTop→right→left :
+  {i j k : Level} {A : Type i} {B : Type j} {X : Type k}
+  (f : A → X) (g : B → X) (h : A → B) →
+  f ∼ g ∘ h → Section h → Section g → Section f
+sectionTop→right→left f g h H (pair s S) (pair u U) =
+  pair (s ∘ u) (S' ⁻¹ ∙ᵣ u ∙ U)
+  where
+  S' : g ∼ f ∘ s
+  S' = sectionTriangle f g h s H S
+
+sectionTop→left↔right :
+  {i j k : Level} {A : Type i} {B : Type j} {X : Type k}
+  (f : A → X) (g : B → X) (h : A → B) →
+  f ∼ g ∘ h → Section h → (Section f ↔ Section g)
+sectionTop→left↔right f g h H p =
+  pair (sectionTop→left→right f g h H p)
+       (sectionTop→right→left f g h H p)
+```
+
+= Commutative triangle with retraction lemma <note:92588128-5591-45a6-9559-c75e846fde57>
+ 
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.4(b)"))[
+    Consider a commuting triangle
+    #figure(
+        diagram($
+            A edge("rr", h, ->) edge("dr", f, ->, label-side: #right) & & B edge("dl", g, ->, label-side: #left) \
+                & X
+        $)
+    )
+    with $H ofType f ~ g compose h$. If $g ofType B -> X$ has a
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[retraction] $r ofType X
+    -> B$, then the triangle
+    #figure(
+        diagram($
+            A edge("rr", f, ->) edge("dr", h, ->, label-side: #right) & & X edge("dl", r, ->, label-side: #left) \
+                & B
+        $)
+    )
+    commutes, and $f ofType A -> X$ has a retraction if and only if $h ofType A
+    -> B$ has a retraction.
+]
+#proof[
+    *Step 1 (Commutativity).* Let $R ofType r compose g ~ id_(B)$ witness that
+    $r ofType X -> B$ is a retraction of $g ofType B -> X$. Then we can
+    construct a #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopy]
+    $S ofType h ~ r compose f$ by whiskering $H$ on the left by $r$ $ r dot.op H
+    ofType r compose f ~ r compose g compose h, $ whiskering $R$ on the right by
+    $h$
+    $
+        R dot.op h ofType r dot.op g dot.op h ~ h,
+    $
+    and then #link("note://a3eaa21d-b0a4-4aed-80fd-ed5aeb914aab")[concatenating]
+    these two homotopies and taking their
+    #link("note://926fa23f-6495-407a-a492-9aec9e451930")[inverse].
+
+    *Step 2 ($==>$).* Suppose $s ofType X -> A$ is a retraction of $f ofType X
+    -> A$, with $S ofType s compose f ~ id_(A)$. Whiskering $H^(-1)$ on the left
+    by $s$ gives
+    $
+        s dot.op H^(-1) ofType s compose g compose h ~ s compose f.
+    $
+    Concatenating this with $S$ then gives
+    $
+        (s dot.op H^(-1)) dot.op S ofType (s compose g) compose h ~ id_(A).
+    $
+    Therefore $s compose g$ is a retraction of $h$.
+
+    *Step 3 ($<==$).* Now let $t ofType B -> A$ be a section of $h ofType A ->
+    B$ equipped with a homotopy $T ofType t compose h ~ id_(A)$. Whiskering the
+    inverse of the homotopy $S ofType h ~ r compose f$ constructed in Step 1 on
+    the left by $t$ gives
+    $
+        t compose r compose f ~ t compose h.
+    $
+    Then concatenating on the right by $T ofType t compose h ~ id_(A)$ gives
+    $
+        (t compose r) compose f ~ id_(A).
+    $
+    Therefore $t compose r$ is a retraction of $f$.
+]
+
+```agda
+retractionTriangle :
+  {i j k : Level} {A : Type i} {B : Type j} {X : Type k}
+  (f : A → X) (g : B → X) (h : A → B) (r : X → B) →
+  f ∼ g ∘ h → LeftInverse g r → h ∼ r ∘ f
+retractionTriangle f g h r H R = ((r ∙ₗ H) ∙ (R ∙ᵣ h)) ⁻¹
+
+retractionRight→left→top :
+  {i j k : Level} {A : Type i} {B : Type j} {X : Type k}
+  (f : A → X) (g : B → X) (h : A → B) →
+  f ∼ g ∘ h → Retraction g → Retraction f → Retraction h
+retractionRight→left→top f g h H (pair r R) (pair s S) =
+  pair (s ∘ g) (s ∙ₗ (H ⁻¹) ∙ S)
+
+retractionRight→top→left :
+  {i j k : Level} {A : Type i} {B : Type j} {X : Type k}
+  (f : A → X) (g : B → X) (h : A → B) →
+  f ∼ g ∘ h → Retraction g → Retraction h → Retraction f
+retractionRight→top→left f g h H (pair r R) (pair t T) =
+  pair (t ∘ r) (t ∙ₗ S ⁻¹ ∙ T)
+  where
+  S : h ∼ r ∘ f
+  S = retractionTriangle f g h r H R
+
+retractionRight→left↔top :
+  {i j k : Level} {A : Type i} {B : Type j} {X : Type k}
+  (f : A → X) (g : B → X) (h : A → B) →
+  f ∼ g ∘ h → Retraction g → Retraction f ↔ Retraction h
+retractionRight→left↔top f g h H p =
+  pair (retractionRight→left→top f g h H p)
+       (retractionRight→top→left f g h H p)
+```
+
+= Three for two property for equivalences <note:eb0e793e-d04a-4145-ad54-152aa50d2aee>
+ 
+#theorem(
+    supplement: [$3$-for-$2$ property for equivalences; #cite_link(<rijke2025>, "Rijke 2025, exer. 9.4(c)")]
+)[
+    If any two of the functions in the commutative diagram
+    #figure(
+        diagram($
+            A edge("rr", h, ->) edge("dr", f, ->, label-side: #right) & & B edge("dl", g, ->, label-side: #left) \
+                & X
+        $)
+    )
+    are #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalences], then
+    so is the third.
+]
+#proof[
+    In each case, express the target function as a
+    #link("note://bc9568f6-830b-4b4e-9aab-1808b1127cb0")[composition] of
+    inverses and then apply
+    #link("note://6ba4ba4a-79ee-41cd-911d-f1ea3c0d9eea")[Lemma 22] (which shows
+    that inverses compose) and
+    #link("note://52746242-840c-49cd-b924-5d5889004220")[Lemma 25] (which shows
+    that inverses are invariant under homotopy).
+]
+
+```agda
+isEquivalenceTop→left→right :
+  {i j k : Level} {A : Type i} {B : Type j} {X : Type k}
+  (f : A → X) (g : B → X) (h : A → B) →
+  f ∼ g ∘ h → IsEquivalence h → IsEquivalence f → IsEquivalence g
+isEquivalenceTop→left→right f g h H φ ψ with
+  isEquivalence→hasInverse φ | isEquivalence→hasInverse ψ
+... | (pair s φ') | (pair t ψ') = inverse→isEquivalence g (h ∘ t) ρ
+  where
+  ω : Inverse s h
+  ω = inverseInverse h s φ'
+
+  χ : Inverse (f ∘ s) (h ∘ t)
+  χ = inverseCompose f t s h ψ' ω
+
+  π : g ∼ f ∘ s
+  π = sectionTriangle f g h s H (project₂ φ')
+
+  ρ : Inverse g (h ∘ t)
+  ρ = inverse→homotopy→inverseˡ χ (π ⁻¹)
+
+isEquivalenceTop→right→left :
+  {i j k : Level} {A : Type i} {B : Type j} {X : Type k}
+  (f : A → X) (g : B → X) (h : A → B) →
+  f ∼ g ∘ h → IsEquivalence h → IsEquivalence g → IsEquivalence f
+isEquivalenceTop→right→left f g h H φ ψ with
+  isEquivalence→hasInverse φ | isEquivalence→hasInverse ψ
+... | (pair s φ') | (pair u ψ') = inverse→isEquivalence f (s ∘ u) χ
+  where
+  ω : Inverse (g ∘ h) (s ∘ u)
+  ω = inverseCompose g u h s ψ' φ'
+
+  χ : Inverse f (s ∘ u)
+  χ = inverse→homotopy→inverseˡ ω (H ⁻¹)
+
+isEquivalenceLeft→right→top : 
+  {i j k : Level} {A : Type i} {B : Type j} {X : Type k}
+  (f : A → X) (g : B → X) (h : A → B) →
+  f ∼ g ∘ h → IsEquivalence f → IsEquivalence g → IsEquivalence h
+isEquivalenceLeft→right→top f g h H φ ψ with
+  isEquivalence→hasInverse φ | isEquivalence→hasInverse ψ
+... | (pair t φ') | (pair u ψ') = inverse→isEquivalence h (t ∘ g) π
+  where
+  ψ'' : Inverse u g
+  ψ'' = inverseInverse g u ψ'
+                           
+  ω : Inverse (u ∘ f) (t ∘ g)
+  ω = inverseCompose u g f t ψ'' φ'
+                                 
+  χ : h ∼ u ∘ f
+  χ = retractionTriangle f g h u H (project₁ ψ')
+                                             
+  π : Inverse h (t ∘ g)
+  π = inverse→homotopy→inverseˡ ω (χ ⁻¹)
 ```

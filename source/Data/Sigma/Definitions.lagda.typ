@@ -128,3 +128,38 @@ Equal {B = B} u v =
   Σ (project₁ u ＝ project₁ v)
     (λ α → transport B α (project₂ u) ＝ project₂ v)
 ```
+
+= Sigma swap base functions <note:2b484b41-4405-42e7-bd4d-e35dbe878770>
+ 
+We define a base swap function on
+#link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[$Sigma$-types]. This is
+used in #link("note://0e627eaa-64e9-47a5-b5a3-37a4e92ba151")[Lemma 26] to
+construct an #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]
+between the two types.
+
+```agda
+swapBaseˡ : {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k} →
+            Σ (Σ A B) (C ∘ project₁) → Σ (Σ A C) (B ∘ project₁)
+swapBaseˡ (pair (pair x y) z) = (pair (pair x z) y)
+
+swapBaseʳ : {i j k : Level} {A : Type i} {B : Type j} {C : A → B → Type k} →
+            Σ A (λ x → Σ B (λ y → C x y)) → Σ B (λ y → Σ A (λ x → C x y))
+swapBaseʳ (pair x (pair y z)) = pair y (pair x z)
+```
+
+= Product map <note:ec14d7a6-df57-4319-aa85-1f575cb45244>
+ 
+Given maps $f ofType A -> C$, $g ofType B -> D$, we can define a map on
+#link("note://23a01b78-e433-4a66-8915-bfda82ee149a")[products] $f times g ofType
+A times B -> C times D$ by
+$
+    (f times g)((x, y)) = (f(x), g(y))
+$
+@rijke2025[exer. 9.7(a)].
+
+```agda
+map : {i j k l : Level}
+      {A : Type i} {B : Type j} {C : Type k} {D : Type l} →
+      (A → C) → (B → D) → (A × B → C × D)
+map f g (pair x y) = pair (f x) (g y)
+```

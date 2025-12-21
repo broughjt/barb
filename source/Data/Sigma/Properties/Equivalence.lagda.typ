@@ -7,6 +7,7 @@ module Data.Sigma.Properties.Equivalence where
 
 open import Base.Function.Core
 open import Base.Function.Definitions
+open import Base.Function.Properties.Equivalence
 open import Base.Identity.Core
 open import Base.Universe
 open import Data.Sigma.Core
@@ -94,4 +95,71 @@ swapInverse = pair H H
   K : associateCurriedˡ ∘ associateCurriedʳ ∼
       (identity {_} {Σ A (λ x → Σ (B x) (curry C x))})
   K (pair x (pair y z)) = reflexive
+```
+
+= Double sigma base swap equivalence on right <note:0e627eaa-64e9-47a5-b5a3-37a4e92ba151>
+ 
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.5(a)"))[
+    Let $A$ and $B$ be types, and let $C(x, y)$ be a
+    #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] indexed by
+    $x ofType A$ and $y ofType B$. Then there is an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]
+    $
+        sigmaType(x, A) sigmaType(y, B) C(x, y) tilde.eq
+        sigmaType(y, B) sigmaType(x, A) C(x, y)
+    $
+]
+#proof[
+    Use #link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[$Sigma$-recursion]
+    to define the natural maps back and forth. The
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[required homotopies]
+    then hold by definition.
+]
+
+```agda
+swapBaseʳ-inverse :
+  {i j k : Level} {A : Type i} {B : Type j} {C : A → B → Type k} →            
+  Inverse (swapBaseʳ {A = A} {B = B} {C = C})
+          (swapBaseʳ {A = B} {B = A} {C = flip C})
+swapBaseʳ-inverse {A = A} {B = B} {C = C} = pair H H
+  where
+  H : {i j k : Level} {A : Type i} {B : Type j} {C : A → B → Type k} →            
+      swapBaseʳ ∘ swapBaseʳ ∼ identity {_} {Σ A (λ x → Σ B (λ y → C x y))}
+  H (pair x (pair y z)) = reflexive
+
+swapBaseʳ-≃ : 
+  {i j k : Level} {A : Type i} {B : Type j} {C : A → B → Type k} →            
+  Σ A (λ x → Σ B (λ y → C x y)) ≃ Σ B (λ y → Σ A (λ x → C x y))
+swapBaseʳ-≃ = inverse→≃ swapBaseʳ swapBaseʳ swapBaseʳ-inverse
+```
+
+= Double sigma base swap equivalence on left <note:8654b3c4-caef-412d-aef6-3e31dcc2418b>
+ 
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.5(b)"))[
+    Let $B$ and $C$ be #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type
+    families] over a type $A$. There is an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]
+    $
+        sigmaType(u, sigmaType(x, A) B(x)) C(project1(u)) tilde.eq
+        sigmaType(v, sigmaType(x, A) C(x)) B(project1(v)).
+    $
+]
+#proof[
+    Use the #link("note://2b484b41-4405-42e7-bd4d-e35dbe878770")[natural maps
+    back and forth]. The
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[required homotopies]
+    then hold by definition.
+]
+
+```agda
+swapBaseˡ-inverse : 
+  {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k} →            
+  Inverse (swapBaseˡ {A = A} {B = B} {C = C})
+          (swapBaseˡ {A = A} {B = C} {C = B})
+swapBaseˡ-inverse = pair H H
+  where
+  H : {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k} →            
+      swapBaseˡ {B = C} {C = B} ∘ swapBaseˡ ∼
+      (identity {_} {Σ (Σ A B) (C ∘ project₁)})
+  H (pair (pair x y) z) = reflexive
 ```
