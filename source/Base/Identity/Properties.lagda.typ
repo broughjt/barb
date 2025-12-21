@@ -5,14 +5,15 @@
 ```agda
 module Base.Identity.Properties where
 
+open import Base.Family.Definitions
 open import Base.Function.Core
 open import Base.Function.Definitions as Function hiding (_⁻¹; _∙_)
-open import Base.Function.Properties.Equivalence
 open import Base.Function.Negation
-open import Base.Family.Definitions
+open import Base.Function.Properties.Equivalence
 open import Base.Identity.Core
 open import Base.Identity.Definitions
 open import Base.Identity.Syntax
+open import Base.Truncation.Definitions
 open import Base.Universe
 open import Data.Sigma.Core
 ```
@@ -694,4 +695,29 @@ transportInverse {_} {_} {A} {B} {x} {y} reflexive = pair H K
 ≠-symmetric : {i : Level} {A : Type i} →
               Symmetric {A = A} _≠_
 ≠-symmetric p = p ∘ _⁻¹
+```
+
+= Type of endpoint-path pairs is contractible <note:0505440a-b3cf-41ad-b847-df4a87400d7a>
+ 
+#theorem(supplement: cite_link(<rijke2025>, "Rijke 2025, thm. 10.1.4"))[
+    Let $A$ be a type. For any $a ofType A$, the type of
+    #link("note://536f383d-a59f-4ad3-8c15-82f0a7b9822d")[endpoint-path pairs]
+    $
+        sigmaType(x, A) a = x
+    $
+    is #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible].
+]
+#proof[
+    Take $(a, refl_(a)) ofType sigmaType(x, A) a = x$ as the
+    #link("note://f817901c-750e-4575-a259-d83730424ade")[center of
+    contraction]. The
+    #link("note://f817901c-750e-4575-a259-d83730424ade")[contraction] is given
+    by #link("note://536f383d-a59f-4ad3-8c15-82f0a7b9822d")[Lemma 1].
+]
+
+```agda
+endpointPathContractible : {i : Level} {A : Type i}
+                           (a : A) → IsContractible (Σ A (λ x → a ＝ x))
+endpointPathContractible a =
+  pair (pair a reflexive) endpointPathPairsUnique
 ```
