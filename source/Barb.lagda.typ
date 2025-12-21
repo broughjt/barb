@@ -24,6 +24,8 @@ import Base.Identity.Definitions
 import Base.Identity.Properties
 import Base.Identity.Syntax
 
+import Base.Truncation.Definitions
+
 import Base.Universe
 
 import Data.Bool.Core
@@ -33,6 +35,7 @@ import Data.Bool.Properties
 import Data.Coproduct.Core
 import Data.Coproduct.Definitions
 import Data.Coproduct.Properties.Equivalence
+import Data.Coproduct.Properties.Map
 
 import Data.Empty
 
@@ -44,8 +47,10 @@ import Data.Sigma.Core
 import Data.Sigma.Definitions
 import Data.Sigma.Properties.Equivalence
 import Data.Sigma.Properties.Identity
+import Data.Sigma.Properties.Map
 
-import Data.Unit
+import Data.Unit.Core
+import Data.Unit.Properties
 
 import Algebra.Definitions
 ```

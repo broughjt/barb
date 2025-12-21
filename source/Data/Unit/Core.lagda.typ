@@ -1,9 +1,9 @@
-#import("../../../../library/template.typ"): *
+#import("../../../../../library/template.typ"): *
 
 #show: template
 
 ```agda
-module Data.Unit where
+module Data.Unit.Core where
 
 open import Base.Universe
 ```

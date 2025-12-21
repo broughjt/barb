@@ -8,7 +8,7 @@ module Data.Bool.Definitions where
 open import Base.Universe
 open import Data.Bool.Core as Bool
 open import Data.Empty
-open import Data.Unit
+open import Data.Unit.Core
 ```
 
 = Boolean operations <note:84ca1018-8448-4ecf-beb0-9bc92b18c914>

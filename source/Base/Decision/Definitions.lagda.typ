@@ -16,7 +16,7 @@ open import Data.Bool.Definitions
 open import Data.Coproduct.Core as Coproduct
 open import Data.Empty as Empty
 open import Data.Sigma.Core
-open import Data.Unit as Unit
+open import Data.Unit.Core as Unit
 ```
 
 = Empty type is decidable <note:f5e3fd77-76be-4ea5-8325-8e6b6d91442a>

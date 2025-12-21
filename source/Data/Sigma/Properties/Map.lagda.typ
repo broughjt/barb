@@ -82,9 +82,9 @@ mapCompose f f' g g' (pair x y) = reflexive
 ]
 
 ```agda
-mapHomotopy : {i j k l : Level}
-              {A : Type i} {B : Type j} {C : Type k} {D : Type l}
-              {f f' : A → C} {g g' : B → D} →
-              f ∼ f' → g ∼ g' → map f g ∼ map f' g'
-mapHomotopy H K = {!!}
+-- mapHomotopy : {i j k l : Level}
+--               {A : Type i} {B : Type j} {C : Type k} {D : Type l}
+--               {f f' : A → C} {g g' : B → D} →
+--               f ∼ f' → g ∼ g' → map f g ∼ map f' g'
+-- mapHomotopy H K = {!!}
 ```

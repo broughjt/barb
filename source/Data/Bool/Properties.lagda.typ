@@ -22,7 +22,7 @@ open import Data.Bool.Core as Bool
 open import Data.Bool.Definitions as Bool
 open import Data.Empty as Empty
 open import Data.Sigma.Core
-open import Data.Unit as Unit
+open import Data.Unit.Core as Unit
 ```
 
 = Observational equality on booleans is reflexive <note:4793b3c0-efaf-4823-897e-b035568ee6bb>

@@ -18,7 +18,7 @@ open import Data.Empty as Empty
 open import Data.Sigma.Core
 open import Data.Sigma.Definitions as Sigma
 open import Data.Sigma.Properties.Equivalence as Sigma
-open import Data.Unit
+open import Data.Unit.Core
 ```
 
 = Coproducts satisfy the unit laws up to equivalence with respect to the empty type <note:f5ac35b4-ac3e-4b2c-984e-28edc4e7c935>
