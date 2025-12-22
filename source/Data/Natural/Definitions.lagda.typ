@@ -5,7 +5,7 @@
 ```agda
 module Data.Natural.Definitions where
 
-open import Base.Universe hiding (zero; successor)
+open import Base.Universe.Core hiding (zero; successor)
 open import Data.Natural.Core
 ```
 

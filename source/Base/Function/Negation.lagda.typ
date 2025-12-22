@@ -6,7 +6,7 @@
 module Base.Function.Negation where
 
 open import Base.Function.Core
-open import Base.Universe
+open import Base.Universe.Core
 open import Data.Coproduct.Core as Coproduct
 open import Data.Empty as Empty
 ```

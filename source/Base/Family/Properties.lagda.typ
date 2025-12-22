@@ -5,7 +5,7 @@
 ```agda
 module Base.Family.Properties where
 
-open import Base.Universe
+open import Base.Universe.Core
 open import Base.Family.Definitions
 open import Base.Identity.Core
 ```

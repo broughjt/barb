@@ -8,7 +8,7 @@ module Data.Sigma.Definitions where
 open import Base.Function.Core
 open import Base.Identity.Core hiding (induction)
 open import Base.Identity.Definitions
-open import Base.Universe
+open import Base.Universe.Core
 open import Data.Sigma.Core
 ```
 

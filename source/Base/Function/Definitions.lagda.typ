@@ -8,7 +8,7 @@ module Base.Function.Definitions where
 open import Base.Function.Core
 open import Base.Identity.Core
 open import Base.Identity.Definitions renaming (_⁻¹ to _⁻¹'; _∙_ to _∙'_)
-open import Base.Universe
+open import Base.Universe.Core
 open import Data.Sigma.Core
 ```
 

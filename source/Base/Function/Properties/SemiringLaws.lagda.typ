@@ -10,7 +10,7 @@ open import Base.Function.Definitions
 open import Base.Function.Negation
 open import Base.Function.Properties.Equivalence
 open import Base.Identity.Core
-open import Base.Universe
+open import Base.Universe.Core
 open import Data.Coproduct.Core
 open import Data.Coproduct.Definitions as Coproduct
 open import Data.Coproduct.Properties.Equivalence as Coproduct

@@ -5,7 +5,7 @@
 ```agda
 module Base.Identity.Core where
 
-open import Base.Universe
+open import Base.Universe.Core
 ```
 
 = Identity type <note:261490cb-2887-4247-9a83-7f674e3c9651>

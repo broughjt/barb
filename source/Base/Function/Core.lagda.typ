@@ -5,7 +5,7 @@
 ```agda
 module Base.Function.Core where
 
-open import Base.Universe
+open import Base.Universe.Core
 ```
 
 = Identity function <note:efea6413-096d-4249-8ef0-a4de74fcee13>

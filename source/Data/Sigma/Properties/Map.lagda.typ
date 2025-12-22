@@ -8,7 +8,7 @@ module Data.Sigma.Properties.Map where
 open import Base.Function.Core
 open import Base.Function.Definitions
 open import Base.Identity.Core
-open import Base.Universe
+open import Base.Universe.Core
 open import Data.Sigma.Core
 open import Data.Sigma.Definitions
 ```

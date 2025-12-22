@@ -7,7 +7,7 @@ module Data.Unit.Properties where
 
 open import Base.Identity.Core
 open import Base.Truncation.Definitions
-open import Base.Universe
+open import Base.Universe.Core
 open import Data.Sigma.Core
 open import Data.Unit.Core as Unit
 ```

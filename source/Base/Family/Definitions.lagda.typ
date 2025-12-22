@@ -6,7 +6,7 @@
 module Base.Family.Definitions where
 
 open import Base.Function.Negation
-open import Base.Universe
+open import Base.Universe.Core
 ```
 
 = Reflexive <note:7e7a1c6f-6051-4526-83e9-01d030717ea5>

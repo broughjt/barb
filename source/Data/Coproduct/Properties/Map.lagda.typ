@@ -9,7 +9,7 @@ open import Base.Function.Core
 open import Base.Function.Definitions
 open import Base.Identity.Core
 open import Base.Identity.Definitions hiding (_⁻¹; _∙_)
-open import Base.Universe
+open import Base.Universe.Core
 open import Data.Coproduct.Core
 open import Data.Coproduct.Definitions
 open import Data.Sigma.Core

@@ -7,7 +7,7 @@ module Base.Identity.Syntax where
 
 open import Base.Identity.Core
 open import Base.Identity.Definitions
-open import Base.Universe
+open import Base.Universe.Core
 ```
 
 = Equational reasoning syntax <note:3a94206b-78b0-41ad-830a-7e176246c13a>

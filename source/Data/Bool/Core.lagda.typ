@@ -5,7 +5,7 @@
 ```agda
 module Data.Bool.Core where
 
-open import Base.Universe
+open import Base.Universe.Core
 ```
 
 = Type of booleans <note:78e3004d-88e7-45e5-8d4d-da76962195f3>

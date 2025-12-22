@@ -5,7 +5,7 @@
 ```agda
 module Data.Natural.Core where
 
-open import Base.Universe hiding (zero; successor)
+open import Base.Universe.Core hiding (zero; successor)
 ```
 
 = Type of natural numbers <note:600e8ce4-83d2-4a92-9295-ccb0aef05689>
@@ -37,7 +37,7 @@ By the way, zero is definitely a natural number. People that think the natural
 numbers start at one have no class.
 
 ```agda
-data ℕ : Type Base.Universe.zero where
+data ℕ : Type Base.Universe.Core.zero where
   zero : ℕ
   successor : ℕ → ℕ
 

@@ -26,7 +26,7 @@ import Base.Identity.Syntax
 
 import Base.Truncation.Definitions
 
-import Base.Universe
+import Base.Universe.Core
 
 import Data.Bool.Core
 import Data.Bool.Definitions

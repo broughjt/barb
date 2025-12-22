@@ -17,7 +17,7 @@ open import Base.Function.Properties.Equivalence
 open import Base.Identity.Core
 open import Base.Identity.Definitions
 open import Base.Identity.Properties
-open import Base.Universe
+open import Base.Universe.Core
 open import Data.Bool.Core as Bool
 open import Data.Bool.Definitions as Bool
 open import Data.Empty as Empty

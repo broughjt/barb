@@ -5,7 +5,7 @@
 ```agda
 module Data.Unit.Core where
 
-open import Base.Universe
+open import Base.Universe.Core
 ```
 
 = Unit type <note:fe0ba530-46e9-4031-83bb-330db4d12b4e>

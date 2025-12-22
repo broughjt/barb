@@ -5,7 +5,7 @@
 ```agda
 module Data.Coproduct.Core where
 
-open import Base.Universe
+open import Base.Universe.Core
 ```
 
 = Coproduct type <note:001d31c7-7fb6-4878-883a-ff464bb9c0a8>

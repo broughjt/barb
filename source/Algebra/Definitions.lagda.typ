@@ -6,7 +6,7 @@
 module Algebra.Definitions where
 
 open import Base.Identity.Core
-open import Base.Universe
+open import Base.Universe.Core
 open import Data.Sigma.Core
 ```
 

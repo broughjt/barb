@@ -6,7 +6,7 @@
 module Data.Sigma.Core where
 
 open import Base.Function.Core
-open import Base.Universe
+open import Base.Universe.Core
 ```
 
 = Sigma type <note:ae098784-7572-4d29-b548-a2db9b6d004a>

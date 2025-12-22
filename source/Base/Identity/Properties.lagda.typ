@@ -14,7 +14,7 @@ open import Base.Identity.Core
 open import Base.Identity.Definitions
 open import Base.Identity.Syntax
 open import Base.Truncation.Definitions
-open import Base.Universe
+open import Base.Universe.Core
 open import Data.Sigma.Core
 ```
 

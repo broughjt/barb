@@ -6,7 +6,7 @@
 module Data.Coproduct.Definitions where
 
 open import Base.Function.Core
-open import Base.Universe
+open import Base.Universe.Core
 open import Data.Coproduct.Core
 ```
 

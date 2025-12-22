@@ -5,7 +5,7 @@
 ```agda
 module Base.Function.Properties.Homotopy where
 
-open import Base.Universe
+open import Base.Universe.Core
 open import Base.Identity.Core
 open import Base.Identity.Definitions renaming (_⁻¹ to _⁻¹'; _∙_ to _∙'_)
 import Base.Identity.Properties as Identity

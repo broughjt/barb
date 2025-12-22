@@ -8,7 +8,7 @@ module Base.Identity.Definitions where
 open import Base.Function.Core
 open import Base.Function.Negation
 open import Base.Identity.Core
-open import Base.Universe
+open import Base.Universe.Core
 ```
 
 = Disequality <note:3cb5f252-202d-45a6-a77f-c7db57262632>

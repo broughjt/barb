@@ -5,7 +5,7 @@
 ```agda
 module Data.Empty where
 
-open import Base.Universe
+open import Base.Universe.Core
 ```
 
 = Empty type <note:9d7cf197-7f2a-4633-aa63-1c9df1429a13>

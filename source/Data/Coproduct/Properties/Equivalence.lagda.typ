@@ -8,7 +8,7 @@ module Data.Coproduct.Properties.Equivalence where
 open import Base.Function.Core
 open import Base.Function.Definitions
 open import Base.Function.Negation
-open import Base.Universe
+open import Base.Universe.Core
 open import Base.Identity.Core
 open import Data.Coproduct.Core
 open import Data.Coproduct.Definitions as Coproduct
