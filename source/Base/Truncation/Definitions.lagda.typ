@@ -32,10 +32,10 @@ IsContractible A = Σ A (λ c → (x : A) → c ＝ x)
 = Singleton induction <note:2a65336f-3db1-411e-869f-9c87a18d408a>
  
 Following #cite(<rijke2025>, form: "prose", supplement: "def. 10.2.1"), a type
-$A$ equipped with an element $a ofType A$ satisfies *singleton induction* if for
-every type family $B$ over $A$, the
+$A$ satisfies *singleton induction* if it comes equipped with an element $a
+ofType A$ such that for every type family $B$ over $A$, the
 #link("note://ac0a22e1-3510-4129-ab02-d0f95da4a48c")[evaluation map] at the
-element $a ofType A$
+element $a$
 $
     evaluate_(a) ofType ( piType(x, A) B(x) ) -> B(a),
 $
@@ -50,13 +50,18 @@ $
     evaluate_(a) compose induction_(s)^(a) ~ id_(B(a)).
 $
 
+```agda
+IsSingleton : {i j : Level} → (A : Type i) → Type (i ⊔ successor j)
+IsSingleton {i} {j} A =
+  Σ A (λ a → (B : A → Type j) → Section (_|>_ {A = A} {B = B} a))
+```
+
 Initially, I found this definition difficult to understand. The note
 #link("note://5c363e12-3c53-4145-9b22-985fd2af9d7b")[Understanding the
 definition of singleton induction] attempts to explain by drawing an analogy
 with the situation for the
 #link("note://fe0ba530-46e9-4031-83bb-330db4d12b4e")[unit type].
 
-```agda
-IsSingleton : {i j : Level} → (A : Type i) → A → Type (i ⊔ successor j)
-IsSingleton {i} {j} A a = (B : A → Type j) → Section (_|>_ {A = A} {B = B} a)
-```
+Note: I have slightly modified Rijke's definition by requiring the type $A$ to
+be equipped with a distinguished element $a ofType A$ as part of the definition
+of singleton induction, rather than treating its existence as a precondition.
