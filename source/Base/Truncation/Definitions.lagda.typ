@@ -5,6 +5,8 @@
 ```agda
 module Base.Truncation.Definitions where
 
+open import Base.Function.Core
+open import Base.Function.Definitions
 open import Base.Identity.Core
 open import Base.Universe
 open import Data.Sigma.Core
@@ -25,4 +27,36 @@ the *contraction* of $A$.
 IsContractible : {i : Level} →
                  Type i → Type i
 IsContractible A = Σ A (λ c → (x : A) → c ＝ x)
+```
+
+= Singleton induction <note:2a65336f-3db1-411e-869f-9c87a18d408a>
+ 
+Following #cite(<rijke2025>, form: "prose", supplement: "def. 10.2.1"), a type
+$A$ equipped with an element $a ofType A$ satisfies *singleton induction* if for
+every type family $B$ over $A$, the
+#link("note://ac0a22e1-3510-4129-ab02-d0f95da4a48c")[evaluation map] at the
+element $a ofType A$
+$
+    evaluate_(a) ofType ( piType(x, A) B(x) ) -> B(a),
+$
+given by $evaluate_(a)(f) := f(a)$, has a
+#link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[section]. Expanding the
+definition of a section, this means there is a map
+$
+    induction_(s)^(a) ofType B(a) -> ( piType(x, A) B(x) )
+$
+and a #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopy]
+$
+    evaluate_(a) compose induction_(s)^(a) ~ id_(B(a)).
+$
+
+Initially, I found this definition difficult to understand. The note
+#link("note://5c363e12-3c53-4145-9b22-985fd2af9d7b")[Understanding the
+definition of singleton induction] attempts to explain by drawing an analogy
+with the situation for the
+#link("note://fe0ba530-46e9-4031-83bb-330db4d12b4e")[unit type].
+
+```agda
+IsSingleton : {i j : Level} → (A : Type i) → A → Type (i ⊔ successor j)
+IsSingleton {i} {j} A a = (B : A → Type j) → Section (_|>_ {A = A} {B = B} a)
 ```
