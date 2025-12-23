@@ -5,7 +5,9 @@
 ```agda
 module Base.Truncation.Properties.Contractible where
 
-open import Base.Universe
+open import Base.Universe.Core
+open import Base.Universe.Lift hiding (induction)
+open import Base.Universe.Properties.Lift
 open import Base.Truncation.Definitions
 open import Base.Function.Core
 open import Base.Function.Definitions hiding (_⁻¹; _∙_)
@@ -120,7 +122,12 @@ isContractible→isSingleton {_} {j} {A} (pair c C) =
 isSingleton→isContractible :
   {i j : Level} {A : Type i} →
   IsSingleton {j = i ⊔ j} A → IsContractible A
--- isSingleton→isContractible (pair a p) with p (λ x → a ＝ x)
--- ... | foo = ?
-isSingleton→isContractible (pair a p) = {!!}
+isSingleton→isContractible {j = j} (pair a p) with p (λ x → Lift j (a ＝ x))
+... | (pair induction _) = pair a (lower ∘ (induction (lift reflexive)))
+
+isContractible↔isSingelton :
+  {i j : Level} {A : Type i} →
+  IsContractible A ↔ IsSingleton {j = i ⊔ j} A 
+isContractible↔isSingelton {i} {j} {A} =
+  pair isContractible→isSingleton (isSingleton→isContractible {j = j})
 ```
