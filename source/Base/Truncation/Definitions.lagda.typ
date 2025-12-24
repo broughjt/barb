@@ -65,3 +65,16 @@ with the situation for the
 Note: I have slightly modified Rijke's definition by requiring the type $A$ to
 be equipped with a distinguished element $a ofType A$ as part of the definition
 of singleton induction, rather than treating its existence as a precondition.
+
+= Contractible map <note:ce3caacd-6477-4d21-b37e-c5423974464a>
+ 
+Following #cite(<rijke2025>, form: "prose", supplement: "def 10.3.4"), a map $f
+ofType A -> B$ is *contractible* if each of its
+#link("note://96d1fb9a-fd38-48cc-886f-7643637ac1e7")[fibers] is
+#link("note://f817901c-750e-4575-a259-d83730424ade")[contractible].
+
+```agda
+IsContractibleFunction : {i j : Level} {A : Type i} {B : Type j} →
+                       (A → B) → Type (i ⊔ j)
+IsContractibleFunction {B = B} f = (y : B) → IsContractible $ Fiber f y
+```

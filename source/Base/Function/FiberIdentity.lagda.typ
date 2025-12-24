@@ -12,7 +12,6 @@ open import Base.Family.Definitions
 open import Base.Family.Properties
 open import Base.Function.Definitions hiding (_∙_)
 open import Base.Function.Core
-open import Base.Function.Properties.Equivalence
 open import Base.Identity.Core
 open import Base.Identity.Definitions
 open import Base.Universe.Core
@@ -82,7 +81,10 @@ equalReflexive (pair x p) = pair reflexive reflexive
 
 = Characterization of fiber identity types is equivalent to fiber identity types <note:571b0e34-86b8-4d44-9e85-d862dafc62e2>
  
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, prop. 10.3.3"))[
+#lemma(
+    label: "29",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, prop. 10.3.3")
+)[
     Let $f ofType A -> B$ be a map and let $y ofType B$. For any elements $(x,
     p)$ and $(x', p')$ of the
     #link("note://96d1fb9a-fd38-48cc-886f-7643637ac1e7")[fiber] of $f$ over $y$,
@@ -122,7 +124,7 @@ equalReflexive (pair x p) = pair reflexive reflexive
   {u v : Fiber f y} →
   IsEquivalence (＝→reflexive {R = Equal} equalReflexive {x = u} {y = v})
 ＝→equal-isEquivalence {u = pair x p} {v = pair x' p'} =
-  inverse→isEquivalence f g (pair H K)
+  pair (pair g K) (pair g H)
   where
   f : pair x p ＝ pair x' p' → Equal (pair x p) (pair x' p')
   f = ＝→reflexive {R = Equal} equalReflexive
@@ -142,4 +144,25 @@ equalReflexive (pair x p) = pair reflexive reflexive
   {u v : Fiber f y} →
   u ＝ v ≃ Equal u v
 ＝≃Equal = pair (＝→reflexive equalReflexive) ＝→equal-isEquivalence
+
+＝↔Equal :
+  {i j : Level} {A : Type i} {B : Type j}
+  {f : A → B} {y : B}
+  {u v : Fiber f y} →
+  u ＝ v ↔ Equal u v
+＝↔Equal = pair (project₁ ＝≃Equal) (project₁ $ project₁ $ project₂ ＝≃Equal)
+
+＝→Equal :
+  {i j : Level} {A : Type i} {B : Type j}
+  {f : A → B} {y : B}
+  {u v : Fiber f y} →
+  u ＝ v → Equal u v
+＝→Equal = project₁ ＝↔Equal
+
+Equal→＝ :
+  {i j : Level} {A : Type i} {B : Type j}
+  {f : A → B} {y : B}
+  {u v : Fiber f y} →
+  Equal u v → u ＝ v
+Equal→＝ = project₂ ＝↔Equal
 ```

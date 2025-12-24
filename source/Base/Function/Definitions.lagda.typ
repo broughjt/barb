@@ -24,6 +24,8 @@ we express the notion of the *logical biconditional*, or *biimplication*, or
 ```agda
 _↔_ : {i j : Level} (A : Type i) (B : Type j) → Type (i ⊔ j)
 A ↔ B = (A → B) × (B → A)
+
+infix 3 _↔_
 ```
 
 = (Type-theoretic) Homotopy <note:3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208>
