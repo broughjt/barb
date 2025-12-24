@@ -241,3 +241,31 @@ Fiber : {i j : Level} {A : Type i} {B : Type j} →
         (A → B) → B → Type (i ⊔ j)
 Fiber {_} {_} {A} {B} f y = Σ A (λ x → f x ＝ y)
 ```
+
+= Coherently invertible map <note:3f3eff81-188f-4284-b83a-9dd41a67c297>
+
+We follow #cite(<rijke2025>, form: "prose", supplement: "def. 10.4.1") in both
+the following definition and preceding motivation.
+
+Previously, we defined a map $f ofType A -> B$ to be
+#link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[invertible] if it comes
+equipped with a map $g ofType B -> A$ and
+#link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopies]
+$
+    G ofType f compose g ~ id_(B) quad "and" quad H ofType g compose f ~ id_(A).
+$
+Note that the homotopies $G dot.op f$ and $f dot.op H$ given by
+#link("note://7805061a-565d-4412-9ca4-acb998e89555")[whiskering] $G$ on the
+right by $f$ and whiskering $H$ on the left by $f$ both have type $f compose g
+compose f ~ f$. The map $f ofType A -> B$ is *coherently invertible* if in
+addition to being invertible, there is a homotopy
+$
+    G dot.op f ~ f dot.op H.
+$
+
+```agda
+CoherentInverse : {i j : Level} {A : Type i} {B : Type j} →
+                  (A → B) → (B → A) → Type (i ⊔ j)
+CoherentInverse f g =
+  Σ (Inverse f g) (λ where (pair H G) → (G ∙ᵣ f) ∼ (f ∙ₗ H))
+```
