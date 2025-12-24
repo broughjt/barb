@@ -222,3 +222,20 @@ Involutive : {i : Level} {A : Type i} →
              (A → A) → Type i
 Involutive f = Inverse f f
 ```
+
+= Fiber of a function over a point <note:96d1fb9a-fd38-48cc-886f-7643637ac1e7>
+ 
+Let $f ofType A -> B$ be a function. Following #cite(<rijke2025>, form: "prose",
+supplement: "def. 10.3.1"), the *fiber* of $f$ at a point $y ofType B$ is the
+type
+$
+    Fiber_(f)(y) := sigmaType(x, A) f(x) = y.
+$
+In other words, the fiber of $f$ at $y$ is the type of all $x ofType A$ which
+are mapped to $y$ by $f$.
+
+```agda
+Fiber : {i j : Level} {A : Type i} {B : Type j} →
+        (A → B) → B → Type (i ⊔ j)
+Fiber {_} {_} {A} {B} f y = Σ A (λ x → f x ＝ y)
+```
