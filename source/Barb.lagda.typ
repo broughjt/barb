@@ -14,7 +14,9 @@ import Base.Family.Properties
 
 import Base.Function.Core
 import Base.Function.Definitions
+import Base.Function.FiberIdentity
 import Base.Function.Negation
+import Base.Function.Properties.Contractible
 import Base.Function.Properties.Equivalence
 import Base.Function.Properties.Homotopy
 import Base.Function.Properties.SemiringLaws
@@ -25,8 +27,11 @@ import Base.Identity.Properties
 import Base.Identity.Syntax
 
 import Base.Truncation.Definitions
+import Base.Truncation.Properties.Contractible
 
 import Base.Universe.Core
+import Base.Universe.Lift
+import Base.Universe.Properties.Lift
 
 import Data.Bool.Core
 import Data.Bool.Definitions

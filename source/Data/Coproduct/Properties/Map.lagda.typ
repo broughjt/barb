@@ -164,21 +164,25 @@ mapEquivalence {A = A} {B = B} {C = C} {D = D} {f = f} {g = g}
   (pair (pair f' H) (pair f'' K)) (pair (pair g' L) (pair g'' M)) =
   pair (pair (map f' g') O) (pair (map f'' g'') Q)
   where
-  HL : map (f ∘ f') (g ∘ g') ∼ map (identity {_} {C}) (identity {_} {D})
+  -- Note: This proof was written before I switched the definition of
+  -- IsEquivalence to be Retraction f × Section f instead of Section f ×
+  -- Retraction f, so it unfortunately doesn't correspond to the names in the
+  -- paper proof.
+  HL : map (f' ∘ f) (g' ∘ g) ∼ map (identity {_} {A}) (identity {_} {B})
   HL = mapHomotopy H L
 
-  N : map (f ∘ f') (g ∘ g') ∼ map f g ∘ map f' g'
-  N = mapCompose f' f g' g
+  N : map (f' ∘ f) (g' ∘ g) ∼ map f' g' ∘ map f g
+  N = mapCompose f f' g g'
 
-  O : map f g ∘ map f' g' ∼ identity {_} {C ＋ D}
+  O : map f' g' ∘ map f g ∼ identity {_} {A ＋ B}
   O = (N ⁻¹) ∙ HL ∙ mapIdentity
 
-  KM : map (f'' ∘ f) (g'' ∘ g) ∼ map identity identity
+  KM : map (f ∘ f'') (g ∘ g'') ∼ map (identity {_} {C}) (identity {_} {D})
   KM = mapHomotopy K M
 
-  P : map (f'' ∘ f) (g'' ∘ g) ∼ map f'' g'' ∘ map f g
-  P = mapCompose f f'' g g''
+  P : map (f ∘ f'') (g ∘ g'') ∼ map f g ∘ map f'' g''
+  P = mapCompose f'' f g'' g
 
-  Q : map f'' g'' ∘ map f g ∼ identity {_} {A ＋ B}
+  Q : map f g ∘ map f'' g'' ∼ identity {_} {C ＋ D}
   Q = (P ⁻¹) ∙ KM ∙ mapIdentity
 ```

@@ -248,7 +248,7 @@ false≠true = !≠ true
 constantNotEquivalence : (b : 𝟐) →
                          ¬ IsEquivalence (constant {A = 𝟐} b)
 constantNotEquivalence b (pair (pair f H) (pair g K)) =
-  absurd (H $ ! b) (≠-symmetric (!≠ b))
+  absurd (K $ ! b) (≠-symmetric (!≠ b))
 ```
 
 = Booleans not equivalent to the unit type <note:71caa6f0-5e7e-4cd6-9564-1566e2021c79>
@@ -292,11 +292,11 @@ constantNotEquivalence b (pair (pair f H) (pair g K)) =
 ```agda
 bool≄unit : ¬ (𝟐 ≃ 𝟏)
 bool≄unit (pair f (pair (pair g G) (pair h H))) = 
-  absurd (p ⁻¹ ∙ q) (!≠ (h ⋆))
+  absurd (p ⁻¹ ∙ q) (!≠ (g ⋆))
   where
-  p : h (f (! h ⋆)) ＝ (! h ⋆)
-  p = H $ ! (h ⋆)
+  p : g (f (! g ⋆)) ＝ (! g ⋆)
+  p = G $ ! (g ⋆)
 
-  q : h (f (! h ⋆)) ＝ h ⋆
-  q = Unit.induction {P = λ x → h x ＝ h ⋆} reflexive (f (! h ⋆))
+  q : g (f (! g ⋆)) ＝ g ⋆
+  q = Unit.induction {P = λ x → g x ＝ g ⋆} reflexive (f (! g ⋆))
 ```

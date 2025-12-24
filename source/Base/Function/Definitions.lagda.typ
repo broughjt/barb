@@ -183,7 +183,7 @@ Retraction {A = A} {B = B} f = Σ (B → A) (LeftInverse f)
 ```
 
 A function $g ofType B -> A$ is an *inverse* of a function $f ofType A -> B$ if
-$g$ is both a section and a retraction of $f$, that is, if it is both a left and
+$g$ is both a retraction and a section of $f$, that is, if it is both a left and
 right invese inverse of $f$.
 
 ```agda
@@ -196,12 +196,13 @@ HasInverse : {i j : Level} {A : Type i} {B : Type j} →
 HasInverse {A = A} {B = B} f = Σ (B → A) (Inverse f)
 ```
 
-A function $f ofType A -> B$ is an *equivalence* if it has both a section and a retraction.
+A function $f ofType A -> B$ is an *equivalence* if it has both a retraction and
+a section.
 
 ```agda
 IsEquivalence : {i j : Level} {A : Type i} {B : Type j} →
                 (A → B) → Type (i ⊔ j)
-IsEquivalence f = Section f × Retraction f
+IsEquivalence f = Retraction f × Section f
 ```
 
 We write $A tilde.eq B$ for the type of all equivalences from a type $A$ to a
@@ -252,20 +253,26 @@ Previously, we defined a map $f ofType A -> B$ to be
 equipped with a map $g ofType B -> A$ and
 #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopies]
 $
-    G ofType f compose g ~ id_(B) quad "and" quad H ofType g compose f ~ id_(A).
+    G ofType g compose f ~ id_(A) quad "and" quad H ofType f compose g ~ id_(B).
 $
-Note that the homotopies $G dot.op f$ and $f dot.op H$ given by
+
+Note that the homotopies $f dot.op G$ and $H dot.op f$ given by
 #link("note://7805061a-565d-4412-9ca4-acb998e89555")[whiskering] $G$ on the
-right by $f$ and whiskering $H$ on the left by $f$ both have type $f compose g
+left by $f$ and whiskering $H$ on the right by $f$ both have type $f compose g
 compose f ~ f$. The map $f ofType A -> B$ is *coherently invertible* if in
 addition to being invertible, there is a homotopy
+
 $
-    G dot.op f ~ f dot.op H.
+    f dot.op G ~ H dot.op f.
 $
 
 ```agda
 CoherentInverse : {i j : Level} {A : Type i} {B : Type j} →
                   (A → B) → (B → A) → Type (i ⊔ j)
 CoherentInverse f g =
-  Σ (Inverse f g) (λ where (pair H G) → (G ∙ᵣ f) ∼ (f ∙ₗ H))
+  Σ (Inverse f g) (λ where (pair G H) → (f ∙ₗ G) ∼ (H ∙ᵣ f))
+
+IsCoherentlyInvertible : {i j : Level} {A : Type i} {B : Type j} →
+                        (A → B) → Type (i ⊔ j)
+IsCoherentlyInvertible {_} {_} {A} {B} f = Σ (B → A) (CoherentInverse f)
 ```

@@ -124,7 +124,7 @@ equalReflexive (pair x p) = pair reflexive reflexive
   {u v : Fiber f y} →
   IsEquivalence (＝→reflexive {R = Equal} equalReflexive {x = u} {y = v})
 ＝→equal-isEquivalence {u = pair x p} {v = pair x' p'} =
-  pair (pair g K) (pair g H)
+  pair (pair g H) (pair g K)
   where
   f : pair x p ＝ pair x' p' → Equal (pair x p) (pair x' p')
   f = ＝→reflexive {R = Equal} equalReflexive
