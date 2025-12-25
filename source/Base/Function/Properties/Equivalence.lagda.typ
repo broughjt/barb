@@ -7,8 +7,10 @@ module Base.Function.Properties.Equivalence where
 
 open import Base.Function.Core
 open import Base.Function.Definitions
+open import Base.Function.Negation
 open import Base.Identity.Core
 open import Base.Universe.Core
+open import Data.Empty as Empty
 open import Data.Sigma.Core
 open import Data.Sigma.Definitions as Sigma
 ```
@@ -505,7 +507,10 @@ inverse→homotopy→inverseʳ {f = f} {g = g} {g' = g'} (pair G H) K = pair
 
 = Equivalence and homotopic implies equivalence <note:4b08592f-f5db-4f89-a80d-450239d5889c>
  
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.3(a)"))[
+#lemma(
+    label: "36",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.3(a)")
+)[
     Let $f, f' ofType A -> B$ be maps equipped with a
     #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopy] $f ~ f'$. Then
     $f$ is an #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]
@@ -851,4 +856,53 @@ isEquivalenceLeft→right→top f g h H φ ψ with
                                              
   π : Inverse h (t ∘ g)
   π = inverse→homotopy→inverseˡ ω (χ ⁻¹)
+```
+
+= A type is empty if and only if it is equivalent to the empty type <note:50797027-9e1a-403b-89ac-59c9f14129ed>
+
+Every #link("note://16ffba35-7712-4eb7-8902-0812e529aa16")[negation] is an
+#link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]. In other
+words, if $not A$ then $A$ is
+#link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalent] to the
+#link("note://9d7cf197-7f2a-4633-aa63-1c9df1429a13")[empty type].
+ 
+#lemma[
+    Every function into the empty type is an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]---that is,
+    for every type $A$, we have $not A$ if and only if there is an equivalence
+    $A tilde.eq emptyType$.
+]
+#proof[
+    ($==>$) Let $f ofType A -> emptyType$ be a
+    #link("note://16ffba35-7712-4eb7-8902-0812e529aa16")[negation]. To show that
+    $f$ is an #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence],
+    use the #link("note://9d7cf197-7f2a-4633-aa63-1c9df1429a13")[recursion
+    principle for the empty type] $recursion ofType emptyType -> A$ as the
+    inverse function. Both
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[homotopies] then follow
+    by the #link("note://9d7cf197-7f2a-4633-aa63-1c9df1429a13")[induction
+    principle for the empty type].
+
+    ($<==$) Suppose we have $(f, p) ofType A tilde.eq emptyType$. The in
+    particular we have a negation $f ofType A -> emptyType$.
+]
+
+```agda
+¬isEquivalence : {i : Level} {A : Type i} →
+                 (f : ¬ A) → IsEquivalence f
+¬isEquivalence {A = A} f = inverse→isEquivalence f Empty.recursion (pair G H)
+  where
+  G : Empty.recursion ∘ f ∼ identity {_} {A}
+  G x = absurd x f 
+
+  H : f ∘ Empty.recursion ∼ identity {_} {𝟎}
+  H = Empty.induction
+
+¬⇒≃𝟎 : {i : Level} {A : Type i} →
+       ¬ A → A ≃ 𝟎 
+¬⇒≃𝟎 f = pair f (¬isEquivalence f)
+
+¬⇔≃𝟎 : {i : Level} {A : Type i} →
+       (¬ A) ↔ (A ≃ 𝟎)
+¬⇔≃𝟎 = pair ¬⇒≃𝟎 project₁
 ```

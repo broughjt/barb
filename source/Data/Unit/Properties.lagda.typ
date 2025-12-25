@@ -5,6 +5,8 @@
 ```agda
 module Data.Unit.Properties where
 
+open import Base.Function.Core
+open import Base.Function.Definitions
 open import Base.Identity.Core
 open import Base.Truncation.Definitions
 open import Base.Universe.Core
@@ -82,4 +84,58 @@ unitIsSingleton =
   pair ⋆
        (λ B → pair (Unit.induction {P = B})
                    (λ y → reflexive))
+```
+
+= Functions to and from the unit type are homotopic to a constant function <note:cabe5b8c-706f-4aca-b786-ac23e95a5d51>
+
+#lemma[
+    For any map $f ofType unitType -> A$ out of the
+    #link("note://fe0ba530-46e9-4031-83bb-330db4d12b4e")[unit type], there is a
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopy]
+    $
+        f ~ constant_(f(star))
+    $
+]
+#proof[
+    By #link("note://fe0ba530-46e9-4031-83bb-330db4d12b4e")[induction on the
+    unit type] with the
+    #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[family] $P ofType
+    unitType -> cal(U)$ given by $P(x) := f(x) = constant_(f(star))(x)$, it
+    suffices to construct an element of $P(star)$, which evaluates to $f(star) =
+    constant_(f(star))(star)$. This holds
+    #link("note://a0baf580-5da2-4328-bfbd-202bedf37747")[judgementally], so we
+    can take $refl_(f(star))$.
+]
+
+#lemma(label: "35")[
+    For any map $f ofType A -> unitType$ into the
+    #link("note://fe0ba530-46e9-4031-83bb-330db4d12b4e")[unit type], there is a
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopy]
+    $
+        f ~ constant_(star).
+    $
+]
+#proof[
+    Apply the #link("note://fe0ba530-46e9-4031-83bb-330db4d12b4e")[induction
+    principle for the unit type] to the
+    #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[family] $P ofType
+    emptyType -> cal(U)$ given by $P(x) := x = star$ to the element $f(x)$. Then
+    it suffices to construct an element of $P(star)$, which evaluates to $star =
+    star$, so we can take $refl_(star)$.
+]
+
+```agda
+unit→-homotopyConstant :
+  {i : Level} {A : Type i} →
+  (f : 𝟏 → A) →
+  f ∼ constant (f ⋆)
+unit→-homotopyConstant f =
+  Unit.induction {P = λ x → f x ＝ constant (f ⋆) x} reflexive
+
+→unit-homotopyConstant :
+  {i : Level} {A : Type i} →
+  (f : A → 𝟏) →
+  f ∼ constant ⋆
+→unit-homotopyConstant f x =
+  Unit.induction {P = λ x → x ＝ ⋆} reflexive (f x)
 ```

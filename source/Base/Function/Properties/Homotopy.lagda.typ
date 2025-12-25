@@ -5,11 +5,13 @@
 ```agda
 module Base.Function.Properties.Homotopy where
 
-open import Base.Universe.Core
+import Base.Identity.Properties as Identity
+open import Base.Function.Core
+open import Base.Function.Definitions
 open import Base.Identity.Core
 open import Base.Identity.Definitions renaming (_⁻¹ to _⁻¹'; _∙_ to _∙'_)
-import Base.Identity.Properties as Identity
-open import Base.Function.Definitions
+open import Base.Identity.Syntax
+open import Base.Universe.Core
 ```
 
 = Concatenation on homotopies is associative up to homotopy <note:2bb9c32b-d3eb-4693-a814-c37b23aac880>
@@ -126,4 +128,107 @@ homotopyAssociative H K L x = Identity.∙-associative (H x) (K x) (L x)
               (H : f ∼ g) →
               H ∙ (H ⁻¹) ∼ (reflexiveHomotopy f)
 ⁻¹-inverseʳ H x = Identity.⁻¹-inverseʳ (H x)
+```
+
+= Homotopy naturality <note:518711cc-ffe5-4ed7-b5e6-daa80d359c32>
+
+#let app = math.sans("ap")
+ 
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, def. 10.4.3"))[
+    Let $f, g ofType A -> B$ be maps. Given a
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopy] $H ofType f ~
+    g$ and a #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path] $p
+    ofType x = y$, there is a path
+    $
+        ap_(f)(p) dot.op H(y) = H(x) dot.op ap_(g)(p)
+    $
+    witnessing that the square
+
+    #figure(
+        diagram($
+            f(x) fletchereq("d", app_(f)(p)) fletchereq("r", H(x)) & g(x) fletchereq("d", app_(g)(p), label-side: #left) \
+            f(y) fletchereq("r", H(y), label-side: #right) & g(x)
+
+        $)
+    )
+    commutes.
+]
+
+According to #cite(<rijke2025>, form: "prose", supplement: "def. 10.4.3"), this
+square is referred to as the *naturality square* of the homotopy $H$ at $p$.
+
+#proof[
+    By #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path induction] on
+    $p$, it is sufficient to construct a path
+    $
+        ap_(f)(refl_(x)) dot.op H(x) = H(x) dot.op ap_(g)(refl_(x)).
+    $
+    By definition of the
+    #link("note://7caf7ee0-9e2a-4761-bee9-25cd52820039")[action on paths], this
+    evaluates to
+    $
+        refl_(f(x)) dot.op H(x) = H(x) dot.op refl_(g(x)),
+    $
+    which holds by the #link("note://50f1bf11-5d39-455c-a39e-0d560ac5cee5")[unit
+    laws for paths].
+]
+
+```agda
+homotopyNatural :
+  {i j : Level} {A : Type i} {B : Type j}
+  {x y : A} {f g : A → B} →
+  (H : f ∼ g) (p : x ＝ y) →
+  (pathAction f p) ∙' (H y) ＝ (H x) ∙' (pathAction g p)
+homotopyNatural {x = x} H reflexive = Identity.∙-unitʳ (H x) ⁻¹'
+```
+
+= Homotopy naturality for the identity function <note:42940391-aee2-4aa4-8240-5a38a3c3ee37>
+
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, def. 10.4.4"))[
+    Let $f : A -> A$ be a map equipped with a
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopy] $H ofType f ~
+    id_(A)$. Then for all $x ofType A$, there is a
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path]
+    $
+        H(f(x)) = ap_(f)(H(x)).
+    $
+
+]
+
+I'm leaving the paper proof unwritten because I don't really understand what's
+going on here right now.
+
+```agda
+homotopyNaturalIdentity :
+  {i : Level} {A : Type i}
+  {f : A → A}
+  (H : f ∼ identity)
+  (x : A) →
+  H (f x) ＝ pathAction f (H x)
+homotopyNaturalIdentity {f = f} H x = r
+  where
+  p : pathAction f (H x) ∙' H x ＝ H (f x) ∙' pathAction identity (H x)
+  p = homotopyNatural {x = f x} {y = x} {f = f} {g = identity} H (H x)
+
+  q : H (f x) ∙' pathAction identity (H x) ＝ H (f x) ∙' (H x)
+  q = pathAction (_∙'_ (H (f x))) (Identity.pathActionIdentity (H x)) ⁻¹'
+
+  -- TODO: Replace this with a lemma that paths are cancellative
+  r : H (f x) ＝ pathAction f (H x)
+  r = H (f x)
+        ＝[ Identity.∙-unitʳ (H (f x)) ⁻¹' ]
+      H (f x) ∙' reflexive
+        ＝[ pathAction (_∙'_ (H (f x))) (Identity.⁻¹-inverseʳ (H x) ⁻¹') ]
+      H (f x) ∙' ((H x) ∙' (H x) ⁻¹')
+        ＝[ Identity.∙-associative (H (f x)) (H x) (H x ⁻¹') ⁻¹' ]
+      (H (f x) ∙' (H x)) ∙' (H x) ⁻¹'
+        ＝[ pathAction (flip _∙'_ ((H x) ⁻¹')) ((p ∙' q) ⁻¹') ]
+      (pathAction f (H x) ∙' H x) ∙' (H x) ⁻¹'
+        ＝[ Identity.∙-associative (pathAction f (H x)) _ _ ]
+      pathAction f (H x) ∙' (H x ∙' (H x) ⁻¹')
+        ＝[ pathAction (_∙'_ $ pathAction f (H x))
+                      (Identity.⁻¹-inverseʳ (H x)) ]
+      pathAction f (H x) ∙' reflexive
+        ＝[ (Identity.∙-unitʳ $ pathAction f (H x)) ]
+      pathAction f (H x) ∎
 ```
