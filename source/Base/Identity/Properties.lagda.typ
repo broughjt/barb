@@ -617,7 +617,10 @@ along the #link("note://95e3c813-ae44-4341-ac56-286cda078568")[inverse] of the
 path are #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[inverse
 functions].
  
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.1"))[
+#lemma(
+    label: "37",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.1")
+)[
     Let $B$ be a #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type
     family] over a type $A$ and let $p ofType x = y$ be a
     #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path] between elements

@@ -175,6 +175,18 @@ identity types of $Sigma$-types] is
   {u v : Σ A B} →
   u ＝ v ≃ Equal u v
 ＝≃Equal = pair (＝→reflexive equalReflexive) ＝→equal-isEquivalence
+
+＝→Equal : 
+  {i j : Level} {A : Type i} {B : A → Type j}
+  {u v : Σ A B} →
+  u ＝ v → Equal u v
+＝→Equal = project₁ ＝≃Equal
+
+Equal→＝ : 
+  {i j : Level} {A : Type i} {B : A → Type j}
+  {u v : Σ A B} →
+  Equal u v → u ＝ v
+Equal→＝ = project₁ $ project₁ $ project₂ ＝≃Equal
 ```
 
 = Characterization of identity on product types <note:dbc89e73-b38a-49b8-b20e-06a10e62393b>

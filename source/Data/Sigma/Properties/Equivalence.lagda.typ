@@ -41,6 +41,11 @@ swapInverse = pair H H
   H : {i j : Level} {A : Type i} {B : Type j} →
       (swap {A = B} {B = A}) ∘ (swap {A = A} {B = B}) ∼ identity
   H (pair x y) = reflexive
+
+swapIsEquivalence :
+  {i j : Level} {A : Type i} {B : Type j} →
+  IsEquivalence (swap {A = A} {B = B})
+swapIsEquivalence = inverse→isEquivalence swap swap swapInverse
 ```
 
 = Left and right sigma associate functions are inverses <note:52df8c7d-2587-4ddf-bfef-29de5ab739d1>

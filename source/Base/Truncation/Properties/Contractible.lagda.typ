@@ -19,7 +19,10 @@ open import Data.Sigma.Core hiding (induction)
 
 = A type is contractible if and only if it satisfies singleton induction <note:dc1d2466-8ead-40b1-9924-f60afcefe390>
  
-#theorem(supplement: cite_link(<rijke2025>, "Rijke 2025, thm. 10.2.3"))[
+#theorem(
+    label: "38",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, thm. 10.2.3")
+)[
     A type is #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible]
     if and only if it satisfies
     #link("note://2a65336f-3db1-411e-869f-9c87a18d408a")[singleton induction].
