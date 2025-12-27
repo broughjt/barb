@@ -9,6 +9,7 @@ open import Base.Function.Core
 open import Base.Function.Definitions
 open import Base.Function.Properties.Equivalence
 open import Base.Identity.Core
+open import Base.Identity.Definitions
 open import Base.Universe.Core
 open import Data.Sigma.Core
 open import Data.Sigma.Definitions
@@ -167,4 +168,77 @@ swapBaseˡ-inverse = pair H H
       swapBaseˡ {B = C} {C = B} ∘ swapBaseˡ ∼
       (identity {_} {Σ (Σ A B) (C ∘ project₁)})
   H (pair (pair x y) z) = reflexive
+```
+
+= Fiber over the first projection map is equivalent to fiber of a type family <note:f9a042a9-e79b-4277-8d9b-e440679252d5>
+ 
+#lemma(
+    label: "39",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 10.7(a)")
+)[
+    Let $B$ be a #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type
+    family] over a type $A$. For each $a ofType A$, there is an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]
+    $
+        Fiber_(project1)(a) tilde.eq B(a).
+    $
+]
+#proof[
+    The map $lambda ((x, y), p) . tr_(B)(p, y)$ has an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[inverse] $lambda y
+    . ((a, y), refl_(a))$. The
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotpies] witnessing
+    this hold by definition.
+]
+
+See #link("note://96d1fb9a-fd38-48cc-886f-7643637ac1e7")[Fiber of a function
+over a point], #link("note://85839d30-6530-4e54-a8ba-efd1c8709928")[Fiber of a
+type family], #link("note://1229c654-047b-4517-9f4c-df4c03224d02")[Transport
+along a path], and #link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[Sigma
+type].
+
+The note #link("note://4988b637-34d2-472b-98f9-34c544f06e62")[Hint about naming
+for fiber of a type family] offers commentary about the connection to
+#link("note://85839d30-6530-4e54-a8ba-efd1c8709928")[fibers of a type family].
+
+```agda
+fiberProject₁→fiber : {i j : Level} {A : Type i} {B : A → Type j} →
+                      (a : A) →
+                      Fiber (project₁ {A = A} {B = B}) a → B a
+fiberProject₁→fiber {B = B} a (pair (pair x y) p) = transport B p y
+
+fiber→fiberProject₁ : {i j : Level} {A : Type i} {B : A → Type j} →
+                      (a : A) →
+                      B a → Fiber (project₁ {A = A} {B = B}) a
+fiber→fiberProject₁ a y = pair (pair a y) reflexive
+
+fiberProject₁→fiberInverse :
+  {i j : Level} {A : Type i} {B : A → Type j} →
+  (a : A) →
+  Inverse (fiberProject₁→fiber {B = B} a) (fiber→fiberProject₁ a)
+fiberProject₁→fiberInverse {B = B} a = pair G H
+  where
+  G : (fiber→fiberProject₁ a) ∘ (fiberProject₁→fiber a) ∼
+      identity {_} {Fiber project₁ a}
+  G (pair (pair x y) reflexive) = reflexive
+
+  H : (fiberProject₁→fiber {B = B} a) ∘ (fiber→fiberProject₁ a) ∼
+      identity {_} {B a}
+  H y = reflexive
+
+fiberProject₁→fiberEquivalence : 
+  {i j : Level} {A : Type i} {B : A → Type j} →
+  (a : A) →
+  IsEquivalence (fiberProject₁→fiber {B = B} a)
+fiberProject₁→fiberEquivalence a =
+  inverse→isEquivalence (fiberProject₁→fiber a)
+                        (fiber→fiberProject₁ a)
+                        (fiberProject₁→fiberInverse a)
+
+fiberProject≃fiber :
+  {i j : Level} {A : Type i} {B : A → Type j} →
+  (a : A) →
+  Fiber (project₁ {A = A} {B = B}) a ≃ B a
+fiberProject≃fiber a =
+  pair (fiberProject₁→fiber a) (fiberProject₁→fiberEquivalence a)
 ```

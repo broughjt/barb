@@ -197,3 +197,184 @@ baseIsContractible⇒fiber≃total :
 baseIsContractible⇒fiber≃total p =
   pair (pair $ project₁ p) (baseIsContractible→pairEquivalence p)
 ```
+
+= The first projection is an equivalence if and only if each fiber is contractible <note:72048b5c-50ba-4b43-8c3a-18c417347534>
+ 
+#lemma(
+    label: "43",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 10.7(b)")
+)[
+    Let $B$ be a #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type
+    family] over a type $A$. The
+    #link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[first projection]
+    $
+        project1 ofType sigmaType(x, A) B(x) -> A
+    $
+    is an #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence] if
+    and only if the #link("note://85839d30-6530-4e54-a8ba-efd1c8709928")[fiber]
+    $B(x)$ is #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible]
+    for each $x ofType A$.
+]
+#proof[
+    By #link("note://984c33bd-7fb6-4432-a0de-ddc279bddc1c")[Theorem 41], a map
+    is an equivalence if and only if each of its
+    #link("note://96d1fb9a-fd38-48cc-886f-7643637ac1e7")[fibers] is
+    contractible. Fix $x ofType A$. By
+    #link("note://f9a042a9-e79b-4277-8d9b-e440679252d5")[Lemma 39], there is an
+    equivalence
+    $
+        Fiber_(project1)(x) tilde.eq B(x),
+    $
+    identifying the #link("note://96d1fb9a-fd38-48cc-886f-7643637ac1e7")[fiber]
+    of the first projection over $x$ with the type family
+    #link("note://85839d30-6530-4e54-a8ba-efd1c8709928")[fiber] $B(x)$.
+
+    Since contractibility is preserved under equivalence by
+    #link("note://41aea79b-658b-464d-b9c4-0326602aa2db")[Lemma 42], the fiber
+    $Fiber_(project1)(x)$ is contractible if and only if $B(x)$ is
+    contractible. The claim follows.
+]
+
+```agda
+project₁-isEquivalence↔fibersContractible :
+  {i j : Level} {A : Type i} {B : A → Type j} →
+  IsEquivalence (project₁ {A = A} {B = B}) ↔ ((x : A) → IsContractible (B x))
+project₁-isEquivalence↔fibersContractible {_} {_} {A} {B} = q ∘↔ p
+  where
+  p : IsEquivalence project₁ ↔
+      IsContractibleFunction (project₁ {A = A} {B = B})
+  p = isEquivalence↔isContractibleFunction
+
+  q : ((x : A) → IsContractible (Fiber project₁ x)) ↔
+      ((x : A) → IsContractible (B x))
+  q = Π↔swap
+    (λ x → isEquivalence→isContractible↔isContractible
+      (fiberProject₁→fiber x) (fiberProject₁→fiberEquivalence x))
+```
+
+= Lift to total space via dependent function is an equivalence if and only if fibers of type family are contractible <note:0e491737-f1c7-4712-bf2c-5bbf45cbd155>
+
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 10.7(c)"))[
+    Let $B$ be a #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type
+    family] over a type $A$ and let $f ofType piType(x, A) B(x)$ be a dependent
+    function. Then the map
+    $
+        s := lambda x . (x, f(x)) ofType A -> sigmaType(x, A) B(x)
+    $
+    is an #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence] if
+    and only if the #link("note://85839d30-6530-4e54-a8ba-efd1c8709928")[fiber]
+    $B(x)$ is #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible]
+    for each $x ofType A$.
+]
+#proof[
+    We instead show that $s$ is an equivalence if and only if the
+    #link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[first projection]
+    $project1 ofType sigmaType(x, A) B(x) -> A$ is an equivalence. The claim
+    then follows by #link("note://72048b5c-50ba-4b43-8c3a-18c417347534")[Lemma
+    43], which shows that $project1$ is an equivalence if and only if the fiber
+    $B(x)$ is contractible for each $x ofType A$.
+
+    ($==>$) Suppose $s$ is an equivalence. Then by
+    #link("note://731be08a-a2ad-477a-8c08-d9f26c32de41")[Lemma 3], it admits an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[inverse] $g ofType
+    sigmaType(x, A) B(x) -> A$ with
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopies]
+    $
+        G ofType g compose s ~ id_(A) quad "and" quad
+        H ofType s compose g ~ id_(sigmaType(x, A) B(x)).
+    $
+
+    Evaluating the second homotopy $H$ at an arbitrary $(x, y) ofType
+    sigmaType(x, A) B(x)$ yields a path
+    $
+        (g((x, y)), f(g((x, y)))) = (x, y).
+    $
+    Using the first projection of the
+    #link("note://a123eb52-0ec7-4d04-a780-e6761d564fd9")[characterization of
+    $Sigma$ identity types], we obtain a path
+    $
+        g((x, y)) = x dot(eq) project1((x, y)).
+    $
+    Since $(x, y)$ was arbitrary, this defines a homotopy $g ~ project1$. By
+    #link("note://52746242-840c-49cd-b924-5d5889004220")[Lemma 25], inverses are
+    invariant under homotopy, so $project1$ is also an inverse of $s$, and hence
+    an equivalence.
+
+    ($<==$) Conversely, suppose $project1 ofType sigmaType(x, A) B(x) -> A$ is
+    an equivalence. By
+    #link("note://731be08a-a2ad-477a-8c08-d9f26c32de41")[Lemma 3], there is a
+    function $g ofType A -> sigmaType(x, A) B(x)$ equipped with homotopies
+    $
+        G ofType g compose project1 ~ id_(sigmaType(x, A) B(x)) quad "and" quad
+        H ofType project1 compose g ~ id_(A).
+    $
+    For each $x ofType A$, the homotopy $G$ at the pair $(x, f(x))$ gives a path
+    $
+        g(x) = (x, (f(x))),
+    $
+    so there is a homotopy $g ~ s$. By
+    #link("note://52746242-840c-49cd-b924-5d5889004220")[Lemma 24], the map $s$
+    is an inverse of $project1$, and therefore an equivalence.
+]
+
+```agda
+
+pairIsEquivalence→project₁-isEquivalence :
+  {i j : Level} {A : Type i} {B : A → Type j}
+  (f : (x : A) → B x) →
+  IsEquivalence (λ x → pair x (f x)) → IsEquivalence (project₁ {A = A} {B = B})
+pairIsEquivalence→project₁-isEquivalence {A = A} {B = B} f p with
+  isEquivalence→hasInverse p
+... | (pair g p'@(pair G H)) =
+  inverse→isEquivalence
+    project₁ s
+    (inverseInverse (λ x → pair x (f x)) project₁ q)
+  where
+  s : A → Σ A B
+  s = λ x → pair x (f x)
+
+  K : g ∼ project₁
+  K (pair x y) = project₁ $ ＝→Equal $ H (pair x y)
+
+  q : Inverse s project₁
+  q = inverse→homotopy→inverseʳ p' K
+
+project₁-isEquivalence→pairIsEquivalence :
+  {i j : Level} {A : Type i} {B : A → Type j}
+  (f : (x : A) → B x) →
+  IsEquivalence (project₁ {A = A} {B = B}) → IsEquivalence (λ x → pair x (f x))
+project₁-isEquivalence→pairIsEquivalence {A = A} {B = B} f p with
+  isEquivalence→hasInverse p
+... | (pair g p'@(pair G H)) = 
+  inverse→isEquivalence
+    s project₁
+    (inverseInverse project₁ s q)
+  where
+  s = (λ x → pair x (f x))
+
+  K : g ∼ s
+  K x = G (pair x (f x))
+
+  q : Inverse project₁ s
+  q = inverse→homotopy→inverseʳ p' K
+
+pairIsEquivalence↔project₁-isEquivalence :
+  {i j : Level} {A : Type i} {B : A → Type j}
+  (f : (x : A) → B x) →
+  IsEquivalence (λ x → pair x (f x)) ↔ IsEquivalence (project₁ {A = A} {B = B})
+pairIsEquivalence↔project₁-isEquivalence f =
+  pair (pairIsEquivalence→project₁-isEquivalence f)
+       (project₁-isEquivalence→pairIsEquivalence f)
+
+pairIsEquivalence↔fibersContractible :
+  {i j : Level} {A : Type i} {B : A → Type j}
+  (f : (x : A) → B x) →
+  IsEquivalence (λ x → pair x (f x)) ↔ ((x : A) → IsContractible (B x))
+pairIsEquivalence↔fibersContractible {A = A} {B = B} f = q ∘↔ p
+  where
+  p : IsEquivalence (λ x → pair x (f x)) ↔ IsEquivalence project₁
+  p = pairIsEquivalence↔project₁-isEquivalence f
+
+  q : IsEquivalence project₁ ↔ ((x : A) → IsContractible (B x))
+  q = project₁-isEquivalence↔fibersContractible
+```

@@ -307,7 +307,7 @@ isEquivalence→isContractibleFunction =
 
 = Equivalence if and only if contractible map <note:984c33bd-7fb6-4432-a0de-ddc279bddc1c>
 
-#theorem[
+#theorem(label: "41")[
     A map is an
     #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence] if and
     only if it has
@@ -502,7 +502,10 @@ isContractible→constantUnitIsEquivalence {_} {A} (pair c C) =
 
 = Map between contractible types is an equivalence <note:41aea79b-658b-464d-b9c4-0326602aa2db>
  
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 10.3(b)"))[
+#lemma(
+    label: "42",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 10.3(b)")
+)[
     Consider a function $f ofType A -> B$. If any two of the three statements
 
     1. $A$ is #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible]
@@ -575,6 +578,14 @@ isEquivalence→isContractible→isContractible₂ f p q =
   where
   H : constant ⋆ ∼ constant ⋆ ∘ f
   H x = reflexive
+
+isEquivalence→isContractible↔isContractible :
+  {i j : Level} {A : Type i} {B : Type j}
+  (f : A → B) →
+  IsEquivalence f → IsContractible A ↔ IsContractible B
+isEquivalence→isContractible↔isContractible f p =
+  pair (isEquivalence→isContractible→isContractible₁ f p)
+       (isEquivalence→isContractible→isContractible₂ f p)
 ```
 
 = A type is contractible if and only if it is equivalent to the unit type <note:87576cff-1971-462a-a83c-221a8f2672a0>

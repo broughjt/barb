@@ -106,29 +106,6 @@ retractionSectionHomotopy {g = g} {h = h} G H = (g ∙ₗ H) ⁻¹ ∙ (G ∙ᵣ
     #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[retraction] in the
     definition of equivalence.
 
-    // ($<==$) Let $f ofType A -> B$ be a function with a section $g ofType B -> A$
-    // and a retraction $h ofType B -> A$. Then there exist
-    // #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopies]
-    // $
-    //     G ofType & f compose g ~ id_(B), \
-    //     H ofType & h compose f ~ id_(A).
-    // $
-    // Using $G$ and $H$,
-    // #link("note://1eff33a2-4cba-48c0-8d40-19bf2c5d08ca")[Lemma 2] shows that
-    // there is a homotopy $K ofType g ~ h$. Then the
-    // #link("note://7805061a-565d-4412-9ca4-acb998e89555")[right whiskering]
-    // operation on $K$ by $f$ gives
-    // $
-    //     K dot.op f ofType g compose f ~ h compose f.
-    // $
-    // #link("note://a3eaa21d-b0a4-4aed-80fd-ed5aeb914aab")[Concatenating] this
-    // with $H$, we obtain
-    // $
-    //     (K dot.op f) dot.op H ofType g compose f ~ id_(A).
-    // $
-    // Therefore, in addition to being a section of $f$, the map $g$ is also a
-    // retraction of $f$, and hence $g$ is an inverse of $f$.
-
     ($<==$) Let $f ofType A -> B$ be a function with a retraction $g ofType B ->
     A$ and a section $h ofType B -> A$. Then
     #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[by definition] there
@@ -498,8 +475,8 @@ inverse→homotopy→inverseˡ {f = f} {f' = f'} {g = g} (pair G H) K = pair
   (section→homotopy→sectionˡ H K)
 
 inverse→homotopy→inverseʳ : {i j : Level} {A : Type i} {B : Type j}
-                             {f : A → B} {g g' : B → A} →
-                             Inverse f g → g ∼ g' → Inverse f g'
+                            {f : A → B} {g g' : B → A} →
+                            Inverse f g → g ∼ g' → Inverse f g'
 inverse→homotopy→inverseʳ {f = f} {g = g} {g' = g'} (pair G H) K = pair
   (retraction→homotopy→retractionʳ G K)
   (section→homotopy→sectionʳ {f = f} H K)
@@ -905,4 +882,112 @@ words, if $not A$ then $A$ is
 ¬⇔≃𝟎 : {i : Level} {A : Type i} →
        (¬ A) ↔ (A ≃ 𝟎)
 ¬⇔≃𝟎 = pair ¬⇒≃𝟎 project₁
+```
+
+= Logical equivalences compose <note:e42158b1-a6f3-4558-8815-793ba4972d3d>
+ 
+#link("note://27061ddb-2091-46c1-8752-21db2ab57f44")[Logical equivalences] can
+be composed by applying
+#link("note://bc9568f6-830b-4b4e-9aab-1808b1127cb0")[function composition]
+pairwise.
+
+#lemma[
+    If $B arrow.l.r C$ and $A arrow.l.r B$ then $A arrow.l.r C$.
+]
+#proof[
+    We have $g_(1) ofType B -> C$ and $g_(2) ofType C -> B$ and similarly we
+    have $f_(1) ofType A -> B$ and $f_(2) ofType B -> A$. Compose $g_1$ after
+    $f_1$ to obtain $g_1 ofType A -> C$ and compose $f_2$ and $g_2$ to obtain
+    $f_2 compose g_2 ofType C -> A$.
+]
+
+```agda
+_∘↔_ : {i j k : Level} {A : Type i} {B : Type j} {C : Type k} →
+       (B ↔ C) → (A ↔ B) → (A ↔ C)
+(pair g₁ g₂) ∘↔ (pair f₁ f₂) = pair (g₁ ∘ f₁) (f₂ ∘ g₂)
+```
+
+= Forall implication quantifier swap <note:36cf6846-8c90-44b6-a889-ee59586ab66f>
+ 
+#lemma[
+    Let $B$ and $C$ be #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type
+    families] over a type $A$. If
+    $
+        piType(x, A) B(x) -> C(x)
+    $
+    then
+    $
+        (piType(x, A) B(x)) -> (piType(x, A) C(x)).
+    $
+]
+#proof[
+    Assume $f ofType piType(x, A) B(x) -> C(x)$. Suppose that we are given $b
+    ofType piType(x, A) B(x)$. To define a function $piType(x, A) C(x)$, let $x
+    ofType A$. Then $b(x) ofType B(x)$, and applying $f(x)$ yields $f(x)(b(x))
+    ofType C(x)$. Since $x$ was arbitrary, this defines a function of type
+    $piType(x, A) C(x)$.
+]
+
+We don't expect the
+#link("note://314a5e4f-bf3c-497a-867c-edc5bb306d7f")[converse] to hold in
+general. To define a function $B(x) -> C(x)$ for a fixed $x ofType A$, we would
+need an element of $B(x)$. However, an assumption of type $(piType(x, A) B(x))
+-> (piType(x, A) C(x))$ doesn't give a particular element of $B(x)$ to work
+with.
+
+```agda
+Π→swap : {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k} →
+         ((x : A) → B x → C x) → (((x : A) → B x) → ((x : A) → C x))
+Π→swap f p x = f x $ p x
+```
+
+= Forall biconditional quantifier swap <note:5fe2144d-ac3f-4c73-8b98-86d7bf27a9ee>
+
+#lemma(label: "40")[
+    Let $B$ and $C$ be #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type
+    families] over a type $A$. If
+    $
+        piType(x, A) B(x) arrow.l.r C(x)
+    $
+    then
+    $
+        (piType(x, A) B(x)) arrow.l.r (piType(x, A) C(x)).
+    $
+]
+#proof[
+    Assume $f ofType piType(x, A) B(x) arrow.l.r C(x)$. For each $x ofType A$,
+    the element $f(x)$ consists of a pair of functions
+    $
+        project1(f(x)) ofType B(x) -> C(x), quad
+        project2(f(x)) ofType C(x) -> B(x).
+    $
+    Thus we obtain functions
+    $
+        f_1 ofType piType(x, A) (B(x) -> C(x)), quad
+        f_2 ofType piType(x, A) (C(x) -> B(x))
+    $
+    defined by $f_1(x) := project1(f(x))$ and $f_2(x) :=
+    project2(f(x))$.
+
+    Applying #link("note://36cf6846-8c90-44b6-a889-ee59586ab66f")[Lemma 40] to
+    $f_1$ and $f_2$ yields functions
+    $
+        (piType(x, A) B(x)) -> (piType(x, A) C(x)), quad
+        (piType(x, A) C(x)) -> (piType(x, A) B(x)).
+    $
+    Together, these define a function
+    $
+        (piType(x, A) B(x)) arrow.l.r (piType(x, A) C(x))
+    $
+    as required.
+]
+
+This is the biconditional version of
+#link("note://36cf6846-8c90-44b6-a889-ee59586ab66f")[Forall implication
+quantifier swap], obtained by applying that lemma in both directions.
+
+```agda
+Π↔swap : {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k} →
+         ((x : A) → B x ↔ C x) → (((x : A) → B x) ↔ ((x : A) → C x))
+Π↔swap f = pair (Π→swap $ project₁ ∘ f) (Π→swap $ project₂ ∘ f)
 ```
