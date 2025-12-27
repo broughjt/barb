@@ -163,3 +163,20 @@ map : {i j k l : Level}
       (A → C) → (B → D) → (A × B → C × D)
 map f g (pair x y) = pair (f x) (g y)
 ```
+
+= Induced map on total spaces <note:6561eded-451d-46bb-8194-c64a0acf904e>
+ 
+Following #cite(<rijke2025>, form: "prose", supplement: "def. 11.1.1"), for
+every family of maps $f ofType piType(x, A) B(x) -> C(x)$, there is an *induced
+map on total spaces*
+$
+    total(f) ofType sigmaType(x, A) B(x) -> sigmaType(x, A) C(x)
+$
+given by $total(f) := lambda (x, y) . (x, f(x, y))$ (see
+#link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[$Sigma$-type]).
+
+```agda
+total : {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k} →
+        ((x : A) → B x → C x) → (Σ A B → Σ A C)
+total f (pair x y) = pair x (f x y)
+```

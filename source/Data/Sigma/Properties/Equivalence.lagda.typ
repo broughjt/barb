@@ -7,9 +7,12 @@ module Data.Sigma.Properties.Equivalence where
 
 open import Base.Function.Core
 open import Base.Function.Definitions
+open import Base.Function.Properties.Contractible
 open import Base.Function.Properties.Equivalence
+open import Base.Function.Properties.Fiber
 open import Base.Identity.Core
 open import Base.Identity.Definitions
+open import Base.Truncation.Definitions
 open import Base.Universe.Core
 open import Data.Sigma.Core
 open import Data.Sigma.Definitions
@@ -241,4 +244,84 @@ fiberProject≃fiber :
   Fiber (project₁ {A = A} {B = B}) a ≃ B a
 fiberProject≃fiber a =
   pair (fiberProject₁→fiber a) (fiberProject₁→fiberEquivalence a)
+```
+
+= Family of functions is a family of equivalences if and only if the induced map on total spaces is an equivalence <note:1e59ed56-2044-4945-8e7e-c97df7680b26>
+ 
+#theorem(supplement: cite_link(<rijke2025>, "Rijke 2025, thm. 11.1.3"))[
+    Let $f ofType piType(x, A) B(x) -> C(x)$ be a family of maps. The following
+    are #link("note://27061ddb-2091-46c1-8752-21db2ab57f44")[logically
+    equivalent]:
+
+    1. The family $f$ is a
+       #link("note://60d115f9-9bef-47af-916a-1a60ea0b3456")[family of
+       equivalences].
+
+    2. The #link("note://6561eded-451d-46bb-8194-c64a0acf904e")[induced map on
+       total spaces]
+       $
+           total(f) ofType sigmaType(x, A) B(x) -> sigmaType(x, A) C(x)
+       $
+       is an #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence].
+]
+#proof[
+    We reduce the claim to a comparison of
+    #link("note://96d1fb9a-fd38-48cc-886f-7643637ac1e7")[fibers]. By
+    #link("note://984c33bd-7fb6-4432-a0de-ddc279bddc1c")[Theorem 41], a map is
+    an #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence] if and
+    only if each of its fibers is
+    #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible]. Thus it
+    suffices to show that the fiber
+    $
+        Fiber_(total(f))(v)
+    $
+    is contractible for each $v ofType sigmaType(x, A) C(x)$ if and only if, for
+    each $x ofType A$ and $z ofType C(x)$, the fiber
+    $
+        Fiber_(f(x))(z)
+    $
+    is contractible.
+
+    #link("note://7a736198-c62d-4ffa-8dc3-30f145d66dab")[Lemma 44] establishes
+    an equivalence between these fibers: for each $v ofType sigmaType(x, A)
+    C(x)$, we have
+    $
+        Fiber_(total(f))(v) tilde.eq Fiber_(f(project1(v)))(project2(v)).
+    $
+
+    Since contractibility is preserved under equivalence
+    (#link("note://41aea79b-658b-464d-b9c4-0326602aa2db")[Lemma 42]), the fiber
+    of $total(f)$ over $v$ is contractible if and only if the corresponding
+    fiber of the component map $f(project1(v))$ over $project2(v)$ is contractible.
+
+    Hence $total(f)$ is an equivalence if and only if each map $f(x)$ is an
+    equivalence, i.e. if and only if $f$ is a family of equivalences.
+]
+
+```agda
+familyOfEquivalences↔totalIsEquivalence :
+  {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k}
+  (f : (x : A) → B x → C x) →
+  ((x : A) → IsEquivalence (f x)) ↔ IsEquivalence (total f)
+familyOfEquivalences↔totalIsEquivalence {_} {_} {_} {A} {B} {C} f =
+  swap p ∘↔ (Π↔swap q ∘↔ (r ∘↔ (Π↔swap s)))
+  where
+  p : IsEquivalence (total f) ↔
+      ((v : Σ A C) → IsContractible $ Fiber (total f) v)
+  p = isEquivalence↔isContractibleFunction
+      
+  q : (v : Σ A C) →
+      (IsContractible $ Fiber (f $ project₁ v) (project₂ v)) ↔
+      (IsContractible $ Fiber (total f) v)
+  q v = swap $ isEquivalence→isContractible↔isContractible
+    (toFiberTotal f v) (toFiberTotalIsEquivalence f v) 
+                                                    
+  r : ((x : A) (z : C x) → IsContractible $ Fiber (f x) z) ↔
+      ((x : Σ A C) → IsContractible $ Fiber (f $ project₁ x) (project₂ x))
+  r = pair uncurry curry
+                   
+  s : (x : A) →
+         IsEquivalence (f x) ↔
+         ((z : C x) → IsContractible $ Fiber (f x) z)
+  s x = isEquivalence↔isContractibleFunction
 ```
