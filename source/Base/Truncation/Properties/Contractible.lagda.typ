@@ -165,8 +165,14 @@ isContractible↔isSingleton {i} {j} {A} =
     3. The family $B$ equipped with $b ofType B$ is an
        #link("note://f349b4cc-b6bb-433a-be57-9f2a3d9d8757")[identity system].
 ]
-#proof[
 
+Note: I was able to come up with the proof for (1) $<==>$ (2) on my own. I
+peeked at the diagram for (2) $<==>$ (3) in Rijke's proof, but after drawing it
+out on my own the I came up with the rest of the argument. I probably would have
+needed to spend a lot more time thinking to come up with the idea to use that
+diagram on my own.
+
+#proof[
     First we show that (1) and (2) are logically equivalent. By
     #link("note://1e59ed56-2044-4945-8e7e-c97df7680b26")[Theorem 45], the family
     of maps $f$ is a family of equivalences if and only if the
@@ -183,15 +189,6 @@ isContractible↔isSingleton {i} {j} {A} =
     #link("note://41aea79b-658b-464d-b9c4-0326602aa2db")[Lemma 42], it follows
     that $total(f)$ is an equivalence if and only if $sigmaType(x, A) B(x)$ is
     contractible. This establishes the logical equivalence of (1) and (2).
-
-    // Next, we show that (2) and (3) are logically equivalent. A type is
-    // contractible if and only if it satisfies
-    // #link("note://2a65336f-3db1-411e-869f-9c87a18d408a")[singleton induction] by
-    // #link("note://dc1d2466-8ead-40b1-9924-f60afcefe390")[Theorem 38], so it
-    // suffices to show that $sigmaType(x, A) B(x)$ satisfies singleton induction
-    // if and only if $(B, b)$ is an identity system. By the definitions of these
-    // concepts, it suffices to fix a type family $P$ indexed by $u ofType
-    // sigmaType(x, A) B(x)$ and show that
 
     Next, we show that (2) and (3) are logically equivalent. By
     #link("note://dc1d2466-8ead-40b1-9924-f60afcefe390")[Theorem 38], a type is
