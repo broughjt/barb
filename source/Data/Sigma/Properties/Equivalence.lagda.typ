@@ -442,3 +442,68 @@ familyOfEquivalences↔totalIsEquivalence' {A = A} {D = D} f g p =
     u : IsEquivalence (totalMap {C = D} f)
     u = isEquivalence→totalMapIsEquivalence p
 ```
+
+= Curry function has a section <note:89c0b826-88d2-47b9-9c24-5cd1468c03ee>
+
+Note, the section is not
+$
+    uncurry ofType & (piType(x, A) piType(y, B(x)) C(x, y)) -> \
+        & (piType(u, sigmaType(x, A) B(x)) C(project1(u), project2(u)))
+$
+where $C ofType piType(x, A) B(x) -> cal(U)$, but rather
+$
+    uncurry' ofType & (piType(x, A) piType(y, B(x)) C((x, y))) -> \
+        & (piType(u, sigmaType(x, A) B(x)) C(u))
+$
+where $C ofType sigmaType(x, A) B(x) -> cal(U)$ which lines up with the type
+family $C$ used in the
+#link("note://bc0fb217-3c37-4034-9681-ab3040569951")[definition of curry].
+
+Certainly `uncurry'` is also a
+#link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[retraction] for `curry`,
+but #link("note://9e47d14d-311a-4046-bf89-207c96c5fa2f")[I'm pretty sure that
+proving this requires function extensionality].
+
+#lemma(label: "47")[
+    The `uncurry'` operator is a
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[section] of the `curry`
+    operator.
+]
+#proof[
+    Let $f ofType piType(u, sigmaType(x, A) B(x)) C(u)$. Our goal is to
+    construct a path
+    $
+        curry(uncurry'(f)) = f.
+    $
+    By the definitions of
+    #link("note://bc0fb217-3c37-4034-9681-ab3040569951")[`curry` and
+    `uncurry'`], the left-hand side evaluates to
+    $
+        lambda x . lambda y . induction_(Sigma)(f, pair(x, y)).
+    $
+    By the #link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[computation rule
+    for $Sigma$-types], we have $induction_(Sigma)(f, pair(x, y)) dot(eq) f(x,
+    y)$, so
+    $
+        lambda x . lambda y . induction_(Sigma)(f, pair(x, y)) dot(eq)
+        lambda x . lambda y . f(x, y)
+    $
+    Then the $eta$-rule for functions gives
+    $
+        lambda x . lambda y . f(x, y) dot(eq) f.
+    $
+    Thus we may take $refl_(f(x))$ for the required path.
+]
+
+
+```agda
+curryUncurry'Section :
+  {i j k : Level} {A : Type i} {B : A → Type j} {C : Σ A B → Type k} →
+  RightInverse (curry {C = C}) (uncurry' {C = C})
+curryUncurry'Section f = reflexive
+
+-- curryUncurry'Retraction : 
+--   {i j k : Level} {A : Type i} {B : A → Type j} {C : Σ A B → Type k} →
+--   LeftInverse (curry {C = C}) (uncurry' {C = C})
+-- curryUncurry'Retraction f = {!!}
+```

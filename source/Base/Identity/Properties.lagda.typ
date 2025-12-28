@@ -702,7 +702,10 @@ transportInverse {_} {_} {A} {B} {x} {y} reflexive = pair H K
 
 = Type of endpoint-path pairs is contractible <note:0505440a-b3cf-41ad-b847-df4a87400d7a>
  
-#theorem(supplement: cite_link(<rijke2025>, "Rijke 2025, thm. 10.1.4"))[
+#theorem(
+    label: "46",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, thm. 10.1.4")
+)[
     Let $A$ be a type. For any $a ofType A$, the type of
     #link("note://536f383d-a59f-4ad3-8c15-82f0a7b9822d")[endpoint-path pairs]
     $

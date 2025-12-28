@@ -547,7 +547,10 @@ homotopy→isEquivalence↔isEquivalence H =
 
 = Commutative triangle with section lemma <note:b92b0253-66cd-46ff-aaab-8c33541cfd45>
  
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.4(a)"))[
+#lemma(
+    label: "48",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.4(a)")
+)[
     Consider a commuting triangle
     #figure(
         diagram($

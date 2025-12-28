@@ -23,6 +23,7 @@ import Base.Function.Properties.SemiringLaws
 
 import Base.Identity.Core
 import Base.Identity.Definitions
+import Base.Identity.IdentitySystem
 import Base.Identity.Properties
 import Base.Identity.Syntax
 
@@ -53,6 +54,7 @@ import Data.Sigma.Definitions
 import Data.Sigma.Properties.Equivalence
 import Data.Sigma.Properties.Identity
 import Data.Sigma.Properties.Map
+import Data.Sigma.Properties.Truncation
 
 import Data.Unit.Core
 import Data.Unit.Properties
