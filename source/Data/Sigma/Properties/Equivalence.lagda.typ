@@ -248,7 +248,10 @@ fiberProject≃fiber a =
 
 = Family of functions is a family of equivalences if and only if the induced map on total spaces is an equivalence <note:1e59ed56-2044-4945-8e7e-c97df7680b26>
  
-#theorem(supplement: cite_link(<rijke2025>, "Rijke 2025, thm. 11.1.3"))[
+#theorem(
+    label: "45",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, thm. 11.1.3")
+)[
     Let $f ofType piType(x, A) B(x) -> C(x)$ be a family of maps. The following
     are #link("note://27061ddb-2091-46c1-8752-21db2ab57f44")[logically
     equivalent]:
@@ -314,7 +317,7 @@ familyOfEquivalences↔totalIsEquivalence {_} {_} {_} {A} {B} {C} f =
       (IsContractible $ Fiber (f $ project₁ v) (project₂ v)) ↔
       (IsContractible $ Fiber (total f) v)
   q v = swap $ isEquivalence→isContractible↔isContractible
-    (toFiberTotal f v) (toFiberTotalIsEquivalence f v) 
+    (fromFiberTotal f v) (fromFiberTotalIsEquivalence f v) 
                                                     
   r : ((x : A) (z : C x) → IsContractible $ Fiber (f x) z) ↔
       ((x : Σ A C) → IsContractible $ Fiber (f $ project₁ x) (project₂ x))
@@ -324,4 +327,118 @@ familyOfEquivalences↔totalIsEquivalence {_} {_} {_} {A} {B} {C} f =
          IsEquivalence (f x) ↔
          ((z : C x) → IsContractible $ Fiber (f x) z)
   s x = isEquivalence↔isContractibleFunction
+```
+
+= Equivalence lift to total space <note:ca0042cc-2d24-4664-8baa-c538fb438ec2>
+ 
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, lem. 11.1.4"))[
+    Let $f ofType A -> B$ be a map and let $C$ be a
+    #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] over
+    $B$. If $f$ is an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence], then the
+    map
+    $
+        sigma_(f)(C) := lambda (x, z) . (f(x), z)
+        ofType sigmaType(x, A) C(f(x)) -> sigmaType(y, B) C(y)
+    $
+    is an equivalence.
+]
+
+The proof is pretty similar to the proof of
+#link("note://1e59ed56-2044-4945-8e7e-c97df7680b26")[Theorem 45]. For details,
+see the formal proof below---I'm too lazy to write it out in prose again right
+now.
+
+```agda
+isEquivalence→totalMapIsEquivalence :
+  {i j k : Level} {A : Type i} {B : Type j} {C : B → Type k}
+  {f : A → B} →
+  IsEquivalence f → IsEquivalence $ totalMap {C = C} f
+isEquivalence→totalMapIsEquivalence {_} {_} {_} {A} {B} {C} {f} =
+  r ∘ uncurry' ∘ q ∘ p
+  where
+  p : IsEquivalence f →
+      ((y : B) → IsContractible $ Fiber f y)
+  p = isEquivalence→isContractibleFunction
+
+  q : ((y : B) → IsContractible $ Fiber f y) →
+      ((y : B) (z : C y) →
+        IsContractible $ Fiber (totalMap {C = C} f) (pair y z))
+  q r y z =
+    isEquivalence→isContractible→isContractible₂
+      (fromFiberTotal' f (pair y z))
+      (fromFiberTotal'IsEquivalence f (pair y z))
+      (r y)
+
+  r : ((v : Σ B C) → IsContractible $ Fiber (totalMap f) v) →
+      (IsEquivalence $ totalMap {C = C} f)
+  r = isContractibleFunction→isEquivalence
+```
+
+= A family of maps over a map is a family of equivalences if and only if the other induced map on total spaces (Africa by Toto) is an equivalence <note:f59a5151-306a-43a4-99ba-1975ec2ba4be>
+ 
+#theorem(
+    supplement: cite_link(<rijke2025>, "Rijke 2025, thm. 11.1.6")
+)[
+    Let $f ofType A -> B$ and let $g ofType piType(x, A) C(x) -> D(f(x))$ be a
+    #link("note://dd0ebacd-5d30-4a29-a069-9d12805db0db")[family of maps over]
+    $f$. Suppose $f$ is an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]. Then the
+    family of maps $g$ over $f$ is a
+    #link("note://60d115f9-9bef-47af-916a-1a60ea0b3456")[family of equivalences]
+    if and only if the map $total'_(f)(g)$
+    (#link("note://dd0ebacd-5d30-4a29-a069-9d12805db0db")[Africa by Toto]) is an
+    equivalence.
+]
+
+TODO: Write a paper proof. It is basically an appeal to a commutative diagram
+and and application of the
+#link("note://eb0e793e-d04a-4145-ad54-152aa50d2aee")[3-for-2 property for
+equivalences].
+
+Note: this is a generalization of
+#link("note://1e59ed56-2044-4945-8e7e-c97df7680b26")[Theorem 45].
+
+```agda
+totalTriangle :
+  {i j k l : Level} {A : Type i} {B : Type j} {C : A → Type k} {D : B → Type l}
+  (f : A → B) (g : (x : A) → C x → D $ f x) →
+  total' f g ∼ (totalMap {C = D} f) ∘ (total g)
+totalTriangle f g (pair x z) = reflexive
+
+familyOfEquivalences↔totalIsEquivalence' :
+  {i j k l : Level} {A : Type i} {B : Type j} {C : A → Type k} {D : B → Type l}
+  (f : A → B) (g : (x : A) → C x → D $ f x) →
+  IsEquivalence f →
+  ((x : A) → IsEquivalence $ g x) ↔ IsEquivalence (total' {D = D} f g) 
+familyOfEquivalences↔totalIsEquivalence' {A = A} {D = D} f g p =
+  r ∘↔ q
+  where
+  q : ((x : A) → IsEquivalence $ g x) ↔
+      IsEquivalence (total g)
+  q = familyOfEquivalences↔totalIsEquivalence g
+                                              
+  r : IsEquivalence (total g) ↔ IsEquivalence (total' {D = D} f g)
+  r = pair (flip t u) (flip s u)
+    where
+    s : IsEquivalence (total' {D = D} f g) →
+        IsEquivalence (totalMap {C = D} f) →
+        IsEquivalence (total g)
+    s = isEquivalenceLeft→right→top
+          (total' f g)
+          (totalMap f)
+          (total g)
+          (totalTriangle f g)
+
+    t : IsEquivalence (total g) →
+        IsEquivalence (totalMap {C = D} f) →
+        IsEquivalence (total' {D = D} f g)
+    t = isEquivalenceTop→right→left
+          (total' f g)
+          (totalMap f)
+          (total g)
+          (totalTriangle f g)
+
+    u : IsEquivalence (totalMap {C = D} f)
+    u = isEquivalence→totalMapIsEquivalence p
 ```

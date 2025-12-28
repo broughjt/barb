@@ -180,51 +180,127 @@ $f(x) ofType B(x) -> C(x)$ over $z$.
 ]
 
 ```agda
-toFiberTotal :
-  {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k}
-  (f : (x : A) → B x → C x)
-  (u : Σ A C) →
-  Fiber (total f) u → Fiber (f $ project₁ u) (project₂ u)
-toFiberTotal {B = B} f (pair x₀ z₀) (pair (pair x y) p) with (＝→Equal p)
-... | pair reflexive q = pair y q
-
 fromFiberTotal :
   {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k}
   (f : (x : A) → B x → C x)
   (u : Σ A C) →
-  Fiber (f $ project₁ u) (project₂ u) → Fiber (total f) u
-fromFiberTotal f (pair x₀ z₀) (pair y p) =
-  pair (pair x₀ y) (Equal→＝ (pair reflexive p)) 
+  Fiber (total f) u → Fiber (f $ project₁ u) (project₂ u)
+fromFiberTotal {B = B} f (pair x₀ z₀) (pair (pair x y) p) with (＝→Equal p)
+... | pair reflexive q = pair y q
 
-toFiberTotalInverse : 
+toFiberTotal :
   {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k}
   (f : (x : A) → B x → C x)
   (u : Σ A C) →
-  Inverse (toFiberTotal f u) (fromFiberTotal f u)
-toFiberTotalInverse f (pair x₀ z₀) = pair G H
+  Fiber (f $ project₁ u) (project₂ u) → Fiber (total f) u
+toFiberTotal f (pair x₀ z₀) (pair y p) =
+  pair (pair x₀ y) (Equal→＝ (pair reflexive p)) 
+
+fromFiberTotalInverse : 
+  {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k}
+  (f : (x : A) → B x → C x)
+  (u : Σ A C) →
+  Inverse (fromFiberTotal f u) (toFiberTotal f u)
+fromFiberTotalInverse f (pair x₀ z₀) = pair G H
   where
-  G : (fromFiberTotal f (pair x₀ z₀)) ∘ (toFiberTotal f (pair x₀ z₀)) ∼
+  G : (toFiberTotal f (pair x₀ z₀)) ∘ (fromFiberTotal f (pair x₀ z₀)) ∼
       identity {_} {Fiber (total f) (pair x₀ z₀)}
   G (pair (pair x y) reflexive) = reflexive
 
-  H : (toFiberTotal f (pair x₀ z₀)) ∘ (fromFiberTotal f (pair x₀ z₀)) ∼
+  H : (fromFiberTotal f (pair x₀ z₀)) ∘ (toFiberTotal f (pair x₀ z₀)) ∼
       identity {_} {Fiber (f x₀) z₀}
   H (pair y reflexive) = reflexive
 
-toFiberTotalIsEquivalence :
+fromFiberTotalIsEquivalence :
   {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k}
   (f : (x : A) → B x → C x)
   (u : Σ A C) →
-  IsEquivalence $ toFiberTotal f u
-toFiberTotalIsEquivalence f u =
-  inverse→isEquivalence (toFiberTotal f u)
-                        (fromFiberTotal f u)
-                        (toFiberTotalInverse f u)
+  IsEquivalence $ fromFiberTotal f u
+fromFiberTotalIsEquivalence f u =
+  inverse→isEquivalence (fromFiberTotal f u)
+                        (toFiberTotal f u)
+                        (fromFiberTotalInverse f u)
 
 fiberTotal≃ : 
   {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k}
   (f : (x : A) → B x → C x)
   (u : Σ A C) →
   Fiber (total f) u ≃ Fiber (f $ project₁ u) (project₂ u)
-fiberTotal≃ f u = pair (toFiberTotal f u) (toFiberTotalIsEquivalence f u)
+fiberTotal≃ f u = pair (fromFiberTotal f u) (fromFiberTotalIsEquivalence f u)
+```
+
+= Fibers of total map equivalent to fibers of the original map <note:e6072f57-0394-4b67-97cd-7465cd31b6ef>
+
+#lemma[
+    Consider a map $f ofType A -> B$ and let $C$ be a
+    #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] over
+    $B$. Define a map
+    $
+        sigma_(f)(C) ofType sigmaType(x, A) C(f(x)) -> sigmaType(y, B) C(y)
+    $
+    by $sigma_(f)(C)((x, z)) := (f(x), z)$ (see
+    #link("note://69363933-8530-42aa-b18d-8c37c4365ff9")[Total map
+    thing]). There is an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]
+    $
+        Fiber_(sigma_(f)(C))((y, z)) tilde.eq Fiber_(f)(y)
+    $
+    between the #link("note://96d1fb9a-fd38-48cc-886f-7643637ac1e7")[fiber] of
+    $sigma_(f)(C)$ over $(y, z)$ and the fiber of $f$ over $y$.
+]
+
+The proof is pretty similar to the proof of
+#link("note://7a736198-c62d-4ffa-8dc3-30f145d66dab")[Lemma 44]. See the formal
+proof below, I'm too lazy to write prose for it right now.
+
+Intuition: nothing happens to the $z ofType C(y)$, the only processing done by
+$sigma_(f)(C)$ happens by applying $f$.
+
+```agda
+fromFiberTotal' :
+  {i j k : Level} {A : Type i} {B : Type j} {C : B → Type k}
+  (f : A → B)
+  (v : Σ B C) →
+  Fiber (totalMap f) v → Fiber f (project₁ v)
+fromFiberTotal' f (pair y z) (pair (pair x z) reflexive) = pair x reflexive
+
+toFiberTotal' :
+  {i j k : Level} {A : Type i} {B : Type j} {C : B → Type k}
+  (f : A → B)
+  (v : Σ B C) →
+  Fiber f (project₁ v) → Fiber (totalMap f) v
+toFiberTotal' f (pair y z) (pair x reflexive) = pair (pair x z) reflexive
+
+fromFiberTotal'Inverse :
+  {i j k : Level} {A : Type i} {B : Type j} {C : B → Type k}
+  (f : A → B)
+  (v : Σ B C) →
+  Inverse (fromFiberTotal' f v) (toFiberTotal' f v)
+fromFiberTotal'Inverse f (pair y₀ z₀) = pair G H
+  where
+  G : (toFiberTotal' f (pair y₀ z₀)) ∘ (fromFiberTotal' f (pair y₀ z₀)) ∼
+      identity {_} {Fiber (totalMap f) (pair y₀ z₀)}
+  G (pair (pair x z) reflexive) = reflexive
+
+  H : (fromFiberTotal' f (pair y₀ z₀)) ∘ (toFiberTotal' f (pair y₀ z₀)) ∼
+      identity {_} {Fiber f y₀}
+  H (pair x reflexive) = reflexive
+
+fromFiberTotal'IsEquivalence :
+  {i j k : Level} {A : Type i} {B : Type j} {C : B → Type k}
+  (f : A → B)
+  (v : Σ B C) →
+  IsEquivalence (fromFiberTotal' f v)
+fromFiberTotal'IsEquivalence f v =
+  inverse→isEquivalence (fromFiberTotal' f v)
+                        (toFiberTotal' f v)
+                        (fromFiberTotal'Inverse f v)
+
+fiberTotal'≃ :
+  {i j k : Level} {A : Type i} {B : Type j} {C : B → Type k}
+  (f : A → B)
+  (v : Σ B C) →
+  Fiber (totalMap f) v ≃ Fiber f (project₁ v)
+fiberTotal'≃ f v =
+  pair (fromFiberTotal' f v) (fromFiberTotal'IsEquivalence f v)
 ```

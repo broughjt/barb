@@ -31,21 +31,36 @@ just ordinary #link("note://23a01b78-e433-4a66-8915-bfda82ee149a")[Cartesian
 products] as in the example above.
 
 ```agda
-curry : {i j k : Level} {A : Type i} {B : A → Type j} {C : Σ A B → Type k} →
-        ((u : Σ A B) → C u) →
-        ((x : A) → (y : B x) → C $ pair x y)
+curry :
+  {i j k : Level} {A : Type i} {B : A → Type j} {C : Σ A B → Type k} →
+  ((u : Σ A B) → C u) →
+  ((x : A) → (y : B x) → C $ pair x y)
 curry f x y = f $ pair x y
+
+curry' :
+  {i j k : Level} {A : Type i} {B : A → Type j} {C : (x : A) → B x → Type k} →
+  ((u : Σ A B) → C (project₁ u) (project₂ u)) →
+  ((x : A) → (y : B x) → C x y)
+curry' = curry
 ```
 
 We can also define an *uncurry* operator, which takes a curried function and
 returns a verion which takes its argument as a pair.
 
 ```agda
-uncurry : {i j k : Level}
-          {A : Type i} {B : A → Type j} {C : (x : A) → B x → Type k} →
-          ((x : A) (y : B x) → C x y) →
-          ((u : Σ A B) → C (project₁ u) (project₂ u))
+uncurry :
+  {i j k : Level}
+  {A : Type i} {B : A → Type j} {C : (x : A) → B x → Type k} →
+  ((x : A) (y : B x) → C x y) →
+  ((u : Σ A B) → C (project₁ u) (project₂ u))
 uncurry {C = C} = induction {P = λ u → C (project₁ u) (project₂ u)}
+
+uncurry' :
+  {i j k : Level}
+  {A : Type i} {B : A → Type j} {C : Σ A B → Type k} →
+  ((x : A) (y : B x) → C $ pair x y) →
+  ((u : Σ A B) → C u)
+uncurry' {C = C} = induction {P = C}
 ```
 
 Compare #cite(<rijke2025>, form: "prose", supplement: "rem. 4.6.3").
@@ -179,4 +194,53 @@ given by $total(f) := lambda (x, y) . (x, f(x, y))$ (see
 total : {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k} →
         ((x : A) → B x → C x) → (Σ A B → Σ A C)
 total f (pair x y) = pair x (f x y)
+```
+
+= Total map thing <note:69363933-8530-42aa-b18d-8c37c4365ff9>
+
+Given a map $f ofType A -> B$ and a type family $C$ over $B$, #cite(<rijke2025>,
+form: "prose") introduces a map
+$
+    sigma_(f)(C) := lambda (x, z) . (f(x), z)
+    ofType sigmaType(x, A) C(f(x)) -> sigmaType(y, B) C(y)
+$
+as part of Lemma 11.1.4. I'm giving it a name in Agda because I'll need to mention it in several modules.
+
+```agda
+totalMap : {i j k : Level} {A : Type i} {B : Type j} {C : B → Type k}
+           (f : A → B) →
+           Σ A (C ∘ f) → Σ B C
+totalMap f (pair x z) = (pair (f x) z)
+```
+
+= Induced map on total spaces of a family of maps over a map (Africa by Toto) <note:dd0ebacd-5d30-4a29-a069-9d12805db0db>
+
+Following
+#cite(<rijke2025>, form: "prose", supplement: "Rijke 2025, def. 11.1.5"),
+Consider a map $f ofType A -> B$ and a family of maps
+$
+    g ofType piType(x, A) C(x) -> D(f(x)),
+$
+where $C$ is a #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family]
+over $A$ and $D$ is a type family over $B$. Here, we say $g$ is a *family of
+maps over* $f$. We define the *other induced map on total spaces* (since Rijke
+doesn't give this map a name and there is already a first
+#link("note://6561eded-451d-46bb-8194-c64a0acf904e")[induced map on total
+spaces])
+$
+    total'_(f)(g) ofType sigmaType(x, A) C(x) -> sigmaType(y, B) D(y)
+$
+by $total'_(f)(g)(x, z) := (f(x), g(x, z))$.
+
+I'm kind of confused about the role of this map, so I have affectionately titled
+this map "Africa by Toto" in my mind, since it is called "toto" in the code for
+Rijke's book and Rijke doesn't explain it at all or give it a name.
+
+```agda
+total' :
+  {i j k l : Level}
+  {A : Type i} {B : Type j} {C : A → Type k} {D : B → Type l}
+  (f : A → B) → ((x : A) → C x → D $ f x) →
+  Σ A C → Σ B D
+total' f g (pair x z) = pair (f x) (g x z)
 ```

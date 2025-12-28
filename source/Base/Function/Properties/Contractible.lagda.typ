@@ -85,11 +85,11 @@ open import Data.Unit.Core
 ]
 
 ```agda
-isContractibleFunction→IsEquivalence :
+isContractibleFunction→isEquivalence :
   {i j : Level} {A : Type i} {B : Type j}
   {f : A → B} →
   IsContractibleFunction f → IsEquivalence f
-isContractibleFunction→IsEquivalence {_} {_} {A} {B} {f} p =
+isContractibleFunction→isEquivalence {_} {_} {A} {B} {f} p =
   inverse→isEquivalence f g (pair H K)
   where
   g : B → A
@@ -326,7 +326,7 @@ isEquivalence↔isContractibleFunction :
 isEquivalence↔isContractibleFunction =
   pair
   isEquivalence→isContractibleFunction
-  isContractibleFunction→IsEquivalence
+  isContractibleFunction→isEquivalence
 ```
 
 = If a type is contractible than it has contractible identity types <note:1d8b9cbe-0517-4ca7-840a-d9601bedde8e>
