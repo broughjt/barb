@@ -29,17 +29,41 @@ open import Data.Sigma.Properties.Identity
     only if both $A$ and $B$ are contractible.
 ]
 #proof[
+    ($==>$) Suppose $A times B$ is contractible, with
+    #link("note://f817901c-750e-4575-a259-d83730424ade")[center of contraction]
+    $(c, d)$ and
+    #link("note://f817901c-750e-4575-a259-d83730424ade")[contraction] $C$. We
+    show that both $A$ and $B$ are contractible.
 
-    ($==>$) Suppose $A times B$ is
-    #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible]. It
-    suffices to show that $A$ is contractible, since the contractibility of $B$
-    follows by a symmetry argument. Indeed, if $A times B$ is contractible then
-    $B times A$ is contractible by Lemma x, which shows that $swap ofType A
-    times B -> B times A$ is an equivalence, and Lemma y, which shows that if
-    one side of an equivalence is contractible then so is the other. Then we can
-    apply the argument to the contractibility of $B times A$ to prove that $B$
-    is contractible.
-    
+    To show that $A$ is contractible, take $c$ as the center of contraction. Fix
+    $x ofType A$. Applying $C$ to the pair $(x, d)$ yields a
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path]
+    $
+        (c, d) = (x, d).
+    $
+    Projecting to the first component using the
+    #link("note://dbc89e73-b38a-49b8-b20e-06a10e62393b")[characterization of the
+    identity types of products], we obtain a path $c = x$, as required.
+
+    The contractibility of $B$ follows by symmetry: since $A times B tilde.eq B
+    times A$ (#link("note://9327c53c-1b28-4d36-89cf-d7d51a91d705")[Lemma 53])
+    and contracibility is preserved by
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalences]
+    (#link("note://41aea79b-658b-464d-b9c4-0326602aa2db")[Lemma 42]), it follows
+    that $B times A$ is contractible, and applying the preceding argument to $B
+    times A$ shows that $B$ is contractible.
+
+    ($<==$) Conversely, suppose $A$ and $B$ are contractible, with centers $c
+    ofType A$ and $d ofType B$ and contractions $C$ and $D$, respectively. We
+    show that $A times B$ is contractible. Take $(c, d)$ as the center of
+    contraction. For any $(x, y) ofType A times B$, the contractions $C$ and $D$
+    yield paths
+    $
+        c = x quad "and" quad d = y.
+    $
+    By the characterization of the identity types of products, these determine a
+    path $(c, d) = (x, y)$.
+
 ]
 
 ```agda
@@ -49,8 +73,7 @@ open import Data.Sigma.Properties.Identity
 ×-isContractible→isContractible₁ {A = A} (pair (pair c d) C) = pair c C'
   where
   C' : (x : A) → c ＝ x
-  -- TODO: Replace with Cartesian product identity characterization
-  C' x = project₁ $ ＝→Equal $ C (pair x d)
+  C' x = project₁ $ ＝→Equal-× $ C (pair x d)
 
 ×-isContractible→isContractible₂ :
   {i j : Level} {A : Type i} {B : Type j} →
@@ -59,18 +82,21 @@ open import Data.Sigma.Properties.Identity
   ×-isContractible→isContractible₁ {A = B} {B = A} ∘
   isEquivalence→isContractible→isContractible₁ swap swapIsEquivalence
 
--- TODO: Replace with Cartesian product identity characterization
--- isContractible→×-isContractible :
---   {i j : Level} {A : Type i} {B : Type j} →
---   IsContractible A → IsContractible B → IsContractible (A × B)
--- isContractible→×-isContractible = {!!}
+isContractible→×-isContractible :
+  {i j : Level} {A : Type i} {B : Type j} →
+  IsContractible A → IsContractible B → IsContractible (A × B)
+isContractible→×-isContractible {A = A} {B = B} (pair c C) (pair d D) =
+  pair (pair c d) E
+  where
+  E : (u : A × B) → pair c d ＝ u
+  E (pair x y) = Equal-×→＝ $ pair (C x) (D y)
 
--- ×-contractible : {i j : Level} {A : Type i} {B : Type j} →
---                  IsContractible (A × B) ↔ (IsContractible A × IsContractible B)
--- ×-contractible {_} {_} {A} {B} = pair
---   (map ×-isContractible→isContractible₁ ×-isContractible→isContractible₂ ∘
---    (λ u → pair u u))
---   (uncurry isContractible→×-isContractible)
+×-contractible : {i j : Level} {A : Type i} {B : Type j} →
+                 IsContractible (A × B) ↔ (IsContractible A × IsContractible B)
+×-contractible {_} {_} {A} {B} = pair
+  (map ×-isContractible→isContractible₁ ×-isContractible→isContractible₂ ∘
+   (λ u → pair u u))
+  (uncurry isContractible→×-isContractible)
 ```
 
 = Total space over a contractible base space is equivalent to fiber over the center of contraction <note:9f820c12-c050-423b-ae07-cc1fb0cddd37>

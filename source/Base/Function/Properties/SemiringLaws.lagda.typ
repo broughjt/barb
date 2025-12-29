@@ -195,7 +195,10 @@ type].
 #link("note://22261946-d41d-4db3-849d-0511c26b0dea")[commutative] up to
 #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence].
 
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, ex. 9.2.9"))[
+#lemma(
+    label: "53",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, ex. 9.2.9")
+)[
     For all types $A$ and $B$, there is an
     #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]
     $

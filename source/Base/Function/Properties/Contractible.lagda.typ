@@ -219,7 +219,7 @@ when you get down in the weeds, but I wouldn't have come up with this on my own
 without a lot more work.
 
 TODO: Write a paper proof. Had one in the previous notes, but I have to switch
-some things and I'm too lazy right now. Plus he proof just totally sucks.
+some things and I'm too lazy right now. Plus the proof just totally sucks.
 
 ```agda
 hasInverse→isCoherentlyInvertible :

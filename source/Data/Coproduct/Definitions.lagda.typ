@@ -6,8 +6,11 @@
 module Data.Coproduct.Definitions where
 
 open import Base.Function.Core
+open import Base.Identity.Core
 open import Base.Universe.Core
+open import Base.Universe.Lift hiding (induction; recursion)
 open import Data.Coproduct.Core
+open import Data.Empty hiding (induction; recursion)
 ```
 
 = Coproduct map <note:95fefab8-ba33-4759-8a33-03997164ebab>
@@ -74,4 +77,19 @@ associateʳ : {i j k : Level} {A : Type i} {B : Type j} {C : Type k} →
 associateʳ (inject₁ x) = inject₁ (inject₁ x)
 associateʳ (inject₂ (inject₁ x)) = inject₁ (inject₂ x)
 associateʳ (inject₂ (inject₂ x)) = inject₂ x
+```
+
+= Observational equality of coproducts <note:d30c9670-8903-4e87-8234-c463ce37ad88>
+ 
+Following #cite(<rijke2025>, form: "prose", supplement: "def. 11.5.2"), we
+define *observational equality of coproducts* using the following binary type
+family:
+
+```agda
+Equal : {i j : Level} {A : Type i} {B : Type j} →
+        (A ＋ B) → (A ＋ B) → Type (i ⊔ j)
+Equal {i} {j} (inject₁ x) (inject₁ x') = Lift j (x ＝ x')
+Equal {i} {j} (inject₁ x) (inject₂ y') = Lift (i ⊔ j) 𝟎
+Equal {i} {j} (inject₂ y) (inject₁ x') = Lift (i ⊔ j) 𝟎
+Equal {i} {j} (inject₂ y) (inject₂ y') = Lift i (y ＝ y')
 ```

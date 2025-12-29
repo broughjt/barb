@@ -172,35 +172,110 @@ identity types of $Sigma$-types] is
 
 ＝≃Equal :
   {i j : Level} {A : Type i} {B : A → Type j}
-  {u v : Σ A B} →
+  (u v : Σ A B) →
   u ＝ v ≃ Equal u v
-＝≃Equal = pair (＝→reflexive equalReflexive) ＝→equal-isEquivalence
+＝≃Equal u v = pair (＝→reflexive equalReflexive) ＝→equal-isEquivalence
+
+＝↔Equal : 
+  {i j : Level} {A : Type i} {B : A → Type j}
+  (u v : Σ A B) →
+  u ＝ v ↔ Equal u v
+＝↔Equal u v = ≃→↔ $ ＝≃Equal u v
 
 ＝→Equal : 
   {i j : Level} {A : Type i} {B : A → Type j}
   {u v : Σ A B} →
   u ＝ v → Equal u v
-＝→Equal = project₁ ＝≃Equal
+＝→Equal {u = u} {v = v} = project₁ $ ＝↔Equal u v
 
 Equal→＝ : 
   {i j : Level} {A : Type i} {B : A → Type j}
   {u v : Σ A B} →
   Equal u v → u ＝ v
-Equal→＝ = project₁ $ project₁ $ project₂ ＝≃Equal
+Equal→＝ {u = u} {v = v} = project₂ $ ＝↔Equal u v
 ```
 
-= Characterization of identity on product types <note:dbc89e73-b38a-49b8-b20e-06a10e62393b>
-
-We introduce a specialized version of the
-#link("note://f7ad6df3-6479-4772-b911-5702cd9e6202")[characterization of sigma
-identity types] for
-#link("note://23a01b78-e433-4a66-8915-bfda82ee149a")[Cartesian product types]
-which is easier to use. Since there is no dependency between the left and right
-components, we can avoid the use of the
-#link("note://1229c654-047b-4517-9f4c-df4c03224d02")[transport operation].
+= Characterization of product identity types is reflexive <note:e14a7c2e-f533-4cb5-9c7c-959524947706>
+ 
+#lemma[
+    The #link("note://dbc89e73-b38a-49b8-b20e-06a10e62393b")[characterizing
+    family for product identity types] is
+    #link("note://7e7a1c6f-6051-4526-83e9-01d030717ea5")[reflexive].
+]
+#proof[
+    For each $(x, y) ofType A times B$, take the
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[paths] $refl_(x) ofType
+    x = x$ and $refl_(y) ofType y = y$.
+]
 
 ```agda
-Equal-× : {i j : Level} {A : Type i} {B : Type j} →
-          (A × B) → (A × B) → Type (i ⊔ j)
-Equal-× u v = (project₁ u ＝ project₁ v) × (project₂ u ＝ project₂ v)
+equalReflexive-× : {i j : Level} {A : Type i} {B : Type j} →
+                   Reflexive (Equal-× {A = A} {B = B})
+equalReflexive-× (pair x y) = pair reflexive reflexive
+```
+
+= Characterization of product identity types is equivalent to product identity types <note:1ae1d85f-80d3-4f1d-9d29-8b89ddac166b>
+ 
+#lemma[
+    Let $A$ and $B$ be types. For each $u, v ofType A times B$, the
+    #link("note://d25ccc40-b51e-466f-b87a-59be3acfa38a")[canonical map]
+    $
+        (u = v) -> Equal_(times)(u, v)
+    $
+    induced by #link("note://e14a7c2e-f533-4cb5-9c7c-959524947706")[reflexivity]
+    is an #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence].
+]
+#proof[
+    There is a natural inverse map and the required homotopies follow
+    essentially for free.
+]
+
+See #link("note://dbc89e73-b38a-49b8-b20e-06a10e62393b")[Characterization of
+product identity types],
+#link("note://f7ad6df3-6479-4772-b911-5702cd9e6202")[Characterization of the
+identity types of sigma types], and
+#link("note://a123eb52-0ec7-4d04-a780-e6761d564fd9")[Characterization of
+identity types of sigma types is equivalent to identity].
+
+```agda
+＝→equal-×-isEquivalence :
+  {i j : Level} {A : Type i} {B : Type j}
+  (u v : A × B) →
+  IsEquivalence (＝→reflexive {R = Equal-×} equalReflexive-× {x = u} {y = v})
+＝→equal-×-isEquivalence {A = A} {B = B} u@(pair x y) v@(pair x' y') =
+  inverse→isEquivalence (＝→reflexive equalReflexive-×) g (pair G H)
+  where
+  g : (project₁ u ＝ project₁ v) × (project₂ u ＝ project₂ v) → u ＝ v
+  g (pair reflexive reflexive) = reflexive
+
+  G : g ∘ (＝→reflexive {R = Equal-×} equalReflexive-×) ∼ identity {_} {u ＝ v}
+  G reflexive = reflexive
+
+  H : ＝→reflexive equalReflexive-× ∘ g ∼
+      identity {_} {(project₁ u ＝ project₁ v) × (project₂ u ＝ project₂ v)}
+  H (pair reflexive reflexive) = reflexive
+
+＝≃Equal-× :
+  {i j : Level} {A : Type i} {B : Type j}
+  (u v : A × B) →
+  u ＝ v ≃ Equal-× u v
+＝≃Equal-× u v = pair (＝→reflexive equalReflexive-×) (＝→equal-×-isEquivalence u v)
+
+＝↔Equal-× :
+  {i j : Level} {A : Type i} {B : Type j}
+  (u v : A × B) →
+  u ＝ v ↔ Equal-× u v
+＝↔Equal-× u v = ≃→↔ $ ＝≃Equal-× u v
+
+＝→Equal-× : 
+  {i j : Level} {A : Type i} {B : Type j}
+  {u v : A × B} →
+  u ＝ v → Equal-× u v
+＝→Equal-× {u = u} {v = v} = project₁ $ ＝↔Equal-× u v
+
+Equal-×→＝ : 
+  {i j : Level} {A : Type i} {B : Type j}
+  {u v : A × B} →
+  Equal-× u v → u ＝ v
+Equal-×→＝ {u = u} {v = v} = project₂ $ ＝↔Equal-× u v
 ```

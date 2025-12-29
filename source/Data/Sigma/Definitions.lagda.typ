@@ -144,6 +144,22 @@ Equal {B = B} u v =
     (λ α → transport B α (project₂ u) ＝ project₂ v)
 ```
 
+= Characterization of product identity types <note:dbc89e73-b38a-49b8-b20e-06a10e62393b>
+
+We introduce a specialized version of the
+#link("note://f7ad6df3-6479-4772-b911-5702cd9e6202")[characterization of sigma
+identity types] for
+#link("note://23a01b78-e433-4a66-8915-bfda82ee149a")[Cartesian product types]
+which is easier to use. Since there is no dependency between the left and right
+components, we can avoid the use of the
+#link("note://1229c654-047b-4517-9f4c-df4c03224d02")[transport operation].
+
+```agda
+Equal-× : {i j : Level} {A : Type i} {B : Type j} →
+          (A × B) → (A × B) → Type (i ⊔ j)
+Equal-× u v = (project₁ u ＝ project₁ v) × (project₂ u ＝ project₂ v)
+```
+
 = Sigma swap base functions <note:2b484b41-4405-42e7-bd4d-e35dbe878770>
  
 We define a base swap function on
