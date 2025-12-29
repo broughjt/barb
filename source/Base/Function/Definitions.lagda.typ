@@ -276,3 +276,15 @@ IsCoherentlyInvertible : {i j : Level} {A : Type i} {B : Type j} →
                         (A → B) → Type (i ⊔ j)
 IsCoherentlyInvertible {_} {_} {A} {B} f = Σ (B → A) (CoherentInverse f)
 ```
+
+= Injective <note:69153807-5e02-4218-8a55-d90ee1a6f5b1>
+ 
+A function $f ofType A -> B$ is *injective* if $f(x) = f(y)$ implies $x = y$ for
+all $x, y ofType A$. Phrased contrapositively, a function is injective if it
+sends different elements to different elements.
+
+```agda
+Injective : {i j : Level} {A : Type i} {B : Type j} →
+            (A → B) → Type (i ⊔ j)
+Injective {A = A} f = {x y : A} → f x ＝ f y → x ＝ y
+```

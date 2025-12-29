@@ -249,6 +249,22 @@ characterize-＝↔totalIsContractible {_} {_} {A} {B} a f = q ∘↔ p
     s = isContractible→isContractible→isEquivalence
         (total f) (endpointPathContractible a)
 
+characterize-＝→totalIsContractible :
+  {i j : Level} {A : Type i} {B : A → Type j}
+  (a : A)
+  (f : (x : A) → a ＝ x → B x) →
+  ((x : A) → IsEquivalence $ f x) → IsContractible (Σ A B)
+characterize-＝→totalIsContractible a f =
+  project₁ $ characterize-＝↔totalIsContractible a f
+
+totalIsContractible→characterize-＝ :
+  {i j : Level} {A : Type i} {B : A → Type j}
+  (a : A)
+  (f : (x : A) → a ＝ x → B x) →
+  IsContractible (Σ A B) → ((x : A) → IsEquivalence $ f x)
+totalIsContractible→characterize-＝ a f =
+  project₂ $ characterize-＝↔totalIsContractible a f
+
 totalIsContractible↔identitySystem :
   {i j k : Level} {A : Type i} {B : A → Type j} →
   IsContractible (Σ A B) ↔

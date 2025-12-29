@@ -6,13 +6,20 @@
 module Data.Natural.Properties where
 
 open import Algebra.Definitions
+open import Base.Family.Definitions
+open import Base.Family.Properties
 open import Base.Function.Core
+open import Base.Function.Definitions hiding (_⁻¹; _∙_)
+open import Base.Function.Properties.Equivalence
 open import Base.Identity.Core
 open import Base.Identity.Definitions
 open import Base.Identity.Syntax
+open import Base.Truncation.Definitions
+open import Base.Truncation.Properties.Contractible
 open import Data.Natural.Core
 open import Data.Natural.Definitions
 open import Data.Sigma.Core
+open import Data.Unit.Core
 ```
 
 = Natural number addition satifies the unit laws <note:551473be-e940-44e8-abf4-0b85434926ef>
@@ -136,7 +143,7 @@ successor-+ n m = reflexive
 
 ```agda
 +-commutative : Commutative _+_
-+-commutative zero m = (+-unitʳ m)⁻¹
++-commutative zero m = (+-unitʳ m) ⁻¹
 +-commutative (successor n) m =
   successor (n + m)
     ＝[ pathAction successor (+-commutative n m) ]
@@ -446,4 +453,274 @@ successor-· n m = reflexive
   (n · m) · k + m · k
     ＝[ pathAction (flip _+_ (m · k)) (·-associative n m k) ]
   n · (m · k) + m · k ∎
+```
+
+= Distance zero if and only if eqaul <note:fafe30ff-f03c-459a-a961-cd7d29e6fe66>
+ 
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 6.5(a)(i)"))[
+    For all $n, m ofType NN$, we have $distance(n, m) = 0$ if and only if $n =
+    m$.
+]
+#proof[
+    ($==>$) We proceed by induction on both $n$ and $m$.
+
+    If $n dot(eq) 0$ and $m dot(eq) 0$, the conclusion $n = m$ is immediate
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[by reflexivity].
+
+    Suppose $n dot(eq) 0$ and $m dot(eq) s(m')$ for some $m' ofType NN$, and
+    assume $distance(0, s(m')) =
+    0$. #link("note://9dd496bb-370e-481c-81ad-1ace2b8f6a29")[By definition] we
+    have have
+    $
+        distance(0, s(m')) dot(eq) s(m'),
+    $
+    so the assumption provides a path $s(m') = 0$. Inverting this path yields $0
+    = s(m')$, and hence $n = m$. The case $n = s(n')$ and $m dot(eq) 0$ is
+    symmetric.
+    
+    Finally, fix $n, m ofType NN$ and assume as inductive hypothesis that
+    $distance(n, m) = 0$ implies $n = m$. If $distance(s(n), s(m)) = 0$, then
+    #link("note://9dd496bb-370e-481c-81ad-1ace2b8f6a29")[by definition]
+    $
+        distance(s(n), s(m)) dot(eq) distance(n, m),
+    $
+    so the applying the induction hypothesis yields $n = m$. Applying the
+    successor function to both sides gives $s(n) = s(m)$ as required.
+
+    ($<==$) We prove the converse by induction on $n$.
+
+    In the base case $n dot(eq) 0$, it suffices by
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path induction] to show
+    $distance(0, 0) = 0$, which holds
+    #link("note://9dd496bb-370e-481c-81ad-1ace2b8f6a29")[by definition].
+
+    For the inductive step, fix $n ofType NN$ and assume as induction hypothesis
+    that $n = m$ implies $distance(n, m) = 0$. Suppose we are given a path $s(n)
+    = m$. By path induction, it suffices to consider the case $m = s(n)$ and
+    show that $distance(s(n), s(n)) = 0$. Applying the induction hypothesis to
+    $refl_(n) ofType n = n$ yields a path
+    $
+        distance(n, n) = 0.
+    $
+    #link("note://9dd496bb-370e-481c-81ad-1ace2b8f6a29")[By definition], we have
+    $distance(s(n), s(n)) dot(eq) distance(n, n)$, and therefore
+    $
+        distance(s(n), s(n)) = 0.
+    $
+    This completes the induction.
+]
+
+See #link("note://600e8ce4-83d2-4a92-9295-ccb0aef05689")[Type of natural
+numbers] and #link("note://9dd496bb-370e-481c-81ad-1ace2b8f6a29")[Distance
+function on natural numbers].
+
+```agda
+distance＝0→＝ : {n m : ℕ} → distance n m ＝ 0 → n ＝ m
+distance＝0→＝ {zero} {zero} p = reflexive
+distance＝0→＝ {zero} {successor m} p = p ⁻¹
+distance＝0→＝ {successor n} {zero} p = p
+distance＝0→＝ {successor n} {successor m} p =
+  pathAction successor (distance＝0→＝ p)
+
+＝→distance＝0 : {n m : ℕ} → n ＝ m → distance n m ＝ 0
+＝→distance＝0 {zero} reflexive = reflexive
+＝→distance＝0 {successor n} reflexive = ＝→distance＝0 {n} {n} reflexive
+```
+
+= Natural number observational equality is reflexive <note:302358e1-2575-413b-9105-0621e0f5444f>
+ 
+#lemma(
+    label: "49",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, lem. 6.3.2")
+)[
+    #link("note://4e056c9c-2c11-4992-9838-3dda731d17fa")[Observational equality
+    on natural numbers] is
+    #link("note://7e7a1c6f-6051-4526-83e9-01d030717ea5")[reflexive].
+]
+#proof[
+    By induction on $n$.
+
+    In the base case $n dot(eq) 0$, unfolding the
+    #link("note://4e056c9c-2c11-4992-9838-3dda731d17fa")[definition of
+    observational equality] gives
+    $
+        Equal(0, 0) dot(eq) unitType
+    $
+    since $distance(0, 0) dot(eq) 0$. Hence $Equal(0, 0)$ is inhabited.
+
+    For the inductive step, fix $n ofType NN$ and assume $Equal(n,
+    n)$. #link("note://4e056c9c-2c11-4992-9838-3dda731d17fa")[By definition]
+    $
+        Equal(s(n), s(n)) dot(eq) Equal(n, n),
+    $
+    and therefore $Equal(s(n), s(n))$ holds as well.
+]
+
+```agda
+equalReflexive : Reflexive Equal
+equalReflexive zero = ⋆
+equalReflexive (successor n) = equalReflexive n
+```
+
+= Observational equality on natural numbers characterizes the identity types of natural numbers <note:cc6e8d8b-91c0-4582-8974-97cfb28389a9>
+
+See #link("note://4e056c9c-2c11-4992-9838-3dda731d17fa")[Observational equality
+of the natural numbers].
+ 
+#theorem(
+    label: "50",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, thm. 11.3.1")
+)[
+    For each $n, m ofType NN$, the
+    #link("note://d25ccc40-b51e-466f-b87a-59be3acfa38a")[canonical map]
+    $
+        n = m -> Equal_(NN)(n, m)
+    $
+    induced by #link("note://302358e1-2575-413b-9105-0621e0f5444f")[reflexivity]
+    is an #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence].
+]
+#proof[
+    By the #link("note://47c2a4df-e0c1-49a6-8ce8-feae75d30105")[fundamental
+    theorem of identity types], it is sufficient to show that for each $n ofType
+    NN$, the type
+    $
+        sigmaType(m, NN) Equal_(NN)(n, m)
+    $
+    is #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible].
+
+    Let $r ofType piType(n, NN) Equal_(NN)(n, n)$ denote the proof of
+    #link("note://7e7a1c6f-6051-4526-83e9-01d030717ea5")[reflexivity] for
+    #link("note://4e056c9c-2c11-4992-9838-3dda731d17fa")[observational equality]
+    given in #link("note://302358e1-2575-413b-9105-0621e0f5444f")[Lemma 49]. For
+    each $n ofType NN$, we take $(n, r(n))$ as the
+    #link("note://f817901c-750e-4575-a259-d83730424ade")[center of contraction].
+
+    It remains to give the
+    #link("note://f817901c-750e-4575-a259-d83730424ade")[contraction] by showing
+    that for every $(m, p) ofType sigmaType(m, NN) Equal_(NN)(n, m)$ there is a
+    path
+    $
+        (n, r(n)) = (m, p).
+    $
+    We proceed by induction on $n$ and $m$.
+
+    - (*Base case*) If both $n$ and $m$ are zero, then $Equal_(NN)(0, 0) dot(eq)
+      unitType$ #link("note://4e056c9c-2c11-4992-9838-3dda731d17fa")[by
+      definition], and the required path is obtained by reflexivity. The type
+      $Equal_(NN)$ is empty if one side is zero and the other is a successor, so
+      in these cases the path is obtained via absurdity.
+    - (*Inductive step*) Fix $n, m ofType NN$ and let $p ofType Equal_(NN)(s(n),
+      s(m))$. #link("note://4e056c9c-2c11-4992-9838-3dda731d17fa")[By
+      definition], we have
+      $
+          Equal_(NN)(s(n), s(m)) dot(eq) Equal_(NN)(n, m).
+      $
+
+      Therefore, we can apply the inductive hypothesis to $m$ and $p ofType
+      Equal_(NN)(n, m)$ to get a path
+      $
+          (n, r(n)) = (m, p)
+      $
+      in $sigmaType(m, NN) Equal_(NN)(n,
+      m)$. #link("note://7caf7ee0-9e2a-4761-bee9-25cd52820039")[Applying] the
+      successor function to both components yields a path
+      $
+          (s(n), r(s(n))) = (s(m), p)
+      $
+      in $sigmaType(m, NN) Equal_(NN)(s(n), m)$ as required.
+
+    Thus $sigmaType(m, NN) Equal_(NN)(n, m)$ is contractible for each $n ofType
+    NN$, and hence the canonical map $n = m -> Equal_(NN)(n, m)$ is an
+    equivalence.
+]
+
+```agda
+＝→equal-isEquivalence :
+  (n m : ℕ) →
+  IsEquivalence (＝→reflexive {R = Equal} equalReflexive {x = n} {y = m})
+＝→equal-isEquivalence n =
+  totalIsContractible→characterize-＝
+    n
+    (λ m → ＝→reflexive equalReflexive {x = n} {y = m})
+    p
+  where
+  c : (n : ℕ) → Σ ℕ (Equal n)
+  c n = pair n (equalReflexive n)
+
+  C : (n : ℕ) → (u : Σ ℕ (Equal n)) → c n ＝ u
+  C zero (pair zero ⋆) = reflexive
+  C (successor n) (pair (successor m) p) = pathAction q r
+    where
+    q : Σ ℕ (Equal n) → Σ ℕ (Equal (successor n))
+    q (pair m r) = pair (successor m) r
+
+    r : c n ＝ pair m p
+    r = (C n) (pair m p)
+
+  p : IsContractible (Σ ℕ (Equal n))
+  p = pair (c n) (C n)
+
+＝≃Equal : (n m : ℕ) → n ＝ m ≃ Equal n m
+＝≃Equal n m = pair (＝→reflexive equalReflexive) (＝→equal-isEquivalence n m)
+
+＝↔Equal : (n m : ℕ) → n ＝ m ↔ Equal n m
+＝↔Equal n m = ≃→↔ (＝≃Equal n m)
+
+＝→Equal : {n m : ℕ} → n ＝ m → Equal n m
+＝→Equal {n} {m} = project₁ $ ＝↔Equal n m
+
+Equal→＝ : {n m : ℕ} → Equal n m → n ＝ m
+Equal→＝ {n} {m} = project₂ $ ＝↔Equal n m
+```
+
+= Natural number successor function is injective <note:71254972-aba4-48ec-8e9d-df0a9158f268>
+ 
+#theorem(
+    supplement: [Peano's seventh axiom; #cite_link(<rijke2025>, "Rijke 2025, thm. 6.4.1")]
+)[
+    The #link("note://600e8ce4-83d2-4a92-9295-ccb0aef05689")[natural number
+    successor function] is
+    #link("note://69153807-5e02-4218-8a55-d90ee1a6f5b1")[injective].
+]
+#proof[
+    Let $n, m ofType NN$ and suppose $s(n) = s(m)$. By
+    #link("note://cc6e8d8b-91c0-4582-8974-97cfb28389a9")[Theorem 50], identity
+    of natural numbers is equivalent to
+    #link("note://4e056c9c-2c11-4992-9838-3dda731d17fa")[observational
+    equality], so it follows that $Equal(s(n), s(m))$ holds. However, we have
+    $
+        Equal(s(n), s(m)) dot(eq) Equal(n, m)
+    $
+    #link("note://4e056c9c-2c11-4992-9838-3dda731d17fa")[by definition], so
+    $Equal(n, m)$ holds as well. Applying Theorem 50 again, we conclude that $n
+    = m$.
+
+    Thus the successor function is injective.
+]
+
+```agda
+successorInjective : Injective successor
+successorInjective = Equal→＝ ∘ ＝→Equal
+```
+
+= The successor of a natural number is never zero <note:efe44f4c-4bbc-4dc5-aa05-32248218ea09>
+ 
+#theorem(
+    supplement: [Peano's eighth axiom; #cite_link(<rijke2025>, "Rijke 2025, thm. 6.4.2")]
+)[
+    For any #link("note://600e8ce4-83d2-4a92-9295-ccb0aef05689")[natural number]
+    $n$, we have $s(n) != 0$.
+]
+#proof[
+    Let $n ofType NN$ and suppose $s(n) = 0$. By
+    #link("note://cc6e8d8b-91c0-4582-8974-97cfb28389a9")[Theorem 50], this
+    implies $Equal(s(n), 0)$. However, the type $Equal(s(n), 0)$ is empty by
+    the definition of
+    #link("note://4e056c9c-2c11-4992-9838-3dda731d17fa")[observational equality
+    on natural numbers], a contradiction.
+]
+
+```agda
+successor≠0 : (n : ℕ) → successor n ≠ 0
+successor≠0 n = ＝→Equal
 ```
