@@ -327,6 +327,20 @@ familyOfEquivalences↔totalIsEquivalence {_} {_} {_} {A} {B} {C} f =
          IsEquivalence (f x) ↔
          ((z : C x) → IsContractible $ Fiber (f x) z)
   s x = isEquivalence↔isContractibleFunction
+
+familyOfEquivalences→totalIsEquivalence :
+  {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k}
+  (f : (x : A) → B x → C x) →
+  ((x : A) → IsEquivalence (f x)) → IsEquivalence (total f)
+familyOfEquivalences→totalIsEquivalence f =
+  project₁ $ familyOfEquivalences↔totalIsEquivalence f
+
+totalIsEquivalence→familyOfEquivalences :
+  {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k}
+  (f : (x : A) → B x → C x) →
+  IsEquivalence (total f) → ((x : A) → IsEquivalence (f x))
+totalIsEquivalence→familyOfEquivalences f =
+  project₂ $ familyOfEquivalences↔totalIsEquivalence f
 ```
 
 = Equivalence lift to total space <note:ca0042cc-2d24-4664-8baa-c538fb438ec2>

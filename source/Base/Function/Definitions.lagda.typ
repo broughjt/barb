@@ -288,3 +288,30 @@ Injective : {i j : Level} {A : Type i} {B : Type j} →
             (A → B) → Type (i ⊔ j)
 Injective {A = A} f = {x y : A} → f x ＝ f y → x ＝ y
 ```
+
+= Embedding <note:cce94748-d9b3-4795-a3d8-c698b6dff9dd>
+ 
+Following #cite(<rijke2025>, form: "prose", supplement: "def. 11.4.1"), a map $f
+ofType A -> B$ is an *embedding* if the
+#link("note://7caf7ee0-9e2a-4761-bee9-25cd52820039")[action on paths] of $f$
+$
+    ap_(f) ofType (x = y) -> (f(x) = f(y))
+$
+is an #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence] for
+every $x, y ofType A$. We denote the type of proofs that $f$ is an embedding as
+$IsEmbedding(f)$ and define
+$
+    A arrow.r.hook B := sigmaType(f, A -> B) IsEmbedding(f)
+$
+to be the type of all embeddings from $A$ to $B$.
+
+```agda
+IsEmbedding :
+  {i j : Level} {A : Type i} {B : Type j}
+  (f : A → B) → Type (i ⊔ j)
+IsEmbedding {A = A} f =
+  (x y : A) → IsEquivalence (pathAction f {x = x} {y = y})
+
+_↪_ : {i j : Level} → Type i → Type j → Type (i ⊔ j)
+A ↪ B = Σ (A → B) IsEmbedding
+```

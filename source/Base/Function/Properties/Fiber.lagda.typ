@@ -12,7 +12,7 @@ open import Base.Function.Core
 open import Base.Function.Definitions
 open import Base.Function.Properties.Equivalence
 open import Base.Identity.Core
-open import Base.Identity.Definitions
+open import Base.Identity.Definitions as Identity
 open import Data.Sigma.Core
 open import Data.Sigma.Definitions
 open import Data.Sigma.Properties.Identity

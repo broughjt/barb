@@ -473,7 +473,10 @@ The #link("note://95e3c813-ae44-4341-ac56-286cda078568")[inverse operation] on
 #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[paths] is its own
 #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[inverse].
 
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.1"))[
+#lemma(
+    label: "51",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.1")
+)[
     Let $A$ be any type. For every $x, y ofType A$, the the
     #link("note://95e3c813-ae44-4341-ac56-286cda078568")[inverse operations]
     $-^(-1) ofType x = y -> y = x$ and $-^(-1) ofType y = x -> x = y$ are
@@ -486,8 +489,9 @@ The #link("note://95e3c813-ae44-4341-ac56-286cda078568")[inverse operation] on
 ]
 
 ```agda
-⁻¹⁻¹-inverse : {i : Level} {A : Type i} {x y : A} →
-               Inverse (_⁻¹ {x = x} {y = y}) (_⁻¹ {x = y} {y = x})
+⁻¹⁻¹-inverse :
+  {i : Level} {A : Type i} {x y : A} →
+  Inverse (_⁻¹ {x = x} {y = y}) (_⁻¹ {x = y} {y = x})
 ⁻¹⁻¹-inverse {x = x} {y = y} = pair H K
   where
   H : _⁻¹ ∘ _⁻¹ ∼ (identity {_} {x ＝ y})
@@ -495,6 +499,11 @@ The #link("note://95e3c813-ae44-4341-ac56-286cda078568")[inverse operation] on
 
   K : _⁻¹ ∘ _⁻¹ ∼ (identity {_} {y ＝ x})
   K reflexive = reflexive
+
+⁻¹-isEquivalence :
+  {i : Level} {A : Type i} {x y : A} →
+  IsEquivalence (_⁻¹ {x = x} {y = y})
+⁻¹-isEquivalence {x = x} {y = y} = inverse→isEquivalence _⁻¹ _⁻¹ ⁻¹⁻¹-inverse
 ```
 
 = Path concatenation inverses <note:a0b593a9-3e6c-47b8-8160-d8ab79c4dd9b>

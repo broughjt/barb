@@ -994,3 +994,4 @@ quantifier swap], obtained by applying that lemma in both directions.
          ((x : A) → B x ↔ C x) → (((x : A) → B x) ↔ ((x : A) → C x))
 Π↔swap f = pair (Π→swap $ project₁ ∘ f) (Π→swap $ project₂ ∘ f)
 ```
+
