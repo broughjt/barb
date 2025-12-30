@@ -17,7 +17,10 @@ import Base.Function.Definitions
 import Base.Function.FiberIdentity
 import Base.Function.Negation
 import Base.Function.Properties.Contractible
+import Base.Function.Properties.Embedding
 import Base.Function.Properties.Equivalence
+import Base.Function.Properties.Fiber
+import Base.Function.Properties.Fiber2
 import Base.Function.Properties.Homotopy
 import Base.Function.Properties.SemiringLaws
 
@@ -40,7 +43,9 @@ import Data.Bool.Properties
 
 import Data.Coproduct.Core
 import Data.Coproduct.Definitions
+import Data.Coproduct.Properties.Decision
 import Data.Coproduct.Properties.Equivalence
+import Data.Coproduct.Properties.Identity
 import Data.Coproduct.Properties.Map
 
 import Data.Empty
@@ -51,6 +56,7 @@ import Data.Natural.Properties
 
 import Data.Sigma.Core
 import Data.Sigma.Definitions
+import Data.Sigma.Properties.Decision
 import Data.Sigma.Properties.Equivalence
 import Data.Sigma.Properties.Identity
 import Data.Sigma.Properties.Map
@@ -60,4 +66,6 @@ import Data.Unit.Core
 import Data.Unit.Properties
 
 import Algebra.Definitions
+
+import Scratch.Data.Sigma.Properties.Map
 ```

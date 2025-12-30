@@ -159,7 +159,7 @@ decideEqual true true = decide-𝟏
 ]
 
 ```agda
-decide-＝ : DecidableEquality 𝟐
+decide-＝ : Decide-＝ 𝟐
 decide-＝ x y = ↔-decide→decide Equal↔＝ (decideEqual x y)
 ```
 

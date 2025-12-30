@@ -55,7 +55,10 @@ decide-𝟏 = inject₁ ⋆
 
 = Decisions for products, coproducts, non-dependent function types, negations, and biconditionals <note:244cf793-6456-4035-9bf5-236bfec8ceb5>
  
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, ex. 8.1.3"))[
+#lemma(
+    label: "54",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, ex. 8.1.3")
+)[
     If two types $A$ and $B$ both have
     #link("note://36f1a370-ca8c-4053-8ee6-d284b50b90e5")[decisions], then there
     are also decisions for the types:
@@ -112,18 +115,16 @@ implication in classical logic.
  
 A type $A$ has *decidable equality* if it comes equipped with a
 #link("note://b7fff70f-d736-440d-bd2c-a827baef5171")[decision procedure] for the
-#link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[family]
-$
-    piType(x, y, A) x attach(eq, br: A) y.
-$
-@rijke2025[def. 8.1.5]. This is the same as saying that there is always a
+binary #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[family] $x
+attach(eq, br: A) y$ indexed by $x, y ofType A$ @rijke2025[def. 8.1.5]. This is
+the same as saying that there is always a
 #link("note://36f1a370-ca8c-4053-8ee6-d284b50b90e5")[decision] for the
 #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[identity type] $x
 attach(eq, br: A) y$ between arbitrary elements $x, y$ of $A$.
 
 ```agda
-DecidableEquality : {i : Level} → Type i → Type i
-DecidableEquality A = DecisionProcedure₂ (λ (x y : A) → x ＝ y)
+Decide-＝ : {i : Level} → Type i → Type i
+Decide-＝ A = DecisionProcedure₂ (λ (x y : A) → x ＝ y)
 ```
 
 = Alternative decision combinators for products and function types <note:ead33018-a349-4cd6-a398-51f52c6d308f>

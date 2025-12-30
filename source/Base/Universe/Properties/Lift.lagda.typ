@@ -54,4 +54,8 @@ lowerIsEquivalence j =
 lift≃ : {i j : Level} {A : Type i} →
         A ≃ Lift j A
 lift≃ {j = j} = pair lift (liftIsEquivalence j)
+
+lift↔ : {i j : Level} {A : Type i} →
+        A ↔ Lift j A
+lift↔ = pair lift lower
 ```

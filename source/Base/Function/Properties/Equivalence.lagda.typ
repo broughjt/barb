@@ -348,7 +348,7 @@ inverseCompose g g' f f' (pair G G') (pair F F') = pair
 
 = Equivalences compose <note:7357b4f8-f609-47f1-8644-046018748ae7>
 
-#corollary[
+#corollary(label: "56")[
     If $g ofType B -> C$ and $f ofType A -> B$ are
     #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalences], then $g
     compose f ofType A -> C$ is an equivalence.

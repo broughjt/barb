@@ -22,7 +22,10 @@ open import Data.Sigma.Properties.Identity
 
 = Cartesian product contractible if and only if both components are contractible <note:61774716-8c8a-4461-a44f-63d9eb7c0244>
  
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 10.5"))[
+#lemma(
+    label: "59",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 10.5")
+)[
     For all types $A$ and $B$, the
     #link("note://23a01b78-e433-4a66-8915-bfda82ee149a")[product] $A times B$ is
     #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible] if and
