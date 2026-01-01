@@ -17,7 +17,9 @@ open import Base.Identity.Syntax
 open import Base.Truncation.Definitions
 open import Base.Universe.Core
 open import Data.Sigma.Core
+open import Data.Sigma.Definitions
 open import Data.Unit.Core
+open import Data.Unit.Properties
 ```
 
 = Every contractible map is an equivalence <note:e6848e01-6f0e-415e-9010-b0f2e2b28370>
@@ -609,3 +611,37 @@ isEquivalence→isContractible↔isContractible f p =
     contractible by #link("note://41e67f5f-60c1-4549-8e24-160141e4bd64")[Lemma
     34].
 ]
+
+```agda
+→unitIsEquivalence→isContractible :
+  {i : Level} {A : Type i}
+  (f : A → 𝟏) →
+  IsEquivalence f →
+  IsContractible A
+→unitIsEquivalence→isContractible {A = A} f p = s
+  where
+  q : f ∼ constant ⋆
+  q = →unit-homotopyConstant f
+
+  r : IsEquivalence {A = A} $ constant ⋆
+  r = isEquivalence→homotopy→isEquivalence p q
+
+  s : IsContractible A
+  s = constantUnitIsEquivalence→isContractible r
+
+≃unit→isContractible : 
+  {i : Level} {A : Type i} →
+  A ≃ 𝟏 → IsContractible A
+≃unit→isContractible = uncurry →unitIsEquivalence→isContractible
+
+isContractible→≃unit :
+  {i : Level} {A : Type i} →
+  IsContractible A → A ≃ 𝟏
+isContractible→≃unit p =
+  pair (constant ⋆) (isContractible→constantUnitIsEquivalence p)
+
+isContractible↔≃unit :
+  {i : Level} {A : Type i} →
+  IsContractible A ↔ (A ≃ 𝟏)
+isContractible↔≃unit = pair isContractible→≃unit ≃unit→isContractible
+```

@@ -13,13 +13,14 @@ open import Base.Function.Core
 open import Base.Function.Definitions hiding (_⁻¹; _∙_)
 open import Base.Function.Properties.Contractible
 open import Base.Function.Properties.Equivalence
-open import Base.Identity.Core hiding (induction)
+open import Base.Identity.Core as Identity hiding (induction)
 open import Base.Identity.Definitions
 open import Base.Identity.Properties
 open import Base.Identity.IdentitySystem
 open import Data.Sigma.Core as Sigma hiding (induction)
 open import Data.Sigma.Definitions
 open import Data.Sigma.Properties.Equivalence
+open import Data.Sigma.Properties.Identity
 ```
 
 = A type is contractible if and only if it satisfies singleton induction <note:dc1d2466-8ead-40b1-9924-f60afcefe390>
@@ -249,6 +250,51 @@ characterize-＝↔totalIsContractible {_} {_} {A} {B} a f = q ∘↔ p
     s = isContractible→isContractible→isEquivalence
         (total f) (endpointPathContractible a)
 
+-- TODO:
+characterize-＝→totalIsContractible' :
+  {i j : Level} {A : Type i} {B : A → Type j}
+  (a : A) (f : (x : A) → a ＝ x → B x) →
+  ((x : A) → IsEquivalence $ f x) →
+  IsContractible (Σ A B)
+characterize-＝→totalIsContractible' {_} {_} {A} {B} a f p =
+  r
+  where
+  q : IsEquivalence $ total f
+  q = familyOfEquivalences→totalIsEquivalence f p
+
+  r : IsContractible (Σ A B)
+  r = isEquivalence→isContractible→isContractible₁
+        (total f)
+        q
+        (endpointPathContractible a)
+
+totalIsContractible→characterize-＝' : 
+  {i j : Level} {A : Type i} {B : A → Type j} →
+  IsContractible (Σ A B) →
+  (a : A) (f : (x : A) → a ＝ x → B x) →
+  ((x : A) → IsEquivalence $ f x)
+totalIsContractible→characterize-＝' {A = A} p a f =
+  r
+  where
+  q : IsEquivalence $ total f
+  q = isContractible→isContractible→isEquivalence
+        (total f)
+        (endpointPathContractible a)
+        p
+  
+  r : (x : A) → IsEquivalence $ f x
+  r = totalIsEquivalence→familyOfEquivalences f q
+
+foo : 
+  {i j : Level} {A : Type i} {B : A → Type j}
+  (p : IsContractible (Σ A B))
+  (a : A) (b : B a) →
+  ((x : A) → IsEquivalence (Identity.induction {a = a} {P = λ x p → B x} b x))
+foo {B = B} p a b =
+  totalIsContractible→characterize-＝'
+    p a
+    (Identity.induction {a = a} {P = λ x p → B x} b)
+
 characterize-＝→totalIsContractible :
   {i j : Level} {A : Type i} {B : A → Type j}
   (a : A)
@@ -312,4 +358,73 @@ totalIsContractible↔identitySystem {i} {j} {k} {A} {B} = q' ∘↔ p
       where
       s' : (P : Σ A B → Type (i ⊔ j ⊔ k)) → Section (_|>_ {B = P} (pair a b))
       s' P = project₂ (q a b P) (t (curry P))
+```
+
+= Maps in and out of contractible types are homotopic to constant maps <note:6c0f7999-0810-49f8-92f3-259ad996a7f1>
+ 
+#lemma[
+    Let $A$ be a
+    #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible type] with
+    #link("note://f817901c-750e-4575-a259-d83730424ade")[center]
+    $c ofType A$. For all maps $f ofType A -> B$, there is a
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopy]
+    $
+        constant_(f(c)) ~ f.
+    $
+    Similarly, for all maps $g ofType B -> A$, there is a homotopy
+    $
+        constant_(c) ~ g.
+    $
+]
+#proof[
+    Let $A$ be contractible with center $c ofType A$ and contraction $C$.
+
+    For $f ofType A -> B$, applying $f$ to the
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path] $C(x) ofType c =
+    x$ yields a path $f(c) = f(x)$. These paths determine the required homotopy,
+    since $constant_(f(c))(x) dot(eq) f(c)$
+    #link("note://11168612-1fca-405d-b3c5-2ecb0ece3521")[by definition].
+
+    Similarly, for $g ofType B -> A$, the contraction yields for each $y ofType
+    B$ a path
+    $
+        C(g(y)) ofType c = g(y)
+    $
+    exhibiting a homotopy $constant_(c) ~ g$.
+]
+
+See #link("note://11168612-1fca-405d-b3c5-2ecb0ece3521")[Constant function].
+
+```agda
+contractible→-homotopyConstant :
+  {i j : Level} {A : Type i} {B : Type j} →
+  (p : IsContractible A)
+  (f : A → B) →
+  constant (f $ project₁ p) ∼ f
+contractible→-homotopyConstant (pair c C) f x = pathAction f (C x)
+
+contractible→-homotopyConstant' :
+  {i j : Level} {A : Type i} {B : Type j} →
+  (p : IsContractible A)
+  (c : A)
+  (f : A → B) →
+  constant (f $ c) ∼ f
+contractible→-homotopyConstant' (pair c' C) c f x =
+  pathAction f (C c) ⁻¹ ∙ contractible→-homotopyConstant (pair c' C) f x
+
+→contractible-homotopyConstant :
+  {i j : Level} {A : Type i} {B : Type j} →
+  (p : IsContractible A)
+  (g : B → A) →
+  constant (project₁ p) ∼ g
+→contractible-homotopyConstant (pair c C) g y = C $ g y 
+
+→contractible-homotopyConstant' :
+  {i j : Level} {A : Type i} {B : Type j} →
+  (p : IsContractible A)
+  (c : A)
+  (g : B → A) →
+  constant c ∼ g
+→contractible-homotopyConstant' (pair c' C) c g y =
+  (C c) ⁻¹ ∙ →contractible-homotopyConstant (pair c' C) g y
 ```

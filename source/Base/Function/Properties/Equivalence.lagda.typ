@@ -878,13 +878,13 @@ words, if $not A$ then $A$ is
   H : f ∘ Empty.recursion ∼ identity {_} {𝟎}
   H = Empty.induction
 
-¬⇒≃𝟎 : {i : Level} {A : Type i} →
+¬→≃𝟎 : {i : Level} {A : Type i} →
        ¬ A → A ≃ 𝟎 
-¬⇒≃𝟎 f = pair f (¬isEquivalence f)
+¬→≃𝟎 f = pair f (¬isEquivalence f)
 
-¬⇔≃𝟎 : {i : Level} {A : Type i} →
-       (¬ A) ↔ (A ≃ 𝟎)
-¬⇔≃𝟎 = pair ¬⇒≃𝟎 project₁
+¬→𝟎 : {i : Level} {A : Type i} →
+      (¬ A) ↔ (A ≃ 𝟎)
+¬→𝟎 = pair ¬→≃𝟎 project₁
 ```
 
 = Logical equivalences compose <note:e42158b1-a6f3-4558-8815-793ba4972d3d>

@@ -49,3 +49,31 @@ IdentitySystem {k = k} A a B b =
   (P : (x : A) → B x → Type k) →
   Section (λ (h : (x : A) → (y : B x) → P x y) → h a b)
 ```
+
+= Dependent identity system <note:61490579-d7a0-4536-b107-6eb3f789392e>
+
+We follow #cite(<rijke2025>, form: "prose", supplement: "def. 11.6.1") for the
+following definition.
+
+Let $C$ be an #link("note://f349b4cc-b6bb-433a-be57-9f2a3d9d8757")[identity
+system] on a type $A$ based at $a ofType A$, and let $c ofType
+C(a)$. Furthermore, let $B$ be a
+#link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family] over $A$. A
+*dependent identity system* over $C$ at $b ofType B(a)$ consists of a type
+family
+$
+    D ofType piType(x, A) B(x) -> (C(x) -> cal(U))
+$
+equipped with an element of $d ofType D(a, b, c)$ such that $lambda y . D(a, y,
+c)$ is an identity system on $B(a)$ at $b$.
+
+```agda
+IdentitySystemᵈ :
+  {i j k l m : Level}
+  {A : Type i} {a : A} {B : A → Type j} {b : B a}
+  (C : A → Type k) (c : C a)
+  (D : (x : A) → B x → C x → Type l) (d : D a b c) →
+  Type (j ⊔ l ⊔ successor m)
+IdentitySystemᵈ {_} {_} {_} {_} {m} {A} {a} {B} {b} C c D d =
+  IdentitySystem {k = m} (B a) b (λ y → D a y c) d
+```

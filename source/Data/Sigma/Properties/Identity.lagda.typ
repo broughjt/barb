@@ -243,7 +243,9 @@ identity types of sigma types is equivalent to identity].
   (u v : A × B) →
   IsEquivalence (＝→reflexive {R = Equal-×} equalReflexive-× {x = u} {y = v})
 ＝→equal-×-isEquivalence {A = A} {B = B} u@(pair x y) v@(pair x' y') =
-  inverse→isEquivalence (＝→reflexive equalReflexive-×) g (pair G H)
+  inverse→isEquivalence
+    (＝→reflexive {R = Equal-×} equalReflexive-×)
+    g (pair G H)
   where
   g : (project₁ u ＝ project₁ v) × (project₂ u ＝ project₂ v) → u ＝ v
   g (pair reflexive reflexive) = reflexive
@@ -251,7 +253,7 @@ identity types of sigma types is equivalent to identity].
   G : g ∘ (＝→reflexive {R = Equal-×} equalReflexive-×) ∼ identity {_} {u ＝ v}
   G reflexive = reflexive
 
-  H : ＝→reflexive equalReflexive-× ∘ g ∼
+  H : (＝→reflexive {R = Equal-×} equalReflexive-×) ∘ g ∼
       identity {_} {(project₁ u ＝ project₁ v) × (project₂ u ＝ project₂ v)}
   H (pair reflexive reflexive) = reflexive
 

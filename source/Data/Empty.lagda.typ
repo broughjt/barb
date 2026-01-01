@@ -30,7 +30,7 @@ induction : {i : Level} {P : 𝟎 → Type i} →
             ((x : 𝟎) → P x)
 induction ()
 
-recursion : {i : Level} {P : Type i} → (𝟎 → P)
+recursion : {i : Level} {A : Type i} → (𝟎 → A)
 recursion = induction
 ```
 
