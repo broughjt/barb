@@ -104,7 +104,10 @@ isContractible→×-isContractible {A = A} {B = B} (pair c C) (pair d D) =
 
 = Total space over a contractible base space is equivalent to fiber over the center of contraction <note:9f820c12-c050-423b-ae07-cc1fb0cddd37>
 
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 10.6"))[
+#lemma(
+    label: "68",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 10.6")
+)[
     Let $B$ be a #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type
     family] over a type $A$. If $A$ is
     #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible] with
@@ -187,14 +190,14 @@ I had the idea to reuse the without loss of generality argument used in
 #link("note://dc1d2466-8ead-40b1-9924-f60afcefe390")[Theorem 38] for this proof.
 
 ```agda
-baseIsContractible→pairEquivalence :
+baseIsContractible→pairIsEquivalence :
   {i j : Level} {A : Type i} {B : A → Type j}
   (p : IsContractible A) → 
   let a : A
       a = project₁ p
   in IsEquivalence {B = Σ A B} (pair a)
-baseIsContractible→pairEquivalence {_} {_} {A} {B} (pair a C) =
-  baseIsContractible→pairEquivalence' C' p
+baseIsContractible→pairIsEquivalence {_} {_} {A} {B} (pair a C) =
+  baseIsContractible→pairIsEquivalence' C' p
   where
   C' : (x : A) → a ＝ x
   C' x = (C a) ⁻¹ ∙ C x
@@ -202,11 +205,11 @@ baseIsContractible→pairEquivalence {_} {_} {A} {B} (pair a C) =
   p : (C' a) ⁻¹ ＝ reflexive
   p = pathAction _⁻¹ $ ⁻¹-inverseˡ (C a)
 
-  baseIsContractible→pairEquivalence' :
+  baseIsContractible→pairIsEquivalence' :
     (C : (x : A) → a ＝ x)
     (p : (C a) ⁻¹ ＝ reflexive) →
     IsEquivalence {B = Σ A B} (pair a)
-  baseIsContractible→pairEquivalence' C p =
+  baseIsContractible→pairIsEquivalence' C p =
     inverse→isEquivalence (pair a) g (pair G H)
     where
     g : Σ A B → B a
@@ -224,7 +227,7 @@ baseIsContractible⇒fiber≃total :
   (p : IsContractible A) →
   B (project₁ p) ≃ Σ A B
 baseIsContractible⇒fiber≃total p =
-  pair (pair $ project₁ p) (baseIsContractible→pairEquivalence p)
+  pair (pair $ project₁ p) (baseIsContractible→pairIsEquivalence p)
 ```
 
 = The first projection is an equivalence if and only if each fiber is contractible <note:72048b5c-50ba-4b43-8c3a-18c417347534>

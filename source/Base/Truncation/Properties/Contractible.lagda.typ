@@ -21,6 +21,7 @@ open import Data.Sigma.Core as Sigma hiding (induction)
 open import Data.Sigma.Definitions
 open import Data.Sigma.Properties.Equivalence
 open import Data.Sigma.Properties.Identity
+open import Data.Sigma.Properties.Truncation
 ```
 
 = A type is contractible if and only if it satisfies singleton induction <note:dc1d2466-8ead-40b1-9924-f60afcefe390>
@@ -697,4 +698,182 @@ contractible→-homotopyConstant' (pair c' C) c f x =
   constant c ∼ g
 →contractible-homotopyConstant' (pair c' C) c g y =
   (C c) ⁻¹ ∙ →contractible-homotopyConstant (pair c' C) g y
+```
+
+= Structure identity principle <note:c8ded883-fe70-482b-804b-157512315c1f>
+
+#theorem(
+    supplement: cite_link(<rijke2025>, "Structure identity principle; Rijke 2025, thm. 11.6.2")
+)[
+    Consider a #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family]
+    $B$ over a type $A$. Let
+    $
+        C ofType A -> cal(U), quad D ofType piType(x, A) B(x) -> C(x) -> cal(V)
+    $
+    be auxiliary type families. Suppose:
+
+    1. The #link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[total space]
+       $sigmaType(x, A) C(x)$ is
+       #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible] with
+       #link("note://f817901c-750e-4575-a259-d83730424ade")[center] $(a, c)$.
+    2. The total space $sigmaType(y, B(a)) D(a, y, c)$ is contractible.
+
+    Then for any $(a, b) ofType sigmaType(x, A) B(x)$ and any family of functions
+    $
+        f ofType piType((x, y), sigmaType(x, A) B(x)) (a, b) = (x, y) -> sigmaType(z, C(x)) D(x, y, z)
+    $
+    the family $f$ is a
+    #link("note://60d115f9-9bef-47af-916a-1a60ea0b3456")[family of
+    equivalences].
+]
+#proof[
+    We show that the total space
+    $
+        sigmaType((x, y), sigmaType(x, A) B(x)) sigmaType(z, C(x)) D(x, y, z)
+    $
+    is contractible. Then claim will then follow from the
+    #link("note://47c2a4df-e0c1-49a6-8ce8-feae75d30105")[fundamental theorem of
+    identity types].
+
+    By interchange law given in
+    #link("note://b33026a4-684f-4856-845c-98ca94c51ea8")[Lemma 67], there is an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]
+    $
+        sigmaType((x, y), sigmaType(x, A) B(x)) & sigmaType(z, C(x)) D(x, y, z) tilde.eq \
+        sigmaType((x, z), sigmaType(x, A) C(x)) & sigmaType(y, B(x)) D(x, y, z).
+    $
+    By #link("note://9f820c12-c050-423b-ae07-cc1fb0cddd37")[Lemma 68], any
+    $Sigma$-type over a contractible base is equivalent to the
+    #link("note://85839d30-6530-4e54-a8ba-efd1c8709928")[fiber] over its center
+    of contraction. By assumption, the base $sigmaType(x, A) C(x)$ is
+    contractible, so there is an equivalence
+    $
+        sigmaType((x, z), sigmaType(x, A) C(x)) sigmaType(y, B(x)) D(x, y, z) tilde.eq
+        sigmaType(y, B(a)) D(a, y, c).
+    $
+    Since the right-hand side is contractible by assumption and contractibility
+    is preserved by equivalence
+    (#link("note://41aea79b-658b-464d-b9c4-0326602aa2db")[Lemma 42]), it follows
+    that the total space
+    $
+        sigmaType((x, y), sigmaType(x, A) B(x)) & sigmaType(z, C(x)) D(x, y, z)
+    $
+    is contractible.
+
+    The claim now follows by applying the
+    #link("note://47c2a4df-e0c1-49a6-8ce8-feae75d30105")[fundamental theorem of
+    identity types] to this contractible total space.
+]
+
+```agda
+componentTotalIsContractible→structureTotalIsContractible :
+  {i j k l : Level}
+  {A : Type i} {B : A → Type j}
+  {C : A → Type k} {D : (x : A) → B x → C x → Type l}
+  (p : IsContractible (Σ A C)) →
+  let u = project₁ p
+      a = project₁ u
+      c = project₂ u
+  in
+  IsContractible (Σ (B a) (λ y → D a y c)) →
+  IsContractible (Σ (Σ A B)
+                    (λ u → Σ (C $ project₁ u)
+                    (λ z → D (project₁ u) (project₂ u) z)))
+componentTotalIsContractible→structureTotalIsContractible
+  {_} {_} {_} {_} {A} {B} {C} {D}
+  p@(pair (pair a c) P) q = ω
+  where
+  φ : IsEquivalence $ interchangeʳ {D = D}
+  φ = interchangeʳ-isEquivalence
+
+  ψ : IsEquivalence
+        (pair {B = λ v → Σ (B $ project₁ v)
+                           (λ y → D (project₁ v) y (project₂ v))} (pair a c))
+  ψ = baseIsContractible→pairIsEquivalence p
+
+  ω : IsContractible
+        (Σ (Σ A B)
+           (λ u → Σ (C $ project₁ u) (D (project₁ u) (project₂ u))))
+  ω = isEquivalence→isContractible→isContractible₁
+        (interchangeʳ ∘ pair (pair a c))
+        (isEquivalenceCompose interchangeʳ (pair (pair a c)) φ ψ)
+        q
+
+componentTotalIsContractible→structureTotalIsContractible' :
+  {i j k l : Level}
+  {A : Type i} {B : A → Type j}
+  {C : A → Type k} {D : (x : A) → B x → C x → Type l}
+  (u : Σ A C) →
+  IsContractible (Σ A C) →
+  let a = project₁ u
+      c = project₂ u
+  in
+  IsContractible (Σ (B a) (λ y → D a y c)) →
+  IsContractible (Σ (Σ A B)
+                    (λ u → Σ (C $ project₁ u)
+                    (λ z → D (project₁ u) (project₂ u) z)))
+componentTotalIsContractible→structureTotalIsContractible'
+  {_} {_} {_} {_} {A} {B} {C} {D} (pair a c) p@(pair (pair a' c') P) q =
+  componentTotalIsContractible→structureTotalIsContractible p q'
+  where
+  q' : IsContractible (Σ (B a') (λ y → D a' y c'))
+  q' = transport (λ ?u → IsContractible
+                           (Σ (B $ project₁ ?u)
+                              (λ y → D (project₁ ?u) y (project₂ ?u))))
+                 ((P $ pair a c) ⁻¹)
+                 q
+
+componentTotalIsContractible→characterize-＝-structure :
+  {i j k l : Level}
+  {A : Type i} {B : A → Type j}
+  {C : A → Type k} {D : (x : A) → B x → C x → Type l}
+  (p : IsContractible (Σ A C)) →
+  let w = project₁ p
+      a = project₁ w
+      c = project₂ w
+  in
+  (q : IsContractible (Σ (B a) (λ y → D a y c))) →
+  (u : Σ A B) → 
+  (f : (v : Σ A B) →
+       u ＝ v → Σ (C $ project₁ v) (λ z → D (project₁ v) (project₂ v) z)) →
+  ((v : Σ A B) → IsEquivalence $ f v)
+componentTotalIsContractible→characterize-＝-structure
+  {_} {_} {_} {_} {A} {B} {C} {D} p q u =
+  s
+  where
+  r : IsContractible
+        (Σ (Σ A B)
+           (λ u₁ → Σ (C $ project₁ u₁) (D (project₁ u₁) (project₂ u₁))))
+  r = componentTotalIsContractible→structureTotalIsContractible {D = D} p q
+
+  s : (f : (v : Σ A B) →
+           u ＝ v → Σ (C $ project₁ v) (D (project₁ v) (project₂ v))) →
+      ((v : Σ A B) → IsEquivalence $ f v)
+  s = totalIsContractible→characterize-＝ r u
+
+componentTotalIsContractible→characterize-＝-structure' :
+  {i j k l : Level}
+  {A : Type i} {B : A → Type j}
+  {C : A → Type k} {D : (x : A) → B x → C x → Type l}
+  (a : A) (c : C a) →
+  IsContractible (Σ A C) →
+  IsContractible (Σ (B a) (λ y → D a y c)) →
+  (u : Σ A B) → 
+  (f : (v : Σ A B) →
+       u ＝ v → Σ (C $ project₁ v) (λ z → D (project₁ v) (project₂ v) z)) →
+  ((v : Σ A B) → IsEquivalence $ f v)
+componentTotalIsContractible→characterize-＝-structure'
+  {_} {_} {_} {_} {A} {B} {C} {D} a c p q u =
+  s
+  where
+  r : IsContractible
+        (Σ (Σ A B)
+           (λ v → Σ (C $ project₁ v) (D (project₁ v) (project₂ v))))
+  r = componentTotalIsContractible→structureTotalIsContractible' {D = D}
+        (pair a c) p q
+
+  s : (f : (v : Σ A B) →
+           u ＝ v → Σ (C $ project₁ v) (D (project₁ v) (project₂ v))) →
+      ((v : Σ A B) → IsEquivalence $ f v)
+  s = totalIsContractible→characterize-＝ r u
 ```

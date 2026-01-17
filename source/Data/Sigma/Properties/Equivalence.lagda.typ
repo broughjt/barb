@@ -173,6 +173,102 @@ swapBaseˡ-inverse = pair H H
   H (pair (pair x y) z) = reflexive
 ```
 
+= Interchange law for sigma types <note:b33026a4-684f-4856-845c-98ca94c51ea8>
+ 
+#lemma(label: "67")[
+    Let $A$ be a type, let $B$ and $C$ be
+    #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type families] over
+    $A$, and let
+    $
+        D ofType piType(x, A) B(x) -> C(x) -> cal(U)
+    $
+    be a type family depending on $x ofType A$, $y ofType B(x)$, and $z ofType
+    C(x)$. Then there is an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence]
+    $
+        sigmaType(u, sigmaType(x, A) B(x)) & sigmaType(z, C(project1(u))) D(project1(u), project2(u), z) tilde.eq \
+        sigmaType(v, sigmaType(x, A) C(x)) & sigmaType(y, C(project1(v))) D(project1(v), y, project2(v))
+    $
+]
+#proof[
+    There are natural maps back and forth for which the
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[required homotopies]
+    hold by definition.
+]
+
+```agda
+interchangeˡ :
+  {i j k l : Level}
+  {A : Type i}
+  {B : A → Type j} {C : A → Type k}
+  {D : (x : A) → B x → C x → Type l} →
+  Σ (Σ A B) (λ u → Σ (C $ project₁ u) (λ z → D (project₁ u) (project₂ u) z)) →
+  Σ (Σ A C) (λ v → Σ (B $ project₁ v) (λ y → D (project₁ v) y (project₂ v)))
+interchangeˡ (pair (pair x y) (pair z w)) = pair (pair x z) (pair y w)
+
+interchangeʳ :
+  {i j k l : Level}
+  {A : Type i}
+  {B : A → Type j} {C : A → Type k}
+  {D : (x : A) → B x → C x → Type l} →
+  Σ (Σ A C) (λ v → Σ (B $ project₁ v) (λ y → D (project₁ v) y (project₂ v))) →
+  Σ (Σ A B) (λ u → Σ (C $ project₁ u) (λ z → D (project₁ u) (project₂ u) z))
+interchangeʳ (pair (pair x y) (pair z w)) = pair (pair x z) (pair y w)
+
+interchangeˡ-inverse : 
+  {i j k l : Level}
+  {A : Type i}
+  {B : A → Type j} {C : A → Type k}
+  {D : (x : A) → B x → C x → Type l} →
+  Inverse (interchangeˡ {D = D}) (interchangeʳ {D = D})
+interchangeˡ-inverse {_} {_} {_} {_} {A} {B} {C} {D} = pair H K
+  where
+  H : interchangeʳ {D = D} ∘ interchangeˡ {D = D} ∼
+      identity {_} {Σ (Σ A B)
+                      (λ u → Σ (C $ project₁ u)
+                      (λ y → D (project₁ u) (project₂ u) y))}
+  H (pair (pair x y) (pair z w)) = reflexive
+
+  K : interchangeˡ {D = D} ∘ interchangeʳ {D = D} ∼
+      identity {_} {Σ (Σ A C)
+                      (λ v → Σ (B $ project₁ v)
+                      (λ y → D (project₁ v) y (project₂ v)))}
+  K (pair (pair x z) (pair y w)) = reflexive
+
+interchangeˡ-isEquivalence : 
+  {i j k l : Level}
+  {A : Type i}
+  {B : A → Type j} {C : A → Type k}
+  {D : (x : A) → B x → C x → Type l} →
+  IsEquivalence $ interchangeˡ {D = D}
+interchangeˡ-isEquivalence {D = D} =
+  inverse→isEquivalence (interchangeˡ {D = D})
+                        (interchangeʳ {D = D})
+                        interchangeˡ-inverse 
+
+interchangeʳ-isEquivalence : 
+  {i j k l : Level}
+  {A : Type i}
+  {B : A → Type j} {C : A → Type k}
+  {D : (x : A) → B x → C x → Type l} →
+  IsEquivalence $ interchangeʳ {D = D}
+interchangeʳ-isEquivalence {D = D} =
+  inverse→isEquivalence (interchangeʳ {D = D})
+                        (interchangeˡ {D = D})
+                        (inverseInverse (interchangeˡ {D = D})
+                                        (interchangeʳ {D = D})
+                                        interchangeˡ-inverse)
+
+interchangeˡ≃ :
+  {i j k l : Level}
+  {A : Type i}
+  {B : A → Type j} {C : A → Type k}
+  {D : (x : A) → B x → C x → Type l} →
+  Σ (Σ A B) (λ u → Σ (C $ project₁ u) (λ z → D (project₁ u) (project₂ u) z)) ≃
+  Σ (Σ A C) (λ v → Σ (B $ project₁ v) (λ y → D (project₁ v) y (project₂ v)))
+interchangeˡ≃ {D = D} = pair (interchangeˡ {D = D}) interchangeˡ-isEquivalence
+```
+
 = Fiber over the first projection map is equivalent to fiber of a type family <note:f9a042a9-e79b-4277-8d9b-e440679252d5>
  
 #lemma(

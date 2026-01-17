@@ -109,7 +109,10 @@ mapHomotopy H K (inject₂ y) = pathAction inject₂ (K y)
 
 = Coproduct map of equivalences is an equivalence <note:9b0f68ff-9282-411d-bb37-14b00caf320d>
  
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.6(d)"))[
+#lemma(
+    label: "66",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.6(d)")
+)[
     Given $f ofType A -> C$ and $g ofType B -> D$, let
     $
         f + g ofType A + B -> C + D

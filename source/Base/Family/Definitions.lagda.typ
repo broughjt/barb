@@ -6,6 +6,7 @@
 module Base.Family.Definitions where
 
 open import Base.Function.Negation
+open import Base.Identity.Core
 open import Base.Universe.Core
 ```
 
@@ -57,4 +58,17 @@ $x, y, z ofType A$, if $R(x, y)$ and $R(y, z)$ then $R(x, z)$.
 Transitive : {i j : Level} {A : Type i} →
              (A → A → Type j) → Type (i ⊔ j)
 Transitive {A = A} R = {x y z : A} → R x y → R y z → R x z
+```
+
+= Antisymmetric <note:8aaded72-efb9-483d-9cb4-7ab7912270a8>
+
+A homogeneous binary #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type
+family] over a type $A$ is *antisymmetric* if for all $x, y ofType A$, if $R(x,
+y)$ and $R(y, x)$ then there is an
+#link("note://261490cb-2887-4247-9a83-7f674e3c9651")[identification] $x = y$.
+
+```agda
+Antisymmetric : {i j : Level} {A : Type i} →
+                (A → A → Type j) → Type (i ⊔ j)
+Antisymmetric {A = A} R = {x y : A} → R x y → R y x → x ＝ y
 ```
