@@ -181,7 +181,10 @@ under the successive
 with the path under the action of their
 #link("note://bc9568f6-830b-4b4e-9aab-1808b1127cb0")[composition].
 
-#lemma(supplement: cite_link(<rijke2025>, [Rijke 2025, def. 5.3.1]))[
+#lemma(
+    label: "73",
+    supplement: cite_link(<rijke2025>, [Rijke 2025, def. 5.3.1])
+)[
     Let $x, y ofType A$ be elements of a type $A$. For all paths $p ofType x =
     y$ and maps $f ofType A -> B$, $g ofType B -> C$, we have
     $
@@ -578,6 +581,26 @@ paths]).
         reflexive ∙ r
           ＝[ ∙-unitˡ r ]
         r ∎
+
+∙⁻¹-inverse : {i : Level} {A : Type i} {x y z : A}
+              (p : x ＝ y) →
+              Inverse (_∙_ (p ⁻¹)) (_∙_ {z = z} p)
+∙⁻¹-inverse p = inverseInverse (_∙_ p) (_∙_ (p ⁻¹)) (∙-inverse p)
+
+∙-isEquivalence :
+  {i : Level} {A : Type i} {x y z : A}
+  (p : x ＝ y) →
+  IsEquivalence $ _∙_ {z = z} p
+∙-isEquivalence p = inverse→isEquivalence (_∙_ p) (_∙_ (p ⁻¹)) (∙-inverse p)
+
+∙⁻¹-isEquivalence :
+  {i : Level} {A : Type i} {x y z : A}
+  (p : x ＝ y) →
+  IsEquivalence $ _∙_ {z = z} (p ⁻¹)
+∙⁻¹-isEquivalence p =
+  inverse→isEquivalence
+    (_∙_ (p ⁻¹)) (_∙_ p)
+    (inverseInverse (_∙_ p) (_∙_ (p ⁻¹)) (∙-inverse p))
 ```
 
 #lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.1"))[
@@ -594,10 +617,11 @@ paths]).
 ]
 
 ```agda
-∙-inverse' : {i : Level} {A : Type i} {x y z : A}
-             (q : y ＝ z) →
-             Inverse (flip (_∙_ {x = x}) q) (flip _∙_ (q ⁻¹))
-∙-inverse' {_} {A} {x} {y} {z} q = pair H K
+flip∙-inverse :
+  {i : Level} {A : Type i} {x y z : A}
+  (q : y ＝ z) →
+  Inverse (flip (_∙_ {x = x}) q) (flip _∙_ (q ⁻¹))
+flip∙-inverse {_} {A} {x} {y} {z} q = pair H K
   where
   H : (flip _∙_ (q ⁻¹)) ∘ (flip _∙_ q) ∼ (identity {_} {x ＝ y})
   H p = (p ∙ q) ∙ q ⁻¹
@@ -616,6 +640,22 @@ paths]).
         p ∙ reflexive
           ＝[ ∙-unitʳ p ]
         p ∎
+
+flip∙-isEquivalence :
+  {i : Level} {A : Type i} {x y z : A}
+  (q : y ＝ z) →
+  IsEquivalence $ flip (_∙_ {x = x}) q
+flip∙-isEquivalence q =
+  inverse→isEquivalence (flip _∙_ q) (flip _∙_ (q ⁻¹)) (flip∙-inverse q)
+
+flip∙⁻¹-isEquivalence :
+  {i : Level} {A : Type i} {x y z : A}
+  (q : y ＝ z) →
+  IsEquivalence $ flip (_∙_ {x = x}) (q ⁻¹)
+flip∙⁻¹-isEquivalence q =
+  inverse→isEquivalence
+    (flip _∙_ (q ⁻¹)) (flip _∙_ q)
+    (inverseInverse (flip _∙_ q) (flip _∙_ (q ⁻¹)) (flip∙-inverse q))
 ```
 
 = Transport along a path is inverse to transport along the inverse path <note:985f36e7-d07e-4742-ac8c-b7c0dfe1def8>
@@ -648,9 +688,10 @@ functions].
 ]
 
 ```agda
-transportInverse : {i j : Level} {A : Type i} {B : A → Type j} {x y : A} →
-                   (p : x ＝ y) →
-                   Inverse (transport B p) (transport B (p ⁻¹))
+transportInverse :
+  {i j : Level} {A : Type i} {B : A → Type j} {x y : A} →
+  (p : x ＝ y) →
+  Inverse (transport B p) (transport B (p ⁻¹))
 transportInverse {_} {_} {A} {B} {x} {y} reflexive = pair H K
   where
   H : (transport B (reflexive ⁻¹)) ∘ (transport B reflexive) ∼
@@ -660,6 +701,26 @@ transportInverse {_} {_} {A} {B} {x} {y} reflexive = pair H K
   K : (transport B reflexive) ∘ (transport B (reflexive ⁻¹)) ∼
       (identity {_} {B y})
   K w = reflexive
+
+transportIsEquivalence : 
+  {i j : Level} {A : Type i} {B : A → Type j} {x y : A} →
+  (p : x ＝ y) →
+  IsEquivalence $ transport B p
+transportIsEquivalence {B = B} p =
+  inverse→isEquivalence
+    (transport B p)
+    (transport B (p ⁻¹))
+    (transportInverse p)
+
+transport⁻¹-isEquivalence : 
+  {i j : Level} {A : Type i} {B : A → Type j} {x y : A} →
+  (p : x ＝ y) →
+  IsEquivalence $ transport B (p ⁻¹)
+transport⁻¹-isEquivalence {B = B} p =
+  inverse→isEquivalence
+    (transport B (p ⁻¹))
+    (transport B p)
+    (inverseInverse (transport B p) (transport B (p ⁻¹)) (transportInverse p))
 ```
 
 = Family of identity types is reflexive <note:66b650cf-b748-49bd-8a08-edf38950bb2e>

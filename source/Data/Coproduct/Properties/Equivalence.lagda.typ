@@ -8,10 +8,12 @@ module Data.Coproduct.Properties.Equivalence where
 open import Base.Function.Core
 open import Base.Function.Definitions
 open import Base.Function.Negation
-open import Base.Universe.Core
+open import Base.Function.Properties.Equivalence
 open import Base.Identity.Core
+open import Base.Universe.Core
 open import Data.Coproduct.Core
 open import Data.Coproduct.Definitions as Coproduct
+open import Data.Coproduct.Properties.Identity
 open import Data.Sigma.Core
 ```
 
@@ -35,6 +37,9 @@ open import Data.Sigma.Core
     #link("note://4af48c11-22e0-4aae-89eb-fad6d4320836")[Negation resolution]
     and #link("note://001d31c7-7fb6-4878-883a-ff464bb9c0a8")[Coproduct type]).
 ]
+
+See #link("note://6aa2ace5-0120-4fb0-9681-1db6875a84c5")[Lemma 69], which shows
+the #link("note://314a5e4f-bf3c-497a-867c-edc5bb306d7f")[converse] statement.
 
 ```agda
 resolve₁-inject₁-inverse :
@@ -62,6 +67,72 @@ resolve₂-inject₂-inverse {A = A} {B = B} g = pair H K
 
   K : RightInverse (resolve₂ g) inject₂
   K x = reflexive
+```
+
+= If a coproduct injection is an equivalences then the other component is empty <note:6aa2ace5-0120-4fb0-9681-1db6875a84c5>
+
+#lemma(
+    label: "69",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 11.1(c)")
+)[
+    If $inject1 ofType A -> A + B$ is an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence], then $B$
+    is #link("note://16ffba35-7712-4eb7-8902-0812e529aa16")[empty]. Similarly,
+    if $inject2 ofType B -> A + B$ is an equivalence, then $A$ is empty.
+]
+#proof[
+    We prove the claim for $inject1$; the argument for $inject2$ is analogous.
+
+    Suppose $inject1$ is an equivalence. Then
+    #link("note://731be08a-a2ad-477a-8c08-d9f26c32de41")[it admits an inverse]
+    function $g ofType A + B -> A$ together with
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopies]
+    $
+        H ofType & g compose inject1 ~ id_(A), \
+        K ofType & inject1 compose g ~ id_(A + B).
+    $
+
+    Suppose for contradiction that we are given an element $y ofType B$. Then
+    applying homotopy $K$ to $inject2(y)$ yields a
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path]
+    $
+        inject1(g(inject2(y))) = inject2(y).
+    $
+
+    But this is impossible: by the
+    #link("note://a58c0c4a-1fe6-4bf1-8aec-1cfc5ca262ee")[characterization of the
+    identity types of coproducts], the type
+
+    $
+        inject1(x) = inject2(y)
+    $
+    is empty for any $x ofType A$ and $y ofType B$. Hence $B$ is empty.
+]
+
+See also #link("note://b7b0a00f-26af-486c-b13d-6f5160fbb2d0")[Lemma 6], which
+shows the converse statement.
+
+```agda
+inject₁-isEquivalence→empty :
+  {i j : Level} {A : Type i} {B : Type j} →
+  IsEquivalence {B = A ＋ B} inject₁ →
+  ¬ B
+inject₁-isEquivalence→empty p y with isEquivalence→hasInverse p
+... | (pair g (pair H K)) = project₁ (≃→↔ (＝≃Equal₁₂ (g (inject₂ y)) y)) q
+  where
+  q : inject₁ (g (inject₂ y)) ＝ inject₂ y
+  q = K $ inject₂ y
+  
+inject₂-isEquivalence→empty : 
+  {i j : Level} {A : Type i} {B : Type j} →
+  IsEquivalence {B = A ＋ B} inject₂ →
+  ¬ A
+inject₂-isEquivalence→empty p x with isEquivalence→hasInverse p
+... | (pair g (pair H K)) =
+  project₁ (≃→↔ (＝≃Equal₂₁ x (g (inject₁ x)))) q
+  where
+  q : inject₂ (g (inject₁ x)) ＝ inject₁ x
+  q = K (inject₁ x)
 ```
 
 = Coproduct swap is its own inverse <note:2311a766-22a2-4a85-91f2-1f3bc032cfff>
@@ -134,3 +205,4 @@ associateInverse {A = A} {B = B} {C = C} = pair H K
   K (inject₂ (inject₁ x)) = reflexive
   K (inject₂ (inject₂ x)) = reflexive
 ```
+

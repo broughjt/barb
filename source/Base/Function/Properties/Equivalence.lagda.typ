@@ -664,7 +664,10 @@ sectionTop→left↔right f g h H p =
 
 = Commutative triangle with retraction lemma <note:92588128-5591-45a6-9559-c75e846fde57>
  
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.4(b)"))[
+#lemma(
+    label: "72",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 9.4(b)")
+)[
     Consider a commuting triangle
     #figure(
         diagram($

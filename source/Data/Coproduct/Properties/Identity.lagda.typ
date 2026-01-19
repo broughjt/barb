@@ -101,7 +101,7 @@ equalReflexive (inject₂ y) = lift reflexive
   IsEquivalence (＝→reflexive {R = Equal} equalReflexive {x = u} {y = v})
 ＝→equal-isEquivalence {_} {_} {A} {B} {u} {v} =
   totalIsContractible→characterize-＝
-    u (λ v → ＝→reflexive equalReflexive) (p u) v
+    (p u) u (λ v → ＝→reflexive equalReflexive) v
   where
   p : (u : A ＋ B) → IsContractible (Σ (A ＋ B) (Equal u))
   p (inject₁ x) =

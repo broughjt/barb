@@ -16,6 +16,7 @@ open import Base.Truncation.Definitions
 open import Base.Universe.Core
 open import Data.Sigma.Core
 open import Data.Sigma.Definitions
+open import Data.Sigma.Properties.Identity
 ```
 
 = Product swap is its own inverse <note:3da4b91a-9d29-437d-aecd-794a120d4685>
@@ -439,6 +440,77 @@ totalIsEquivalence→familyOfEquivalences f =
   project₂ $ familyOfEquivalences↔totalIsEquivalence f
 ```
 
+= Family of inverses implies induced maps on total spaces are inverses <note:2d568ea6-459f-476e-9a8b-2d5ea7a57815>
+
+#lemma(label: "70")[
+    Let $f ofType piType(x, A) B(x) -> C(x)$ and $g ofType piType(x, A) C(x) ->
+    B(x)$ be families of maps. If $f_x$ and $g_x$ are
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[inverses] for each $x
+    ofType A$, then the
+    #link("note://6561eded-451d-46bb-8194-c64a0acf904e")[induced maps on total
+    spaces] $total(f)$ and $total(g)$ are inverses.
+]
+#proof[
+    For each $x ofType A$, let
+    $
+        H_x ofType g_x compose f_x ~ id_(B(x)), quad K_x ofType f_x compose g_x ~ id_(C(x))
+    $
+    be the #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[given]
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopies].
+
+    The #link("note://6561eded-451d-46bb-8194-c64a0acf904e")[induced maps on
+    total spaces are given by]
+    $
+        total(f)(x, y) dot(eq) (x, f_(x)(y)), quad total(g)(x, z) dot(eq) (x, g_(x)(z)).
+    $
+    Hence
+    $
+        (total(g) compose total(f))(x, y) dot(eq) (x, g_(x)(f_(x)(y))).
+    $
+    Define a homotopy
+    $
+        H ofType total(g) compose total(f) ~ id_(sigmaType(x, A) B(x))
+    $
+    by, for each $(x, y)$, taking the
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path] in the
+    #link("note://a123eb52-0ec7-4d04-a780-e6761d564fd9")[$Sigma$-type] whose
+    first component is $refl_(x)$ and whose second component is the path
+    $
+        H_(x)(y) ofType g_(x)(f_(x)(y)) = y.
+    $
+    Since the base path is
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[reflexivity], the
+    #link("note://1229c654-047b-4517-9f4c-df4c03224d02")[transport] in the
+    #link("note://a123eb52-0ec7-4d04-a780-e6761d564fd9")[characterization of the
+    identity types of $Sigma$-types] evaluates to the
+    #link("note://efea6413-096d-4249-8ef0-a4de74fcee13")[identity map], and this
+    indeed gives a path
+    $
+        (x, g_(x)(f_(x)(y))) = (x, y).
+    $
+
+    The construction of
+    $
+        K ofType total(f) compose total(g) ~ id_(sigmaType(x, A) C(x))
+    $
+    is completely analogous, using $K_x$.
+]
+
+```agda
+familyOfInverses→totalInverse :
+  {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k}
+  (f : (x : A) → B x → C x)
+  (g : (x : A) → C x → B x) →
+  ((x : A) → Inverse (f x) (g x)) → Inverse (total f) (total g)
+familyOfInverses→totalInverse {_} {_} {_} {A} {B} {C} f g p = pair H K
+  where
+  H : total g ∘ total f ∼ identity {_} {Σ A B}
+  H (pair x y) = Equal→＝ $ pair reflexive (project₁ (p x) y)
+
+  K : total f ∘ total g ∼ identity {_} {Σ A C}
+  K (pair x z) = Equal→＝ $ pair reflexive (project₂ (p x) z)
+```
+
 = Equivalence lift to total space <note:ca0042cc-2d24-4664-8baa-c538fb438ec2>
  
 #lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, lem. 11.1.4"))[
@@ -612,6 +684,7 @@ curryUncurry'Section :
   RightInverse (curry {C = C}) (uncurry' {C = C})
 curryUncurry'Section f = reflexive
 
+-- TODO:
 -- curryUncurry'Retraction : 
 --   {i j k : Level} {A : Type i} {B : A → Type j} {C : Σ A B → Type k} →
 --   LeftInverse (curry {C = C}) (uncurry' {C = C})
