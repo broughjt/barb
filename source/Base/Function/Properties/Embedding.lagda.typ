@@ -17,11 +17,17 @@ open import Base.Truncation.Definitions
 open import Base.Truncation.Properties.Contractible
 open import Base.Universe.Core
 open import Data.Sigma.Core
+open import Data.Sigma.Definitions
+open import Data.Sigma.Properties.Equivalence
+open import Data.Sigma.Properties.Identity
 ```
 
 = Every equivalence is an embedding <note:577a5656-7132-434f-ba99-a2736940d780>
  
-#theorem(supplement: cite_link(<rijke2025>, "Rijke 2025, thm. 11.4.2"))[
+#theorem(
+    label: "76",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, thm. 11.4.2")
+)[
     Every #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence] is
     an #link("note://cce94748-d9b3-4795-a3d8-c698b6dff9dd")[embedding].
 ]
@@ -224,7 +230,7 @@ isEmbeddingCompose g f p q x y =
 
 = Commutative triangle with embedding lemma <note:8f5a36cb-8a7a-4000-9e80-239822db1379>
  
-#lemma[
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 11.4(a)"))[
     Consider a commuting triangle
     #figure(
         diagram($
@@ -232,7 +238,6 @@ isEmbeddingCompose g f p q x y =
                 & X
         $)
     )
-
     with $H ofType f ~ g compose h$. If $g ofType B -> X$ is an
     #link("note://cce94748-d9b3-4795-a3d8-c698b6dff9dd")[embedding] then $f
     ofType A -> X$ is an embedding if and only if $h ofType A -> B$ is an
@@ -320,4 +325,194 @@ isEmbeddingRight→left↔top :
 isEmbeddingRight→left↔top f g h H p =
   pair (isEmbeddingRight→left→top f g h H p)
        (isEmbeddingRight→top→left f g h H p)
+```
+
+= Commuting triangle with equivalence and embedding lemma <note:dfc4bd6c-b223-4363-ab91-3faf13a7f181>
+ 
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 11.4(b)"))[
+    Consider a commuting triangle
+    #figure(
+        diagram($
+            A edge("rr", h, ->) edge("dr", f, ->, label-side: #right) & & B edge("dl", g, ->, label-side: #left) \
+                & X
+        $)
+    )
+    with $H ofType f ~ g compose h$. If $h ofType A -> B$ is an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence] then $f
+    ofType A -> X$ is an
+    #link("note://cce94748-d9b3-4795-a3d8-c698b6dff9dd")[embedding] if and only
+    if $g ofType B -> X$ is an embedding.
+]
+#proof[
+    Since $h$ is an equivalence, by
+    #link("note://731be08a-a2ad-477a-8c08-d9f26c32de41")[Lemma 3] it admits an
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[inverse] $h' ofType B
+    -> A$ with #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopies]
+    $
+        h' compose h ~ id_(A), quad h compose h' ~ id_(B).
+    $
+
+    ($==>$) Suppose $f$ is an embedding. By
+    #link("note://b92b0253-66cd-46ff-aaab-8c33541cfd45")[Lemma 48], there is a
+    homotopy
+    $
+        g ~ f compose h'.
+    $
+    Since $h'$ is an equivalence, it is in particular an embedding by
+    #link("note://577a5656-7132-434f-ba99-a2736940d780")[Lemma 76]. By
+    assumption, $f$ is also an embedding, so their composite $f compose h'$ is
+    an embedding by #link("note://d6dea5c8-f33b-446a-8dea-d4c10b35f39c")[Lemma
+    75]. Finally, since $g$ is homotopic to $f ∘ h'$, and embeddings are
+    invariant under homotopy
+    (#link("note://577d40af-e9a0-4e3e-891e-003b1fdc88ff")[Lemma 74]), it follows
+    that $g$ is an embedding.
+
+    ($<==$) Conversely, suppose $g$ is an embedding. Because equivalences are
+    embeddings (#link("note://577a5656-7132-434f-ba99-a2736940d780")[Lemma 76]),
+    $h$ is an embedding. Since embeddings are closed under composition, $g
+    compose h$ is an embedding. We have $f ~ g compose h$ by assumption, so it
+    follows by #link("note://577d40af-e9a0-4e3e-891e-003b1fdc88ff")[Lemma 74]
+    that $f$ is also an embedding.
+]
+
+```agda
+isEquivalenceTop→isEmbeddingRight→IsEmbeddingLeft :
+  {i j k : Level} {A : Type i} {B : Type j} {X : Type k}
+  (f : A → X) (g : B → X) (h : A → B) →
+  f ∼ g ∘ h → IsEquivalence h → IsEmbedding g → IsEmbedding f
+isEquivalenceTop→isEmbeddingRight→IsEmbeddingLeft f g h H p q =
+  s
+  where
+  r : IsEmbedding h
+  r = isEquivalence→isEmbedding p
+
+  s : IsEmbedding f
+  s = isEmbeddingRight→top→left f g h H q r
+
+isEquivalenceTop→isEmbeddingLeft→IsEmbeddingRight :
+  {i j k : Level} {A : Type i} {B : Type j} {X : Type k}
+  (f : A → X) (g : B → X) (h : A → B) →
+  f ∼ g ∘ h → IsEquivalence h → IsEmbedding f → IsEmbedding g
+isEquivalenceTop→isEmbeddingLeft→IsEmbeddingRight
+  {_} {_} {_} {A} {B} {X} f g h H p q with isEquivalence→hasInverse p
+... | (pair h' (pair K L)) = s
+  where
+  M : g ∼ f ∘ h'
+  M = sectionTriangle f g h h' H L
+
+  r : IsEquivalence h'
+  r = inverse→isEquivalence h' h (pair L K)
+
+  s : IsEmbedding g
+  s = isEmbedding→homotopy→isEmbedding
+      (isEmbeddingCompose f h' q $ isEquivalence→isEmbedding r)
+        (M ⁻¹)
+
+isEquivalenceTop→isEmbeddingLeft↔IsEmbeddingRight :
+  {i j k : Level} {A : Type i} {B : Type j} {X : Type k}
+  (f : A → X) (g : B → X) (h : A → B) →
+  f ∼ g ∘ h → IsEquivalence h → (IsEmbedding f ↔ IsEmbedding g)
+isEquivalenceTop→isEmbeddingLeft↔IsEmbeddingRight f g h H p =
+  pair (isEquivalenceTop→isEmbeddingLeft→IsEmbeddingRight f g h H p)
+       (isEquivalenceTop→isEmbeddingRight→IsEmbeddingLeft f g h H p)
+```
+
+= If the composition of two embeddings is an equivalence then both embeddings are equivalences <note:5d8f73d1-0578-4152-82cf-7b993aa4225a>
+ 
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 11.5"))[
+    Let $f ofType A arrow.hook.r B$ and $g ofType B arrow.hook.r C$ be
+    #link("note://cce94748-d9b3-4795-a3d8-c698b6dff9dd")[embeddings]. If the
+    #link("note://bc9568f6-830b-4b4e-9aab-1808b1127cb0")[composite] $g compose
+    f$ is an #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[equivalence],
+    then both $f$ and $g$ are equivalences.
+]
+#proof[
+    We first show that $f$ is an equivalence by comparing its
+    #link("note://96d1fb9a-fd38-48cc-886f-7643637ac1e7")[fibers] with those of
+    $g compose f$.
+
+    Fix $y ofType B$. The
+    #link("note://7caf7ee0-9e2a-4761-bee9-25cd52820039")[action of $g$ on paths]
+    induces a #link("note://6561eded-451d-46bb-8194-c64a0acf904e")[map on total
+    spaces]
+    $
+        Fiber_(f)(y) dot(eq) sigmaType(x, A) f(x) = y -> sigmaType(x, A) g(f(x)) = g(y) dot(eq) Fiber_(g compose f)(g(y)).
+    $
+
+    Because $g$ is an
+    #link("note://cce94748-d9b3-4795-a3d8-c698b6dff9dd")[embedding], for each $x
+    ofType A$, the action of $g$ on paths
+    $
+        ap_g ofType f(x) = y -> g(f(x)) = g(y)
+    $
+    is an equivalence. By
+    #link("note://1e59ed56-2044-4945-8e7e-c97df7680b26")[Lemma 45], it follows
+    that the induced map on total spaces is an equivalence.
+
+    Since $g compose f$ is an equivalence, its fiber over $g(y)$ is
+    #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible] by
+    #link("note://984c33bd-7fb6-4432-a0de-ddc279bddc1c")[Theorem 41]. As
+    equivalences preserve contractibility
+    (#link("note://41aea79b-658b-464d-b9c4-0326602aa2db")[Lemma 42]), the fiber
+    of $f$ over $y$ is also contractible.
+
+    Therefore each fiber of $f$ is contractible, and hence $f$ is an
+    equivalence, again by
+    #link("note://984c33bd-7fb6-4432-a0de-ddc279bddc1c")[Theorem 41].
+
+    Having shown that $f$ is an equivalence, we now conclude that $g$ is an
+    equivalence. Indeed, in the commutative triangle
+    #figure(
+        diagram($
+            A edge("rr", f, ->) edge("dr", g compose f, ->, label-side: #right) & & B edge("dl", g, ->, label-side: #left) \
+                & C
+        $)
+    )
+    both the top map $f$ and left map $g compose f$ are equivalences. By the
+    #link("note://eb0e793e-d04a-4145-ad54-152aa50d2aee")[3-for-2 property for
+    equivalences], it follows that the right map $g$ is an equivalence as well.
+]
+
+```agda
+isEmbedding→∘-isEquivalence→isEquivalence₁ :
+  {i j k : Level} {A : Type i} {B : Type j} {C : Type k}
+  (g : B → C) (f : A → B) →
+  IsEmbedding g → IsEmbedding f →
+  IsEquivalence (g ∘ f) →
+  IsEquivalence f
+isEmbedding→∘-isEquivalence→isEquivalence₁
+  {_} {_} {_} {A} {B} {C} g f p q r = isContractibleFunction→isEquivalence s
+  where
+  s : (y : B) → IsContractible $ Fiber f y
+  s y = w
+    where
+    φ : (x : A) → f x ＝ y → g (f x) ＝ g y
+    φ x = pathAction g
+
+    t : (x : A) → IsEquivalence $ φ x
+    t x = p (f x) y
+
+    u : IsEquivalence $ total φ
+    u = familyOfEquivalences→totalIsEquivalence φ t
+
+    v : IsContractible $ Σ A (λ x → g (f x) ＝ g y)
+    v = isEquivalence→isContractibleFunction r (g y)
+
+    w : IsContractible $ Σ A (λ x → f x ＝ y)
+    w = isEquivalence→isContractible→isContractible₂ (total φ) u v
+
+isEmbedding→∘-isEquivalence→isEquivalence₂ :
+  {i j k : Level} {A : Type i} {B : Type j} {C : Type k}
+  (g : B → C) (f : A → B) →
+  IsEmbedding g → IsEmbedding f →
+  IsEquivalence (g ∘ f) →
+  IsEquivalence g
+isEmbedding→∘-isEquivalence→isEquivalence₂ {_} {_} {_} {A} {B} {C} g f p q r =
+  t
+  where
+  s : IsEquivalence f
+  s = isEmbedding→∘-isEquivalence→isEquivalence₁ g f p q r
+
+  t : IsEquivalence g
+  t = isEquivalenceTop→left→right (g ∘ f) g f (reflexiveHomotopy (g ∘ f)) s r
 ```
