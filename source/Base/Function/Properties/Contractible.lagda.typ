@@ -383,7 +383,10 @@ isContractible→＝-isContractible (pair c C) x y = pair d D
 
 = For all maps with a retraction, if the codomain is contractible then the domain is contractible <note:591c6be7-77c3-4215-a126-f27d87c6bd65>
  
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 10.2"))[
+#lemma(
+    label: "82",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 10.2")
+)[
     For all maps $f ofType A -> B$ with a
     #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[retraction], if the
     codomain $B$ is

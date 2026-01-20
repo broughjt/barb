@@ -119,3 +119,28 @@ inject₂-isEmbedding {B = B} x =
         (total f) q 
         (endpointPathContractible x)
 ```
+
+= Coproduct recursion is an embedding if and only if both component maps are embeddings with disjoint images <note:bf86af6f-9459-4c21-8107-baa752c657f8>
+ 
+#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 11.6"))[
+    Let $f ofType A -> C$ and $g ofType B -> C$ be maps. Then the following are
+    #link("note://27061ddb-2091-46c1-8752-21db2ab57f44")[logically equivalent]:
+
+    1. The coproduct recursor $[f, g] ofType A + B -> C$ is an embedding.
+    2. Both $f$ and $g$ are embeddings, with
+       $
+           f(x) != g(y)
+       $
+       for all $x ofType A$ and $y ofType B$.
+]
+#proof[
+]
+
+TODO: Leaving this for the next chapter when we have a much nicer
+characterization of embeddings as maps with propositional fibers
+
+Use that for the converse direction, the forward direction follows by precomposing with the injections and using the previous lemmas
+
+```agda
+
+```

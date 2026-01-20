@@ -11,7 +11,7 @@ open import Base.Function.Properties.Contractible
 open import Base.Function.Properties.Equivalence
 open import Base.Function.Properties.Fiber
 open import Base.Identity.Core
-open import Base.Identity.Definitions
+open import Base.Identity.Definitions hiding (_∙_; _⁻¹)
 open import Base.Truncation.Definitions
 open import Base.Universe.Core
 open import Data.Sigma.Core
@@ -689,4 +689,224 @@ curryUncurry'Section f = reflexive
 --   {i j k : Level} {A : Type i} {B : A → Type j} {C : Σ A B → Type k} →
 --   LeftInverse (curry {C = C}) (uncurry' {C = C})
 -- curryUncurry'Retraction f = {!!}
+```
+
+= If a family of maps comes equipped with a family of homotopies, then there is a homotopy between the induced maps on total spaces <note:1f612a04-3b82-4766-b1f8-2ba584a96b90>
+ 
+#lemma(
+    label: "77",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 11.8(a)")
+)[
+    Let $f, g ofType piType(x, A) B(x) -> C(x)$ be two famalies of maps. If
+    there is a family of
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopies] $H ofType
+    piType(x, A) f(x) ~ g(x)$, then there is a homotopy
+    $
+        total(f) ~ total(g)
+    $
+    between the #link("note://6561eded-451d-46bb-8194-c64a0acf904e")[induced
+    maps on total spaces].
+]
+#proof[
+    We must construct a
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopy] $total(f) ~
+    total(g)$, that is, for each $(x, y) ofType sigmaType(x, A) B(x)$ a
+    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path]
+    $
+        (x, f(x, y)) = (x, g(x, y))
+    $
+    in $sigmaType(x, A) C(x)$.
+
+    Fix $(x, y)$. Using the
+    #link("note://a123eb52-0ec7-4d04-a780-e6761d564fd9")[characterization of the
+    identity types of $Sigma$-types], a path from $(x, f(x, y))$ to $(x, g(x,
+    y))$ corresponds with:
+    - a path $alpha ofType x = x$ in the base, which we take to be $refl_(x)$, and
+    - a path $tr_(B)(alpha, f(x, y)) = g(x, y)$ over $alpha$.
+    However, #link("note://1229c654-047b-4517-9f4c-df4c03224d02")[by definition]
+    we have $tr_(B)(refl_(x), f(x, y)) dot(eq) f(x, y)$. Applying $H$ to $x$
+    and $y$ yields a path
+    $
+        f(x, y) = g(x, y).
+    $
+    Thus we obtain a path
+    $
+        (x, f(x, y)) = (x, g(x, y))
+    $
+    by pairing $refl_(x)$ with $H(x, y)$. This completes the construction.
+]
+
+```agda
+familyOfHomotopies→totalHomotopy :
+  {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k}
+  (f g : (x : A) → B x → C x) →
+  ((x : A) → f x ∼ g x) →
+  total f ∼ total g
+familyOfHomotopies→totalHomotopy f g H (pair x y) =
+  Equal→＝ $ pair reflexive (H x y)
+```
+
+= Induced map on total spaces respects composition <note:672f07c9-b4bc-4285-8365-bb8ea4a89e6a>
+ 
+#lemma(
+    label: "78",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 11.8(b)")
+)[
+    Let $f ofType piType(x, A) B(x) -> C(x)$ and $g ofType piType(x, A) C(x) ->
+    D(x)$ be families of maps. There is a
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopy]
+    $
+        total(lambda x . g(x) compose f(x)) ~ total(g) compose total(f)
+    $
+    (see #link("note://6561eded-451d-46bb-8194-c64a0acf904e")[Induced map on
+    total spaces]).
+]
+#proof[
+    At each $(x, y) ofType sigmaType(x, A) B(x)$, the left- and right-hand sides
+    are #link("note://a0baf580-5da2-4328-bfbd-202bedf37747")[judgementally
+    equal].
+]
+
+```agda
+totalCompose : 
+  {i j k l : Level}
+  {A : Type i} {B : A → Type j} {C : A → Type k} {D : A → Type l}
+  (g : (x : A) → C x → D x)
+  (f : (x : A) → B x → C x) →
+  total (λ x → g x ∘ f x) ∼ total g ∘ total f
+totalCompose g f (pair x y) = reflexive
+```
+
+= Induced map on total spaces respects identity <note:2f08bfdc-3531-407f-941e-d6df6ffdb5d9>
+
+#lemma(
+    label: "79",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 11.8(c)")
+)[
+    For any #link("note://b05d0e2e-b6ab-45ab-9277-9559f4ee5e1f")[type family]
+    $B$ over a type $A$ there is a
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopy]
+    $
+        total(lambda x . id_(B(x))) ~ id_(sigmaType(x, A) B(x))
+    $
+    (see #link("note://6561eded-451d-46bb-8194-c64a0acf904e")[Induced map on
+    total spaces]).
+]
+#proof[
+    At each $(x, y) ofType sigmaType(x, A) B(x)$, the left- and right-hand sides
+    are #link("note://a0baf580-5da2-4328-bfbd-202bedf37747")[judgementally
+    equal].
+]
+ 
+```agda
+totalIdentity : 
+  {i j : Level} {A : Type i} {B : A → Type j} →
+  total (λ x → identity {_} {B x}) ∼ identity {_} {Σ A B}
+totalIdentity (pair x y) = reflexive
+```
+
+= Family of retractions implies induced map on total spaces has retraction <note:6181393a-be9d-4ad8-8e63-b449c2da3b56>
+ 
+#lemma(label: "80")[
+    If $f ofType piType(x, A) B(x) -> C(x)$ and $g ofType piType(x, A) C(x) ->
+    B(x)$ are families of maps such that $g(x)$ is a
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[retraction] of $f(x)$
+    for each $x ofType A$, then $total(g)$ is a retraction of $total(f)$.
+]
+#proof[
+    We must construct a
+    #link("note://3cb1b8ca-2a77-4c8a-b726-ed8f10dfd208")[homotopy]
+    $
+        total(g) compose total(f) ~ id_(sigmaType(x, A) B(x)).
+    $
+    By #link("note://672f07c9-b4bc-4285-8365-bb8ea4a89e6a")[Lemma 78], the
+    #link("note://6561eded-451d-46bb-8194-c64a0acf904e")[induced map on total
+    spaces] respects
+    #link("note://bc9568f6-830b-4b4e-9aab-1808b1127cb0")[composition], so there
+    is a homotopy
+    $
+        total(g) compose total(f) ~ total(lambda x . g(x) compose f(x)).
+    $
+    Moreover, by #link("note://1f612a04-3b82-4766-b1f8-2ba584a96b90")[Lemma 77],
+    the induced map on total spaces respects homotopy. Since by assumption we
+    have
+    $
+        g(x) compose f(x) ~ id_(B(x))
+    $
+    for each $x ofType A$, we obtain a homotopy
+    $
+        total(lambda x . g(x) compose f(x)) ~ total(lambda x. id_(B(x))).
+    $
+    Finally, the induced map on total space sends families of identity maps to
+    the identity (#link("note://2f08bfdc-3531-407f-941e-d6df6ffdb5d9")[Lemma
+    79]), so there is a homotopy
+    $
+        total(lambda x . id_(B(x))) ~ id_(sigmaType(x, A) B(x)).
+    $
+    Composing these three homotopies yields the required homotopy
+    $
+        total(g) compose total(f) ~ id_(sigmaType(x, A) B(x)).
+    $
+    Thus $total(g)$ is a retraction of $total(f)$.
+]
+
+Turns out we already proved the version of this lemma for inverses in the note
+#link("note://2d568ea6-459f-476e-9a8b-2d5ea7a57815")[Family of inverses implies
+induced maps on total spaces are inverses].
+
+```agda
+familyOfLeftInverses→totalLeftInverse :
+  {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k}
+  (f : (x : A) → B x → C x)
+  (g : (x : A) → C x → B x) →
+  ((x : A) → LeftInverse (f x) (g x)) → LeftInverse (total f) (total g)
+familyOfLeftInverses→totalLeftInverse {_} {_} {_} {A} {B} {C} f g H = K
+  where
+  K : total g ∘ total f ∼ identity {_} {Σ A B}
+  K = L ⁻¹ ∙ M ∙ N
+    where
+    L : total (λ x → g x ∘ f x) ∼ total g ∘ total f
+    L = totalCompose g f
+
+    M : total (λ x → g x ∘ f x) ∼ total (λ x → identity {_} {B x})
+    M = familyOfHomotopies→totalHomotopy
+      (λ x → g x ∘ f x) (λ x → identity {_} {B x}) H
+
+    N : total (λ x → identity {_} {B x}) ∼ identity {_} {Σ A B}
+    N = totalIdentity
+```
+
+= Family of sections implies induced map on total spaces has section <note:2957f389-a645-430c-bcb3-efe6f2565b28>
+
+#lemma(label: "81")[
+    If $f ofType piType(x, A) B(x) -> C(x)$ and $g ofType piType(x, A) C(x) ->
+    B(x)$ are families of maps such that $g(x)$ is a
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[section] of $f(x)$ for
+    each $x ofType A$, then $total(g)$ is a section of $total(f)$.
+]
+#proof[
+    Completely analogous to the proof for
+    #link("note://6181393a-be9d-4ad8-8e63-b449c2da3b56")[Lemma 80].
+]
+
+```agda
+familyOfRightInverses→totalRightInverse :
+  {i j k : Level} {A : Type i} {B : A → Type j} {C : A → Type k}
+  (f : (x : A) → B x → C x)
+  (g : (x : A) → C x → B x) →
+  ((x : A) → RightInverse (f x) (g x)) → RightInverse (total f) (total g)
+familyOfRightInverses→totalRightInverse {_} {_} {_} {A} {B} {C} f g H = K
+  where
+  K : total f ∘ total g ∼ identity {_} {Σ A C}
+  K = L ⁻¹ ∙ M ∙ N
+    where
+    L : total (λ x → f x ∘ g x) ∼ total f ∘ total g
+    L = totalCompose f g
+
+    M : total (λ x → f x ∘ g x) ∼ total (λ x → identity {_} {C x})
+    M = familyOfHomotopies→totalHomotopy
+      (λ x → f x ∘ g x) (λ x → identity {_} {C x}) H
+
+    N : total (λ x → identity {_} {C x}) ∼ identity {_} {Σ A C}
+    N = totalIdentity
 ```

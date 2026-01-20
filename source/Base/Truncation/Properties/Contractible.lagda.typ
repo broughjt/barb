@@ -877,3 +877,117 @@ componentTotalIsContractible→characterize-＝-structure'
       ((v : Σ A B) → IsEquivalence $ f v)
   s = totalIsContractible→characterize-＝ r u
 ```
+
+= To characterize an identity type, it suffices to give a family of maps out of the identity type equipped with sections <note:7509e68a-5c1a-4ce8-aa53-fce8adc17522>
+ 
+#lemma(
+    label: "83",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 11.8(d-e)")
+)[
+    Let
+    $
+        f ofType piType(x, A) a = x -> B(x)
+    $
+    be a family of maps. If there is a family of maps
+    $
+        g ofType piType(x, A) B(x) -> a = x
+    $
+    such that $g(x)$ is a
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[section] of $f(x)$ for
+    each $x ofType A$, then $f$ is a
+    #link("note://60d115f9-9bef-47af-916a-1a60ea0b3456")[family of
+    equivalences].
+]
+#proof[
+    By the #link("note://47c2a4df-e0c1-49a6-8ce8-feae75d30105")[fundamental
+    theorem of identity types], to show that $f$ is a family of equivalences it
+    suffices to show that the
+    #link("note://ae098784-7572-4d29-b548-a2db9b6d004a")[total space]
+    $
+        sigmaType(x, A) B(x)
+    $
+    is #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible].
+
+    By assumption, for each $x ofType A$, the map $g(x)$ is a section of
+    $f(x)$. By #link("note://2957f389-a645-430c-bcb3-efe6f2565b28")[Lemma 81],
+    it follows that the
+    #link("note://6561eded-451d-46bb-8194-c64a0acf904e")[induced map on total
+    spaces]
+    $
+        total(g) ofType sigmaType(x, A) B(x) -> sigmaType(x, A) a = x
+    $
+    is a section of
+    $
+        total(f) ofType sigmaType(x, A) a = x -> sigmaType(x, A) B(x).
+    $
+    #link("note://608cfcd8-b127-4cde-a4ad-afcb1f38cccd")[Equivalently],
+    $total(f)$ is a
+    #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[retraction] of
+    $total(g)$.
+
+    By #link("note://591c6be7-77c3-4215-a126-f27d87c6bd65")[Lemma 82], if a map
+    has a retraction, then contractibility of its codomain implies
+    contractibility of its domain. Hence it suffices to show that
+    $
+        sigmaType(x, A) a = x
+    $
+    is contractible. But the type of endpoint-path pairs is contratible by
+    #link("note://0505440a-b3cf-41ad-b847-df4a87400d7a")[Theorem 46]. Therefore
+    $sigmaType(x, A) B(x)$ is contractible, and the claim follows.
+]
+
+```agda
+familyOfRightInverses→characterize-＝ :
+  {i j : Level} {A : Type i} {B : A → Type j}
+  (a : A)
+  (f : (x : A) → a ＝ x → B x)
+  (g : (x : A) → B x → a ＝ x) →
+  ((x : A) → RightInverse (f x) (g x)) →
+  ((x : A) → IsEquivalence $ f x)
+familyOfRightInverses→characterize-＝ {_} {_} {A} {B} a f g H =
+  totalIsContractible→characterize-＝ q a f
+  where
+  H' : RightInverse (total f) (total g)
+  H' = familyOfRightInverses→totalRightInverse f g H
+
+  p : IsContractible (Σ A (λ x → a ＝ x)) → IsContractible (Σ A B)
+  p = retraction→isContractible→isContractible (total g) (total f) H'
+
+  q : IsContractible (Σ A B)
+  q = p $ endpointPathContractible a
+```
+
+= If the action of a function on paths has a section for each input then the function is an embedding <note:9a00cbde-370e-41f7-88f8-c8bcaff1ba27>
+ 
+#corollary(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 11.9"))[
+    Let $f ofType A -> B$ be a map. If the
+    #link("note://7caf7ee0-9e2a-4761-bee9-25cd52820039")[action of $f$ on paths]
+    $
+        ap_(f) ofType x = y -> f(x) = f(y)
+    $
+    has a #link("note://32c2ca55-63ba-411b-9052-676a51fd16a1")[section] for each
+    $x, y ofType A$, then $f$ is an
+    #link("note://cce94748-d9b3-4795-a3d8-c698b6dff9dd")[embedding].
+]
+#proof[
+    Fix $x ofType A$. By assumption, the family of maps
+    $
+        piType(y, A) x = y -> f(x) = f(y)
+    $
+    admits a family of sections. By
+    #link("note://7509e68a-5c1a-4ce8-aa53-fce8adc17522")[Lemma 83], this family
+    is therefore a #link("note://60d115f9-9bef-47af-916a-1a60ea0b3456")[family
+    of equivalences]. Since this holds for each $x$, $f$ is an
+    #link("note://cce94748-d9b3-4795-a3d8-c698b6dff9dd")[embedding].
+]
+
+```agda
+familyOfRightInverses→embedding : 
+  {i j : Level} {A : Type i} {B : Type j}
+  (f : A → B)
+  (h : (x y : A) → f x ＝ f y → x ＝ y) →
+  ((x y : A) → RightInverse (pathAction f) (h x y)) →
+  IsEmbedding f
+familyOfRightInverses→embedding f h H x =
+  familyOfRightInverses→characterize-＝ x (λ y → pathAction f) (h x) (H x)
+```
