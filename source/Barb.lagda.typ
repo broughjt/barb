@@ -52,6 +52,7 @@ import Data.Coproduct.Properties.Identity
 import Data.Coproduct.Properties.Map
 
 import Data.Empty.Core
+import Data.Empty.Properties
 
 import Data.Natural.Core
 import Data.Natural.Definitions
