@@ -78,3 +78,32 @@ IsContractibleFunction : {i j : Level} {A : Type i} {B : Type j} →
                        (A → B) → Type (i ⊔ j)
 IsContractibleFunction {B = B} f = (y : B) → IsContractible $ Fiber f y
 ```
+
+= Proposition <note:07db70c3-0206-4a29-a7c1-77d208539cec>
+
+Following #cite(<rijke2025>, form: "prose", supplement: "def. 12.1.1"), a type
+$A$ is a *proposition* if each of its
+#link("note://261490cb-2887-4247-9a83-7f674e3c9651")[identity types] are
+#link("note://f817901c-750e-4575-a259-d83730424ade")[contractible], that is, if
+it comes equipped with an element of type
+
+$
+    IsProposition(A) := piType(x, y, A) IsContractible(x = y).
+$
+
+Given a universe $cal(U)$, we define $Proposition$ to be the type of all
+propositions in $cal(U)$:
+
+$
+    Proposition_(cal(U)) := sigmaType(A, cal(U)) IsProposition(A).
+$
+
+```agda
+IsProposition : {i : Level} →
+                Type i → Type i
+IsProposition A = (x y : A) → IsContractible $ x ＝ y
+
+-- TODO: Should the level argument be explicit or implicit
+Proposition : {i : Level} → Type (successor i)
+Proposition {i} = Σ (Type i) IsProposition
+```

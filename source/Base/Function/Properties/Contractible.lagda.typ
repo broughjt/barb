@@ -331,56 +331,6 @@ isEquivalence↔isContractibleFunction =
   isContractibleFunction→isEquivalence
 ```
 
-= If a type is contractible than it has contractible identity types <note:1d8b9cbe-0517-4ca7-840a-d9601bedde8e>
-
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, exer. 10.1"))[
-    If a type $A$ is
-    #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible], then for
-    all $x, y ofType A$, the
-    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[identity type] $x
-    attach(eq, br: A) y$ is also contractible.
-]
-#proof[
-    Let $A$ be a
-    #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible type] with
-    #link("note://f817901c-750e-4575-a259-d83730424ade")[center of contraction]
-    $c ofType A$ and
-    #link("note://f817901c-750e-4575-a259-d83730424ade")[contraction] $C ofType
-    piType(x, A) c = x$. Fix $x, y ofType A$. We show that the
-    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[identity type] $x
-    attach(eq, br: A) y$ is
-    #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible].
-
-    Take the #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path]
-    $
-        C(x)^(-1) dot.op C(y) ofType x = y.
-    $
-    as the center of contraction. For the contraction, let $p ofType x = y$. By
-    #link("note://261490cb-2887-4247-9a83-7f674e3c9651")[path induction] on $p$,
-    we may assume $y$ is $x$ and that $p$ is $refl_(x)$. In this case it
-    suffices to construct a path
-    $
-        C(x)^(-1) dot.op C(x) = refl_(x),
-    $
-    which we obtain immediately from the
-    #link("note://ac149ae0-bd8c-4206-a7bf-eb6e7fa1575e")[left inverse law for
-    paths].
-]
-
-```agda
-isContractible→＝-isContractible :
-  {i : Level} {A : Type i}
-  (p : IsContractible A) →
-  (x y : A) → IsContractible (x ＝ y)
-isContractible→＝-isContractible (pair c C) x y = pair d D
-  where
-  d : x ＝ y
-  d = (C x) Identity.⁻¹ Identity.∙ (C y)
-
-  D : (p : x ＝ y) → d ＝ p
-  D reflexive = Identity.⁻¹-inverseˡ (C x)
-```
-
 = For all maps with a retraction, if the codomain is contractible then the domain is contractible <note:591c6be7-77c3-4215-a126-f27d87c6bd65>
  
 #lemma(
