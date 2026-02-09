@@ -8,7 +8,7 @@ module Base.Function.Negation where
 open import Base.Function.Core
 open import Base.Universe.Core
 open import Data.Coproduct.Core as Coproduct
-open import Data.Empty as Empty
+open import Data.Empty.Core as Empty
 ```
 
 = Negation of a type <note:16ffba35-7712-4eb7-8902-0812e529aa16>

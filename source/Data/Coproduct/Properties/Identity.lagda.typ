@@ -20,7 +20,7 @@ open import Base.Universe.Lift
 open import Base.Universe.Properties.Lift
 open import Data.Coproduct.Core
 open import Data.Coproduct.Definitions
-open import Data.Empty as Empty
+open import Data.Empty.Core as Empty
 open import Data.Sigma.Core
 ```
 

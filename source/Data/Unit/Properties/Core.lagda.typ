@@ -1,9 +1,9 @@
-#import("../../../../../library/template.typ"): *
+#import("../../../../../../library/template.typ"): *
 
 #show: template
 
 ```agda
-module Data.Unit.Properties where
+module Data.Unit.Properties.Core where
 
 open import Base.Function.Core
 open import Base.Function.Definitions
@@ -16,7 +16,10 @@ open import Data.Unit.Core as Unit
 
 = Unit type is contractible <note:2bd735ed-2f78-4b32-8b6f-77e9a5c57573>
  
-#lemma(supplement: cite_link(<rijke2025>, "Rijke 2025, ex. 10.1.3"))[
+#lemma(
+    label: "87",
+    supplement: cite_link(<rijke2025>, "Rijke 2025, ex. 10.1.3")
+)[
     The #link("note://fe0ba530-46e9-4031-83bb-330db4d12b4e")[unit type] is
     #link("note://f817901c-750e-4575-a259-d83730424ade")[contractible].
 ]

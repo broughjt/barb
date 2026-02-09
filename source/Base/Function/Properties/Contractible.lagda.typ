@@ -19,7 +19,7 @@ open import Base.Universe.Core
 open import Data.Sigma.Core
 open import Data.Sigma.Definitions
 open import Data.Unit.Core
-open import Data.Unit.Properties
+open import Data.Unit.Properties.Core
 ```
 
 = Every contractible map is an equivalence <note:e6848e01-6f0e-415e-9010-b0f2e2b28370>

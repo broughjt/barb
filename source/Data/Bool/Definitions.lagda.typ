@@ -7,7 +7,7 @@ module Data.Bool.Definitions where
 
 open import Base.Universe.Core
 open import Data.Bool.Core as Bool
-open import Data.Empty
+open import Data.Empty.Core
 open import Data.Unit.Core
 ```
 

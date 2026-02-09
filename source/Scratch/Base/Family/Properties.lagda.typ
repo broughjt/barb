@@ -3,7 +3,7 @@
 #show: template
 
 ```agda
-module Base.Family.Properties where
+module Scratch.Base.Family.Properties where
 
 open import Base.Universe.Core
 open import Base.Family.Definitions

@@ -14,7 +14,7 @@ open import Base.Universe.Core
 open import Data.Bool.Core
 open import Data.Bool.Definitions
 open import Data.Coproduct.Core as Coproduct
-open import Data.Empty as Empty
+open import Data.Empty.Core as Empty
 open import Data.Sigma.Core
 open import Data.Unit.Core as Unit
 ```

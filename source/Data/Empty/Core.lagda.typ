@@ -3,7 +3,7 @@
 #show: template
 
 ```agda
-module Data.Empty where
+module Data.Empty.Core where
 
 open import Base.Universe.Core
 ```

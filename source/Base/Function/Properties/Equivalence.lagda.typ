@@ -10,7 +10,7 @@ open import Base.Function.Definitions
 open import Base.Function.Negation
 open import Base.Identity.Core
 open import Base.Universe.Core
-open import Data.Empty as Empty
+open import Data.Empty.Core as Empty
 open import Data.Sigma.Core
 open import Data.Sigma.Definitions as Sigma
 ```

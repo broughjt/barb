@@ -14,7 +14,7 @@ open import Base.Universe.Core
 open import Data.Coproduct.Core
 open import Data.Coproduct.Definitions as Coproduct
 open import Data.Coproduct.Properties.Equivalence as Coproduct
-open import Data.Empty as Empty
+open import Data.Empty.Core as Empty
 open import Data.Sigma.Core
 open import Data.Sigma.Definitions as Sigma
 open import Data.Sigma.Properties.Equivalence as Sigma

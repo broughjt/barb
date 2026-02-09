@@ -6,7 +6,7 @@
 module Data.Natural.Definitions where
 
 open import Base.Universe.Core as Universe hiding (zero; successor)
-open import Data.Empty
+open import Data.Empty.Core
 open import Data.Natural.Core
 open import Data.Unit.Core
 ```

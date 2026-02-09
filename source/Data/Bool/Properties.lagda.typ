@@ -20,7 +20,7 @@ open import Base.Identity.Properties
 open import Base.Universe.Core
 open import Data.Bool.Core as Bool
 open import Data.Bool.Definitions as Bool
-open import Data.Empty as Empty
+open import Data.Empty.Core as Empty
 open import Data.Sigma.Core
 open import Data.Unit.Core as Unit
 ```

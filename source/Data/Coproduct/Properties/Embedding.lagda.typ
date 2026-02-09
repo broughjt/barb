@@ -82,7 +82,7 @@ inject₁-isEmbedding :
   IsEmbedding (inject₁ {A = A} {B = B})
 inject₁-isEmbedding {A = A} x =
   totalIsContractible→characterize-＝
-    x (λ y → pathAction inject₁) r
+    r x (λ y → pathAction inject₁)
   where
   f : (y : A) → inject₁ x ＝ inject₁ y → x ＝ y
   f y = (lower ∘ (＝→reflexive {R = Coproduct.Equal} equalReflexive))
@@ -103,7 +103,7 @@ inject₂-isEmbedding :
   IsEmbedding (inject₂ {A = A} {B = B})
 inject₂-isEmbedding {B = B} x =
   totalIsContractible→characterize-＝
-    x (λ y → pathAction inject₂) r
+    r x (λ y → pathAction inject₂)
   where
   f : (y : B) → inject₂ x ＝ inject₂ y → x ＝ y
   f y = (lower ∘ (＝→reflexive {R = Coproduct.Equal} equalReflexive))

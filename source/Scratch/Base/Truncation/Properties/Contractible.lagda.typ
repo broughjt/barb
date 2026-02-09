@@ -6,8 +6,6 @@
 module Scratch.Base.Truncation.Properties.Contractible where
 
 open import Base.Universe.Core
--- open import Base.Universe.Lift hiding (induction)
--- open import Base.Universe.Properties.Lift
 open import Base.Truncation.Definitions
 open import Base.Truncation.Properties.Contractible
 open import Base.Function.Core
@@ -15,13 +13,11 @@ open import Base.Function.Definitions hiding (_⁻¹; _∙_)
 open import Base.Function.Properties.Contractible
 open import Base.Function.Properties.Equivalence
 open import Base.Identity.Core as Identity hiding (induction)
--- open import Base.Identity.Definitions
 open import Base.Identity.Properties
 open import Base.Identity.IdentitySystem
 open import Data.Sigma.Core as Sigma hiding (induction)
 open import Data.Sigma.Definitions
 open import Data.Sigma.Properties.Equivalence
--- open import Data.Sigma.Properties.Identity
 ```
 
 = The fundamental theorem of identity types (version 1) <note:11444574-89ee-44aa-be94-dbd3591cca2c>

@@ -640,9 +640,7 @@ of the natural numbers].
   IsEquivalence (＝→reflexive {R = Equal} equalReflexive {x = n} {y = m})
 ＝→equal-isEquivalence n =
   totalIsContractible→characterize-＝
-    n
-    (λ m → ＝→reflexive equalReflexive {x = n} {y = m})
-    p
+    p n (λ m → ＝→reflexive equalReflexive {x = n} {y = m})
   where
   c : (n : ℕ) → Σ ℕ (Equal n)
   c n = pair n (equalReflexive n)

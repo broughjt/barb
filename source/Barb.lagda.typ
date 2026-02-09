@@ -15,6 +15,7 @@ import Base.Family.Properties
 import Base.Function.Core
 import Base.Function.Definitions
 import Base.Function.FiberIdentity
+import Base.Function.FiberIdentityAlternative
 import Base.Function.Negation
 import Base.Function.Properties.Contractible
 import Base.Function.Properties.Embedding
@@ -32,6 +33,7 @@ import Base.Identity.Syntax
 
 import Base.Truncation.Definitions
 import Base.Truncation.Properties.Contractible
+import Base.Truncation.Properties.Proposition
 
 import Base.Universe.Core
 import Base.Universe.Lift
@@ -44,11 +46,12 @@ import Data.Bool.Properties
 import Data.Coproduct.Core
 import Data.Coproduct.Definitions
 import Data.Coproduct.Properties.Decision
+import Data.Coproduct.Properties.Embedding
 import Data.Coproduct.Properties.Equivalence
 import Data.Coproduct.Properties.Identity
 import Data.Coproduct.Properties.Map
 
-import Data.Empty
+import Data.Empty.Core
 
 import Data.Natural.Core
 import Data.Natural.Definitions
@@ -63,9 +66,12 @@ import Data.Sigma.Properties.Map
 import Data.Sigma.Properties.Truncation
 
 import Data.Unit.Core
-import Data.Unit.Properties
+import Data.Unit.Properties.Core
+import Data.Unit.Properties.Proposition
 
 import Algebra.Definitions
 
+import Scratch.Base.Family.Properties
+import Scratch.Base.Truncation.Properties.Contractible
 import Scratch.Data.Sigma.Properties.Map
 ```

@@ -10,7 +10,7 @@ open import Base.Identity.Core
 open import Base.Universe.Core
 open import Base.Universe.Lift hiding (induction; recursion)
 open import Data.Coproduct.Core
-open import Data.Empty hiding (induction; recursion)
+open import Data.Empty.Core hiding (induction; recursion)
 ```
 
 = Coproduct map <note:95fefab8-ba33-4759-8a33-03997164ebab>
